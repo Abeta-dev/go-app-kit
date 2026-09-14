@@ -6,8 +6,7 @@ on:
   pull_request:
     branches: [ main ]
 
-permissions:
-  contents: read
+permissions: read-all
 
 jobs:
   lint:
@@ -15,16 +14,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
         with:
-          go-version: '1.25.x'
+          go-version: '1.26.x'
           cache: true
 
       - name: Run golangci-lint v2
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6.5.2
         with:
           version: v2.13.2
           args: --timeout=5m
@@ -34,13 +33,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.25.x']
+        go-version: ['1.26.x']
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
         with:
           go-version: ${{ matrix.go-version }}
           cache: true
@@ -61,7 +60,7 @@ jobs:
         run: go test -v ./examples/invoice_service/...
 
       - name: Verify Statement Coverage Gate
-        if: matrix.go-version == '1.25.x'
+        if: matrix.go-version == '1.26.x'
         run: ./scripts/check_coverage.sh
 
   integration:
@@ -83,12 +82,12 @@ jobs:
           --health-retries 5
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
         with:
-          go-version: '1.25.x'
+          go-version: '1.26.x'
           cache: true
 
       - name: Run Integration Tests with Race Detector
@@ -104,12 +103,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
         with:
-          go-version: '1.25.x'
+          go-version: '1.26.x'
           check-latest: true
 
       - name: Run govulncheck
@@ -125,7 +124,7 @@ jobs:
           rm ./cyclonedx-gomod
 
       - name: Upload CycloneDX SBOM Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
           name: cyclonedx-sbom
           path: bom.json
@@ -135,12 +134,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
         with:
-          go-version: '1.25.x'
+          go-version: '1.26.x'
           cache: true
 
       - name: Verify Version & Documentation Synchronization
