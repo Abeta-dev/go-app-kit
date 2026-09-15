@@ -1,0 +1,31 @@
+name: Feature Request
+description: Propose a new enterprise accelerator capability, compliance helper, or domain primitive for go-app-kit
+title: "feat: <brief description>"
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for proposing an enterprise feature or capability for go-app-kit. Please provide architectural context, domain use cases, and design details.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement / Enterprise Use Case
+      description: What business capability, statutory requirement, or architectural pattern are you addressing?
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed Solution / API Design
+      description: Describe the proposed API signature, interface, schema, or behavior.
+      render: go
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What alternative libraries, workarounds, or architectures did you consider?
+    validations:
+      required: false
