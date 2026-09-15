@@ -62,6 +62,15 @@ func main() {
     defer broker.Close()
 
     // 2. Register channel adapters
+    // Option A: Brevo (Sendinblue) Transactional API v3
+    brevoSender, _ := notifications.NewBrevoSender(notifications.BrevoConfig{
+        APIKey:      "xkeysib-...",
+        SenderEmail: "notifications@example.com",
+        SenderName:  "Example Platform",
+    })
+    broker.RegisterSender(brevoSender)
+
+    // Option B: Standard SMTP Relay
     broker.RegisterSender(notifications.NewEmailSender(notifications.EmailConfig{
         Host:     "smtp.mailgun.org",
         Port:     587,
