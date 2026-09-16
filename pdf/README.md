@@ -16,8 +16,9 @@ In-memory HTML-to-PDF document compilation with responsive layout options, templ
 
 1. **In-Memory Pipe Processing**: Renders raw HTML strings into pure `*bytes.Buffer` in memory, eliminating disk I/O bottlenecks and temporary file cleanup edge cases in containerized environments.
 2. **Embedded Production Templates (`go:embed`)**: Bundles standard GST tax invoice and payment receipt templates directly into the compiled Go binary so downstream services don't need external HTML asset deployment.
-3. **Pluggable Generator Interface (`Generator`)**: Wraps the underlying `wkhtmltopdf` process behind a clean Go interface, enabling 100% deterministic unit testing via mock generators without requiring the `wkhtmltopdf` C-binary in local test runners.
-4. **Functional Option Pattern**: Uses composable options (`WithPageSize`, `WithOrientation`, `WithMargins`, `WithDPI`, `WithTitle`) with safe production defaults (A4 Portrait, 10mm margins, 300 DPI).
+3. **Pluggable Renderer Interface (`Renderer`)**: Decouples HTML document compilation behind a clean Go interface (`Renderer`), enabling modular rendering engines (wkhtmltopdf, headless Chrome, Gotenberg) and 100% deterministic unit testing via mock renderers without requiring external C-binaries.
+4. **Graceful Fallback (`ErrNoRendererAvailable`)**: If `wkhtmltopdf` is not present on the host system and no custom `Renderer` is supplied via `WithRenderer`, compilation returns `ErrNoRendererAvailable` gracefully rather than crashing or hanging.
+5. **Functional Option Pattern**: Uses composable options (`WithPageSize`, `WithOrientation`, `WithMargins`, `WithDPI`, `WithTitle`, `WithRenderer`) with safe production defaults (A4 Portrait, 10mm margins, 300 DPI).
 
 ---
 
@@ -76,6 +77,5 @@ func main() {
 
 ## Known Limitations
 
-- **Binary Requirement**: Requires a pre-installed `wkhtmltopdf` binary in the host system `$PATH` (NOT Chromium, Google Chrome, or CDP). For containerized environments, install `wkhtmltopdf` into the container image.
-- **Unit Testing**: Test suites should utilize mock implementations of the `Generator` interface for deterministic, zero-dependency testing without requiring host binary installation.
-
+- **Binary Requirement**: Default rendering requires a pre-installed `wkhtmltopdf` binary in the host system `$PATH` (NOT Chromium, Google Chrome, or CDP). If missing, `pdf.ErrNoRendererAvailable` is returned.
+- **Custom Engines**: For zero C-dependency environments or browser engines, inject a custom implementation via `pdf.WithRenderer(customRenderer)`.

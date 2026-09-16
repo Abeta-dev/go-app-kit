@@ -3,16 +3,18 @@ package india
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"strings"
+
+	fintechin "github.com/umesh0492/go-fintech-india"
 )
 
 var (
-	ErrInvalidPANLength  = errors.New("pan must be exactly 10 characters")
-	ErrInvalidPANFormat  = errors.New("pan format is invalid")
+	// ErrInvalidPANLength indicates the PAN string does not have length 10.
+	ErrInvalidPANLength = errors.New("pan must be exactly 10 characters")
+	// ErrInvalidPANFormat indicates the PAN format regex is invalid.
+	ErrInvalidPANFormat = errors.New("pan format is invalid")
+	// ErrUnknownEntityType indicates the 4th character of PAN is not a recognized entity type.
 	ErrUnknownEntityType = errors.New("unknown pan entity type")
-
-	panRegex = regexp.MustCompile(`^[A-Z]{3}[A-Z]{1}[A-Z]{1}[0-9]{4}[A-Z]{1}$`)
 
 	// Mapping of 4th character of PAN to legal entity type in India
 	entityTypes = map[byte]string{
@@ -38,18 +40,19 @@ type PANDetails struct {
 }
 
 // ValidatePAN verifies the structural validity of a 10-character Indian PAN card number.
+// Delegates statutory validation to github.com/umesh0492/go-fintech-india.
 func ValidatePAN(pan string) error {
 	clean := strings.ToUpper(strings.TrimSpace(pan))
 	if len(clean) != 10 {
 		return ErrInvalidPANLength
 	}
 
-	if !panRegex.MatchString(clean) {
+	if err := fintechin.ValidatePAN(clean); err != nil {
 		return ErrInvalidPANFormat
 	}
 
 	fourthChar := clean[3]
-	if _, ok := entityTypes[fourthChar]; !ok {
+	if _, err := fintechin.EntityType(clean); err != nil {
 		return fmt.Errorf("%w: '%c' is not a valid PAN entity type", ErrUnknownEntityType, fourthChar)
 	}
 

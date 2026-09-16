@@ -2,26 +2,30 @@ package india
 
 import (
 	"errors"
-	"regexp"
 	"strings"
+
+	fintechin "github.com/umesh0492/go-fintech-india"
 )
 
 var (
+	// ErrInvalidIFSCLength indicates the IFSC string does not have length 11.
 	ErrInvalidIFSCLength = errors.New("ifsc must be exactly 11 characters")
+	// ErrInvalidIFSCFormat indicates the IFSC format is invalid (4 bank letters + 0 + 6 branch alphanumeric).
 	ErrInvalidIFSCFormat = errors.New("ifsc format is invalid (4 bank letters + 0 + 6 branch alphanumeric)")
-
-	// 4 letters (Bank), '0' (5th character reserved), 6 alphanumeric (Branch)
-	ifscRegex = regexp.MustCompile(`^[A-Z]{4}0[A-Z0-9]{6}$`)
 )
 
 // ValidateIFSC checks the structural validity of an Indian Financial System Code.
+// Delegates statutory validation to github.com/umesh0492/go-fintech-india.
 func ValidateIFSC(code string) error {
 	clean := strings.ToUpper(strings.TrimSpace(code))
 	if len(clean) != 11 {
 		return ErrInvalidIFSCLength
 	}
 
-	if !ifscRegex.MatchString(clean) {
+	if err := fintechin.ValidateIFSC(clean); err != nil {
+		if errors.Is(err, fintechin.ErrInvalidIFSCLength) {
+			return ErrInvalidIFSCLength
+		}
 		return ErrInvalidIFSCFormat
 	}
 
@@ -34,19 +38,21 @@ func IsValidIFSC(code string) bool {
 }
 
 // GetBankCode extracts the 4-letter bank identifier prefix from an IFSC code.
+// Delegates extraction to github.com/umesh0492/go-fintech-india.
 func GetBankCode(code string) (string, error) {
 	if err := ValidateIFSC(code); err != nil {
 		return "", err
 	}
 	clean := strings.ToUpper(strings.TrimSpace(code))
-	return clean[:4], nil
+	return fintechin.BankCode(clean), nil
 }
 
 // GetBranchCode extracts the 6-character branch identifier from an IFSC code.
+// Delegates extraction to github.com/umesh0492/go-fintech-india.
 func GetBranchCode(code string) (string, error) {
 	if err := ValidateIFSC(code); err != nil {
 		return "", err
 	}
 	clean := strings.ToUpper(strings.TrimSpace(code))
-	return clean[5:], nil
+	return fintechin.BranchCode(clean), nil
 }

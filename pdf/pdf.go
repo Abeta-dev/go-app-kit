@@ -4,6 +4,7 @@ package pdf
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"html/template"
 	"strings"
@@ -11,8 +12,20 @@ import (
 	wkhtml "github.com/SebastiaanKlippert/go-wkhtmltopdf"
 )
 
-// Generator defines the interface representing wkhtml.PDFGenerator's methods to allow mock unit tests.
-type Generator interface {
+// ErrNoRendererAvailable is returned when no PDF rendering engine is available
+// on the host system and no custom Renderer has been configured.
+var ErrNoRendererAvailable = errors.New("pdf: no renderer available: wkhtmltopdf not found in PATH and no custom Renderer configured")
+
+// Renderer defines an abstract interface for compiling HTML into PDF bytes.
+// This decouples document compilation from any specific engine (e.g. wkhtmltopdf, headless Chrome, Gotenberg, or test mocks).
+type Renderer interface {
+	Render(html string, opts Options) ([]byte, error)
+}
+
+// WkhtmlRenderer is the default Renderer implementation backed by wkhtmltopdf.
+type WkhtmlRenderer struct{}
+
+type pdfGenerator interface {
 	AddPage(*wkhtml.PageReader)
 	Create() error
 	Bytes() []byte
@@ -34,26 +47,13 @@ func (w *wkhtmlGenerator) Bytes() []byte {
 	return w.PDFGenerator.Bytes()
 }
 
-// Renderer defines an abstract interface for compiling HTML into PDF bytes.
-// This decouples document compilation from any specific engine (e.g. wkhtmltopdf, headless Chrome, Gotenberg, or test mocks).
-type Renderer interface {
-	Render(html string, opts Options) ([]byte, error)
-}
-
-// WkhtmlRenderer is the default Renderer implementation backed by wkhtmltopdf.
-type WkhtmlRenderer struct{}
+var generatorFactory = defaultGenerator
 
 // Render compiles HTML into PDF bytes using wkhtmltopdf.
 func (w *WkhtmlRenderer) Render(html string, opts Options) ([]byte, error) {
-	var pdfg Generator
-	if opts.generator != nil {
-		pdfg = opts.generator
-	} else {
-		var err error
-		pdfg, err = defaultGenerator(opts)
-		if err != nil {
-			return nil, err
-		}
+	pdfg, err := generatorFactory(opts)
+	if err != nil {
+		return nil, err
 	}
 
 	page := wkhtml.NewPageReader(bytes.NewBufferString(html))
@@ -80,7 +80,6 @@ type Options struct {
 	MarginRight           uint   // Margins in mm (Default: 10)
 	Title                 string // Document title
 	EnableLocalFileAccess bool   // Default: false (prevents file:/// exfiltration)
-	generator             Generator
 	renderer              Renderer
 }
 
@@ -138,13 +137,6 @@ func WithLocalFileAccess(enable bool) Option {
 	return func(o *Options) { o.EnableLocalFileAccess = enable }
 }
 
-// WithGenerator configures a specific Generator instance, allowing mock implementations for testing.
-func WithGenerator(g Generator) Option {
-	return func(o *Options) {
-		o.generator = g
-	}
-}
-
 // WithRenderer configures a custom PDF rendering engine (e.g. headless Chrome, Gotenberg, or mock).
 func WithRenderer(r Renderer) Option {
 	return func(o *Options) {
@@ -153,10 +145,10 @@ func WithRenderer(r Renderer) Option {
 }
 
 // defaultGenerator is the unexported default constructor for wkhtml.PDFGenerator.
-func defaultGenerator(opts Options) (Generator, error) {
+func defaultGenerator(opts Options) (pdfGenerator, error) {
 	g, err := wkhtml.NewPDFGenerator()
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize wkhtmltopdf: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrNoRendererAvailable, err)
 	}
 	g.Dpi.Set(opts.DPI)
 	g.PageSize.Set(opts.PageSize)

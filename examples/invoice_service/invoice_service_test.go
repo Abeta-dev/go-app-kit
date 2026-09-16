@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	wkhtml "github.com/SebastiaanKlippert/go-wkhtmltopdf"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -91,7 +90,7 @@ func TestProcessInvoice_EndToEnd(t *testing.T) {
 	os := &mockOutboxStore{}
 	nb := &mockNotificationBroker{}
 
-	svc := NewInvoiceService(ar, os, nb, pdf.WithGenerator(&mockGeneratorImpl{}))
+	svc := NewInvoiceService(ar, os, nb, pdf.WithRenderer(&mockRendererImpl{}))
 
 	suppBase := "27AAPFU0939F1Z"
 	suppCheck := india.CalculateGSTINCheckDigit(suppBase)
@@ -182,7 +181,7 @@ func TestProcessInvoice_MultiItemMoney(t *testing.T) {
 	os := &mockOutboxStore{}
 	nb := &mockNotificationBroker{}
 
-	svc := NewInvoiceService(ar, os, nb, pdf.WithGenerator(&mockGeneratorImpl{}))
+	svc := NewInvoiceService(ar, os, nb, pdf.WithRenderer(&mockRendererImpl{}))
 
 	suppBase := "27AAPFU0939F1Z"
 	suppCheck := india.CalculateGSTINCheckDigit(suppBase)
@@ -282,8 +281,8 @@ func TestProcessInvoice_ValidationErrors(t *testing.T) {
 	}
 }
 
-type mockGeneratorImpl struct{}
+type mockRendererImpl struct{}
 
-func (m *mockGeneratorImpl) AddPage(p *wkhtml.PageReader) {}
-func (m *mockGeneratorImpl) Create() error                { return nil }
-func (m *mockGeneratorImpl) Bytes() []byte                { return []byte("%PDF-1.4 Mock Invoice") }
+func (m *mockRendererImpl) Render(html string, opts pdf.Options) ([]byte, error) {
+	return []byte("%PDF-1.4 Mock Invoice"), nil
+}

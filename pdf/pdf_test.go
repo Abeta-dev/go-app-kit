@@ -11,52 +11,81 @@ import (
 	"github.com/umesh0492/go-app-kit/pdf"
 )
 
-type mockGenerator struct {
-	addPageCalled bool
-	pageReader    *wkhtml.PageReader
-	createFunc    func() error
-	bytesFunc     func() []byte
+type mockRenderer struct {
+	renderFunc   func(html string, opts pdf.Options) ([]byte, error)
+	called       bool
+	capturedHTML string
+	capturedOpts pdf.Options
 }
 
-func (m *mockGenerator) AddPage(p *wkhtml.PageReader) {
-	m.addPageCalled = true
-	m.pageReader = p
-}
-
-func (m *mockGenerator) Create() error {
-	return m.createFunc()
-}
-
-func (m *mockGenerator) Bytes() []byte {
-	return m.bytesFunc()
-}
-
-func TestGenerate_Success(t *testing.T) {
-	mock := &mockGenerator{
-		createFunc: func() error { return nil },
-		bytesFunc:  func() []byte { return []byte("MOCK_PDF_CONTENT") },
+func (m *mockRenderer) Render(html string, opts pdf.Options) ([]byte, error) {
+	m.called = true
+	m.capturedHTML = html
+	m.capturedOpts = opts
+	if m.renderFunc != nil {
+		return m.renderFunc(html, opts)
 	}
+	return []byte("MOCK_PDF_CONTENT"), nil
+}
 
-	buf, err := pdf.Generate("<html><body>Test</body></html>",
-		pdf.WithGenerator(mock),
+func TestGenerate_CustomRenderer(t *testing.T) {
+	mock := &mockRenderer{}
+
+	buf, err := pdf.Generate("<html><body>Test Document</body></html>",
+		pdf.WithRenderer(mock),
 		pdf.WithPageSize("Letter"),
 		pdf.WithOrientation("Landscape"),
 		pdf.WithDPI(150),
 		pdf.WithMargins(15, 15, 20, 20),
 		pdf.WithTitle("Test Document"),
 	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if buf == nil || buf.String() != "MOCK_PDF_CONTENT" {
-		t.Fatalf("unexpected output: %v", buf)
-	}
-	if !mock.addPageCalled {
-		t.Errorf("expected AddPage to be called")
-	}
+	require.NoError(t, err)
+	require.NotNil(t, buf)
+	assert.Equal(t, "MOCK_PDF_CONTENT", buf.String())
+	assert.True(t, mock.called)
+	assert.Equal(t, "Letter", mock.capturedOpts.PageSize)
+	assert.Equal(t, "Landscape", mock.capturedOpts.Orientation)
+	assert.Equal(t, uint(150), mock.capturedOpts.DPI)
+	assert.Equal(t, uint(15), mock.capturedOpts.MarginTop)
+	assert.Equal(t, uint(15), mock.capturedOpts.MarginBottom)
+	assert.Equal(t, uint(20), mock.capturedOpts.MarginLeft)
+	assert.Equal(t, uint(20), mock.capturedOpts.MarginRight)
+	assert.Equal(t, "Test Document", mock.capturedOpts.Title)
+	assert.False(t, mock.capturedOpts.EnableLocalFileAccess)
 }
 
-func TestGenerate_DefaultGeneratorError(t *testing.T) {
+func TestGenerate_CustomRenderer_Error(t *testing.T) {
+	expectedErr := errors.New("custom engine render failure")
+	mock := &mockRenderer{
+		renderFunc: func(html string, opts pdf.Options) ([]byte, error) {
+			return nil, expectedErr
+		},
+	}
+
+	buf, err := pdf.Generate("<html></html>", pdf.WithRenderer(mock))
+	require.Error(t, err)
+	assert.Nil(t, buf)
+	assert.ErrorIs(t, err, expectedErr)
+}
+
+func TestGenerate_LocalFileAccess(t *testing.T) {
+	t.Run("Default disables local file access", func(t *testing.T) {
+		mock := &mockRenderer{}
+		_, err := pdf.Generate("<html></html>", pdf.WithRenderer(mock))
+		require.NoError(t, err)
+		assert.False(t, mock.capturedOpts.EnableLocalFileAccess)
+	})
+
+	t.Run("WithLocalFileAccess(true) enables local file access", func(t *testing.T) {
+		mock := &mockRenderer{}
+		_, err := pdf.Generate("<html></html>", pdf.WithRenderer(mock), pdf.WithLocalFileAccess(true))
+		require.NoError(t, err)
+		assert.True(t, mock.capturedOpts.EnableLocalFileAccess)
+	})
+}
+
+func TestGenerate_NoRendererAvailable(t *testing.T) {
+	// Verifies graceful handling without C-binary dependencies on host system.
 	origEnv := os.Getenv("WKHTMLTOPDF_PATH")
 	os.Setenv("WKHTMLTOPDF_PATH", "/nonexistent_binary_location")
 	defer func() {
@@ -65,78 +94,97 @@ func TestGenerate_DefaultGeneratorError(t *testing.T) {
 	}()
 	wkhtml.SetPath("")
 
-	buf, err := pdf.Generate("<html></html>")
-	if err == nil {
-		t.Fatalf("expected error with nonexistent WKHTMLTOPDF_PATH")
-	}
-	if buf != nil {
-		t.Fatalf("expected nil buffer")
-	}
+	buf, err := pdf.Generate("<html><body>No host binary</body></html>")
+	require.Error(t, err)
+	assert.Nil(t, buf)
+	assert.ErrorIs(t, err, pdf.ErrNoRendererAvailable)
 }
 
-func TestGenerate_CreateError(t *testing.T) {
-	expectedErr := errors.New("render failed")
-	mock := &mockGenerator{
-		createFunc: func() error { return expectedErr },
-	}
+func TestWkhtmlRenderer_Direct_NoRendererAvailable(t *testing.T) {
+	origEnv := os.Getenv("WKHTMLTOPDF_PATH")
+	os.Setenv("WKHTMLTOPDF_PATH", "/nonexistent_binary_location")
+	defer func() {
+		os.Setenv("WKHTMLTOPDF_PATH", origEnv)
+		wkhtml.SetPath("")
+	}()
+	wkhtml.SetPath("")
 
-	buf, err := pdf.Generate("<html></html>", pdf.WithGenerator(mock))
-	if err == nil {
-		t.Fatalf("expected error from Create()")
-	}
-	if buf != nil {
-		t.Fatalf("expected nil buffer")
-	}
+	r := &pdf.WkhtmlRenderer{}
+	bytes, err := r.Render("<html></html>", pdf.DefaultOptions())
+	require.Error(t, err)
+	assert.Nil(t, bytes)
+	assert.ErrorIs(t, err, pdf.ErrNoRendererAvailable)
 }
 
-func TestGenerate_LocalFileAccess(t *testing.T) {
-	t.Run("Default disables local file access", func(t *testing.T) {
-		mock := &mockGenerator{
-			createFunc: func() error { return nil },
-			bytesFunc:  func() []byte { return []byte("PDF") },
-		}
-		_, err := pdf.Generate("<html></html>", pdf.WithGenerator(mock))
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if mock.pageReader == nil {
-			t.Fatalf("expected pageReader to be captured")
-		}
-		hasLocalAccess := false
-		for _, arg := range mock.pageReader.Args() {
-			if arg == "--enable-local-file-access" {
-				hasLocalAccess = true
-				break
-			}
-		}
-		if hasLocalAccess {
-			t.Errorf("expected EnableLocalFileAccess to be false by default, got true")
-		}
+func TestWkhtmlRenderer_Success(t *testing.T) {
+	var addedPage *wkhtml.PageReader
+	mock := &pdf.MockPDFGenerator{
+		AddPageFunc: func(p *wkhtml.PageReader) {
+			addedPage = p
+		},
+		CreateFunc: func() error { return nil },
+		BytesFunc:  func() []byte { return []byte("PDF_BYTES_SUCCESS") },
+	}
+	reset := pdf.SetGeneratorFactoryForTesting(func(opts pdf.Options) (pdf.MockPDFGeneratorTarget, error) {
+		return mock, nil
 	})
+	defer reset()
 
-	t.Run("WithLocalFileAccess(true) enables local file access", func(t *testing.T) {
-		mock := &mockGenerator{
-			createFunc: func() error { return nil },
-			bytesFunc:  func() []byte { return []byte("PDF") },
-		}
-		_, err := pdf.Generate("<html></html>", pdf.WithGenerator(mock), pdf.WithLocalFileAccess(true))
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		if mock.pageReader == nil {
-			t.Fatalf("expected pageReader to be captured")
-		}
-		hasLocalAccess := false
-		for _, arg := range mock.pageReader.Args() {
-			if arg == "--enable-local-file-access" {
-				hasLocalAccess = true
-				break
-			}
-		}
-		if !hasLocalAccess {
-			t.Errorf("expected EnableLocalFileAccess to be true when explicitly enabled, got false")
-		}
+	r := &pdf.WkhtmlRenderer{}
+	bytes, err := r.Render("<html><body>Test</body></html>", pdf.DefaultOptions())
+	require.NoError(t, err)
+	assert.Equal(t, "PDF_BYTES_SUCCESS", string(bytes))
+	assert.NotNil(t, addedPage)
+}
+
+func TestWkhtmlRenderer_CreateError(t *testing.T) {
+	expectedErr := errors.New("wkhtml execution failure")
+	mock := &pdf.MockPDFGenerator{
+		CreateFunc: func() error { return expectedErr },
+	}
+	reset := pdf.SetGeneratorFactoryForTesting(func(opts pdf.Options) (pdf.MockPDFGeneratorTarget, error) {
+		return mock, nil
 	})
+	defer reset()
+
+	r := &pdf.WkhtmlRenderer{}
+	bytes, err := r.Render("<html></html>", pdf.DefaultOptions())
+	require.Error(t, err)
+	assert.Nil(t, bytes)
+	assert.Contains(t, err.Error(), "failed to render pdf")
+}
+
+func TestWkhtmlRenderer_LocalFileAccess(t *testing.T) {
+	var capturedPage *wkhtml.PageReader
+	mock := &pdf.MockPDFGenerator{
+		AddPageFunc: func(p *wkhtml.PageReader) {
+			capturedPage = p
+		},
+	}
+	reset := pdf.SetGeneratorFactoryForTesting(func(opts pdf.Options) (pdf.MockPDFGeneratorTarget, error) {
+		return mock, nil
+	})
+	defer reset()
+
+	r := &pdf.WkhtmlRenderer{}
+	opts := pdf.DefaultOptions()
+	pdf.WithLocalFileAccess(true)(&opts)
+	_, err := r.Render("<html></html>", opts)
+	require.NoError(t, err)
+	require.NotNil(t, capturedPage)
+	assert.Contains(t, capturedPage.Args(), "--enable-local-file-access")
+}
+
+func TestDefaultOptions(t *testing.T) {
+	opts := pdf.DefaultOptions()
+	assert.Equal(t, "A4", opts.PageSize)
+	assert.Equal(t, "Portrait", opts.Orientation)
+	assert.Equal(t, uint(300), opts.DPI)
+	assert.Equal(t, uint(10), opts.MarginTop)
+	assert.Equal(t, uint(10), opts.MarginBottom)
+	assert.Equal(t, uint(10), opts.MarginLeft)
+	assert.Equal(t, uint(10), opts.MarginRight)
+	assert.False(t, opts.EnableLocalFileAccess)
 }
 
 func TestRenderTemplate(t *testing.T) {
@@ -147,50 +195,40 @@ func TestRenderTemplate(t *testing.T) {
 	}
 
 	rendered, err := pdf.RenderTemplate(tmpl, data)
-	if err != nil {
-		t.Fatalf("RenderTemplate failed: %v", err)
-	}
+	require.NoError(t, err)
 	expected := "Hello, JOHN! Your role is admin."
-	if rendered != expected {
-		t.Fatalf("expected %q, got %q", expected, rendered)
-	}
+	assert.Equal(t, expected, rendered)
 
 	// Bad template syntax
-	if _, err := pdf.RenderTemplate("{{.Unclosed", data); err == nil {
-		t.Fatalf("expected syntax error")
-	}
+	_, err = pdf.RenderTemplate("{{.Unclosed", data)
+	assert.Error(t, err)
 
-	// Execution error (missing field in strict or invalid op)
-	if _, err := pdf.RenderTemplate("{{len .Missing}}", data); err == nil {
-		t.Fatalf("expected execution error")
-	}
+	// Execution error
+	_, err = pdf.RenderTemplate("{{len .Missing}}", data)
+	assert.Error(t, err)
 }
 
 func TestGenerateFromTemplate(t *testing.T) {
-	mock := &mockGenerator{
-		createFunc: func() error { return nil },
-		bytesFunc:  func() []byte { return []byte("PDF_FROM_TEMPLATE") },
+	mock := &mockRenderer{
+		renderFunc: func(html string, opts pdf.Options) ([]byte, error) {
+			assert.Contains(t, html, "Invoice")
+			return []byte("PDF_FROM_TEMPLATE"), nil
+		},
 	}
 
 	tmpl := "<h1>{{.Title}}</h1>"
-	buf, err := pdf.GenerateFromTemplate(tmpl, map[string]string{"Title": "Invoice"}, pdf.WithGenerator(mock))
-	if err != nil {
-		t.Fatalf("GenerateFromTemplate failed: %v", err)
-	}
-	if buf.String() != "PDF_FROM_TEMPLATE" {
-		t.Fatalf("unexpected content: %s", buf.String())
-	}
+	buf, err := pdf.GenerateFromTemplate(tmpl, map[string]string{"Title": "Invoice"}, pdf.WithRenderer(mock))
+	require.NoError(t, err)
+	require.NotNil(t, buf)
+	assert.Equal(t, "PDF_FROM_TEMPLATE", buf.String())
 
-	// Failed template
-	if _, err := pdf.GenerateFromTemplate("{{.Bad", nil, pdf.WithGenerator(mock)); err == nil {
-		t.Fatalf("expected error for bad template")
-	}
+	// Failed template syntax
+	_, err = pdf.GenerateFromTemplate("{{.Bad", nil, pdf.WithRenderer(mock))
+	assert.Error(t, err)
 }
 
 func TestGSTInvoiceTemplate_Render(t *testing.T) {
-	if len(pdf.GSTInvoiceTemplate) == 0 {
-		t.Fatalf("GSTInvoiceTemplate is empty")
-	}
+	require.NotEmpty(t, pdf.GSTInvoiceTemplate)
 
 	data := map[string]any{
 		"InvoiceNumber": "INV-2026-001",
@@ -249,18 +287,12 @@ func TestGSTInvoiceTemplate_Render(t *testing.T) {
 	}
 
 	rendered, err := pdf.RenderTemplate(pdf.GSTInvoiceTemplate, data)
-	if err != nil {
-		t.Fatalf("failed to render GSTInvoiceTemplate: %v", err)
-	}
-	if len(rendered) < 100 {
-		t.Fatalf("rendered output too small: %s", rendered)
-	}
+	require.NoError(t, err)
+	assert.Greater(t, len(rendered), 100)
 }
 
 func TestReceiptTemplate_Render(t *testing.T) {
-	if len(pdf.ReceiptTemplate) == 0 {
-		t.Fatalf("ReceiptTemplate is empty")
-	}
+	require.NotEmpty(t, pdf.ReceiptTemplate)
 
 	data := map[string]any{
 		"ReceiptNumber":        "REC-1002",
@@ -279,53 +311,6 @@ func TestReceiptTemplate_Render(t *testing.T) {
 	}
 
 	rendered, err := pdf.RenderTemplate(pdf.ReceiptTemplate, data)
-	if err != nil {
-		t.Fatalf("failed to render ReceiptTemplate: %v", err)
-	}
-	if len(rendered) < 100 {
-		t.Fatalf("rendered output too small: %s", rendered)
-	}
-}
-
-func TestGenerate_DefaultGenerator_Fallback(_ *testing.T) {
-	// Attempts default wkhtmltopdf generator path when no WithGenerator option is supplied
-	_, _ = pdf.Generate("<html><body>Test</body></html>", pdf.WithTitle("Default Gen Doc"))
-}
-
-type mockRenderer struct {
-	renderFunc func(html string, opts pdf.Options) ([]byte, error)
-}
-
-func (m *mockRenderer) Render(html string, opts pdf.Options) ([]byte, error) {
-	return m.renderFunc(html, opts)
-}
-
-func TestGenerate_CustomRenderer(t *testing.T) {
-	mock := &mockRenderer{
-		renderFunc: func(html string, opts pdf.Options) ([]byte, error) {
-			assert.Equal(t, "A4", opts.PageSize)
-			assert.Contains(t, html, "Custom Engine")
-			return []byte("CUSTOM_ENGINE_PDF_BYTES"), nil
-		},
-	}
-
-	buf, err := pdf.Generate("<html><body>Custom Engine</body></html>",
-		pdf.WithRenderer(mock),
-		pdf.WithPageSize("A4"),
-	)
 	require.NoError(t, err)
-	require.NotNil(t, buf)
-	assert.Equal(t, "CUSTOM_ENGINE_PDF_BYTES", buf.String())
-}
-
-func TestGenerate_CustomRenderer_Error(t *testing.T) {
-	mock := &mockRenderer{
-		renderFunc: func(html string, opts pdf.Options) ([]byte, error) {
-			return nil, errors.New("engine crash")
-		},
-	}
-
-	buf, err := pdf.Generate("<html></html>", pdf.WithRenderer(mock))
-	assert.Error(t, err)
-	assert.Nil(t, buf)
+	assert.Greater(t, len(rendered), 100)
 }
