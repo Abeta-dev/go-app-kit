@@ -287,7 +287,7 @@ func TestReceiptTemplate_Render(t *testing.T) {
 	}
 }
 
-func TestGenerate_DefaultGenerator_Fallback(t *testing.T) {
+func TestGenerate_DefaultGenerator_Fallback(_ *testing.T) {
 	// Attempts default wkhtmltopdf generator path when no WithGenerator option is supplied
 	_, _ = pdf.Generate("<html><body>Test</body></html>", pdf.WithTitle("Default Gen Doc"))
 }

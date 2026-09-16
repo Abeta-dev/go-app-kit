@@ -8,6 +8,7 @@ import (
 // Channel identifies a communication medium.
 type Channel string
 
+// Supported delivery channels.
 const (
 	ChannelEmail   Channel = "EMAIL"
 	ChannelSlack   Channel = "SLACK"
@@ -18,6 +19,7 @@ const (
 // Priority defines the urgency of a notification.
 type Priority string
 
+// Priority levels.
 const (
 	PriorityLow      Priority = "LOW"
 	PriorityNormal   Priority = "NORMAL"

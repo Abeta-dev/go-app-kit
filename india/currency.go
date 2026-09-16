@@ -88,10 +88,10 @@ func amountToWordsBase(amount int64) string {
 	remainder := amount % 10000000
 
 	lakhs := remainder / 100000
-	remainder = remainder % 100000
+	remainder %= 100000
 
 	thousands := remainder / 1000
-	remainder = remainder % 1000
+	remainder %= 1000
 
 	hundreds := remainder / 100
 	units := remainder % 100

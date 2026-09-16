@@ -11,6 +11,7 @@ import (
 	"github.com/umesh0492/go-libs/workerpool"
 )
 
+// Sentinel errors returned by the notification broker.
 var (
 	ErrNoSenderRegistered = errors.New("no sender registered for channel")
 	ErrEmptyRecipients    = errors.New("message recipients cannot be empty")
