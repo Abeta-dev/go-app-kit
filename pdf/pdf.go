@@ -34,6 +34,41 @@ func (w *wkhtmlGenerator) Bytes() []byte {
 	return w.PDFGenerator.Bytes()
 }
 
+// Renderer defines an abstract interface for compiling HTML into PDF bytes.
+// This decouples document compilation from any specific engine (e.g. wkhtmltopdf, headless Chrome, Gotenberg, or test mocks).
+type Renderer interface {
+	Render(html string, opts Options) ([]byte, error)
+}
+
+// WkhtmlRenderer is the default Renderer implementation backed by wkhtmltopdf.
+type WkhtmlRenderer struct{}
+
+// Render compiles HTML into PDF bytes using wkhtmltopdf.
+func (w *WkhtmlRenderer) Render(html string, opts Options) ([]byte, error) {
+	var pdfg Generator
+	if opts.generator != nil {
+		pdfg = opts.generator
+	} else {
+		var err error
+		pdfg, err = defaultGenerator(opts)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	page := wkhtml.NewPageReader(bytes.NewBufferString(html))
+	page.EnableLocalFileAccess.Set(opts.EnableLocalFileAccess)
+	page.Encoding.Set("UTF-8")
+
+	pdfg.AddPage(page)
+
+	if err := pdfg.Create(); err != nil {
+		return nil, fmt.Errorf("failed to render pdf: %w", err)
+	}
+
+	return pdfg.Bytes(), nil
+}
+
 // Options configures PDF rendering properties.
 type Options struct {
 	PageSize              string // "A4", "Letter", etc. (Default: "A4")
@@ -46,6 +81,7 @@ type Options struct {
 	Title                 string // Document title
 	EnableLocalFileAccess bool   // Default: false (prevents file:/// exfiltration)
 	generator             Generator
+	renderer              Renderer
 }
 
 // Option modifies Options.
@@ -109,6 +145,13 @@ func WithGenerator(g Generator) Option {
 	}
 }
 
+// WithRenderer configures a custom PDF rendering engine (e.g. headless Chrome, Gotenberg, or mock).
+func WithRenderer(r Renderer) Option {
+	return func(o *Options) {
+		o.renderer = r
+	}
+}
+
 // defaultGenerator is the unexported default constructor for wkhtml.PDFGenerator.
 func defaultGenerator(opts Options) (Generator, error) {
 	g, err := wkhtml.NewPDFGenerator()
@@ -135,28 +178,17 @@ func Generate(html string, opts ...Option) (*bytes.Buffer, error) {
 		opt(&config)
 	}
 
-	var pdfg Generator
-	if config.generator != nil {
-		pdfg = config.generator
-	} else {
-		var err error
-		pdfg, err = defaultGenerator(config)
-		if err != nil {
-			return nil, err
-		}
+	renderer := config.renderer
+	if renderer == nil {
+		renderer = &WkhtmlRenderer{}
 	}
 
-	page := wkhtml.NewPageReader(bytes.NewBufferString(html))
-	page.EnableLocalFileAccess.Set(config.EnableLocalFileAccess)
-	page.Encoding.Set("UTF-8")
-
-	pdfg.AddPage(page)
-
-	if err := pdfg.Create(); err != nil {
-		return nil, fmt.Errorf("failed to render pdf: %w", err)
+	data, err := renderer.Render(html, config)
+	if err != nil {
+		return nil, err
 	}
 
-	return bytes.NewBuffer(pdfg.Bytes()), nil
+	return bytes.NewBuffer(data), nil
 }
 
 // RenderTemplate evaluates an HTML Go template string against a data context.

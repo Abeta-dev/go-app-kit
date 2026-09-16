@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	wkhtml "github.com/SebastiaanKlippert/go-wkhtmltopdf"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/umesh0492/go-app-kit/pdf"
 )
 
@@ -288,4 +290,42 @@ func TestReceiptTemplate_Render(t *testing.T) {
 func TestGenerate_DefaultGenerator_Fallback(t *testing.T) {
 	// Attempts default wkhtmltopdf generator path when no WithGenerator option is supplied
 	_, _ = pdf.Generate("<html><body>Test</body></html>", pdf.WithTitle("Default Gen Doc"))
+}
+
+type mockRenderer struct {
+	renderFunc func(html string, opts pdf.Options) ([]byte, error)
+}
+
+func (m *mockRenderer) Render(html string, opts pdf.Options) ([]byte, error) {
+	return m.renderFunc(html, opts)
+}
+
+func TestGenerate_CustomRenderer(t *testing.T) {
+	mock := &mockRenderer{
+		renderFunc: func(html string, opts pdf.Options) ([]byte, error) {
+			assert.Equal(t, "A4", opts.PageSize)
+			assert.Contains(t, html, "Custom Engine")
+			return []byte("CUSTOM_ENGINE_PDF_BYTES"), nil
+		},
+	}
+
+	buf, err := pdf.Generate("<html><body>Custom Engine</body></html>",
+		pdf.WithRenderer(mock),
+		pdf.WithPageSize("A4"),
+	)
+	require.NoError(t, err)
+	require.NotNil(t, buf)
+	assert.Equal(t, "CUSTOM_ENGINE_PDF_BYTES", buf.String())
+}
+
+func TestGenerate_CustomRenderer_Error(t *testing.T) {
+	mock := &mockRenderer{
+		renderFunc: func(html string, opts pdf.Options) ([]byte, error) {
+			return nil, errors.New("engine crash")
+		},
+	}
+
+	buf, err := pdf.Generate("<html></html>", pdf.WithRenderer(mock))
+	assert.Error(t, err)
+	assert.Nil(t, buf)
 }
