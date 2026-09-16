@@ -9,7 +9,7 @@ require (
 	github.com/stretchr/testify v1.12.1
 	github.com/testcontainers/testcontainers-go v0.44.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.44.0
-	github.com/umesh0492/go-fintech-india v0.2.0
+	github.com/umesh0492/go-fintech-india v0.2.1
 	github.com/umesh0492/go-libs v0.1.0
 )
 
