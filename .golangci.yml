@@ -1,13 +1,15 @@
+version: "2"
 run:
   modules-download-mode: readonly
   tests: true
 output:
   formats:
-    - format: colored-line-number
-  print-issued-lines: true
-  print-linter-name: true
+    text:
+      path: stdout
+      print-linter-name: true
+      print-issued-lines: true
 linters:
-  disable-all: true
+  default: none
   enable:
     - bodyclose
     - errcheck
@@ -25,73 +27,86 @@ linters:
     - unconvert
     - unparam
     - unused
-settings:
-  errorlint:
-    errorf: true
-    asserts: true
-    comparison: true
-  goconst:
-    min-len: 3
-    min-occurrences: 3
-  gocritic:
-    disabled-checks:
-      - whyNoLint
-      - hugeParam
-      - paramTypeCombine
-      - rangeValCopy
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
-  gocyclo:
-    min-complexity: 15
-  govet:
-    disable:
-      - fieldalignment
-      - shadow
-    enable-all: true
-  prealloc:
-    simple: true
-    range-loops: true
-    for-loops: true
-  revive:
-    severity: warning
+  settings:
+    errorlint:
+      errorf: true
+      asserts: true
+      comparison: true
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+    gocritic:
+      disabled-checks:
+        - whyNoLint
+        - hugeParam
+        - paramTypeCombine
+        - rangeValCopy
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+    gocyclo:
+      min-complexity: 15
+    govet:
+      disable:
+        - fieldalignment
+        - shadow
+      enable-all: true
+    prealloc:
+      simple: true
+      range-loops: true
+      for-loops: true
+    revive:
+      severity: warning
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: error-return
+        - name: error-strings
+        - name: error-naming
+        - name: if-return
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: errorf
+        - name: empty-block
+        - name: superfluous-else
+        - name: unreachable-code
+        - name: redefines-builtin-id
+  exclusions:
+    generated: lax
     rules:
-      - name: blank-imports
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: dot-imports
-      - name: error-return
-      - name: error-strings
-      - name: error-naming
-      - name: if-return
-      - name: increment-decrement
-      - name: indent-error-flow
-      - name: errorf
-      - name: empty-block
-      - name: superfluous-else
-      - name: unreachable-code
-      - name: redefines-builtin-id
+      - linters:
+          - errcheck
+          - gocritic
+          - gocyclo
+          - gosec
+          - noctx
+          - unparam
+          - errorlint
+          - prealloc
+          - revive
+        path: _test\.go
+      - linters:
+          - gocyclo
+          - gocritic
+          - revive
+        path: examples/.*
+      - linters:
+          - gocritic
+        path: india/.*
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gocritic
-        - gocyclo
-        - gosec
-        - noctx
-        - unparam
-        - errorlint
-        - prealloc
-        - revive
-    - path: examples/.*
-      linters:
-        - gocyclo
-        - gocritic
-        - revive
-    - path: india/.*
-      linters:
-        - gocritic
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

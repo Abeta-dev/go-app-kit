@@ -99,15 +99,9 @@ type brevoSendEmailRequest struct {
 	Attachment  []brevoAttachment     `json:"attachment,omitempty"`
 }
 
-func (s *brevoSender) Send(ctx context.Context, msg Message) error {
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	default:
-	}
-
+func buildBrevoPayload(msg Message, senderName, senderEmail string) (brevoSendEmailRequest, error) {
 	if len(msg.Recipients) == 0 {
-		return ErrEmptyRecipients
+		return brevoSendEmailRequest{}, ErrEmptyRecipients
 	}
 
 	toRecipients := make([]brevoEmailRecipient, 0, len(msg.Recipients))
@@ -118,7 +112,7 @@ func (s *brevoSender) Send(ctx context.Context, msg Message) error {
 		}
 	}
 	if len(toRecipients) == 0 {
-		return ErrEmptyRecipients
+		return brevoSendEmailRequest{}, ErrEmptyRecipients
 	}
 
 	htmlContent := msg.HTMLBody
@@ -132,8 +126,8 @@ func (s *brevoSender) Send(ctx context.Context, msg Message) error {
 
 	reqPayload := brevoSendEmailRequest{
 		Sender: brevoEmailSender{
-			Name:  s.cfg.SenderName,
-			Email: s.cfg.SenderEmail,
+			Name:  senderName,
+			Email: senderEmail,
 		},
 		To:          toRecipients,
 		Subject:     msg.Title,
@@ -149,6 +143,21 @@ func (s *brevoSender) Send(ctx context.Context, msg Message) error {
 				Content: base64.StdEncoding.EncodeToString(att.Data),
 			})
 		}
+	}
+
+	return reqPayload, nil
+}
+
+func (s *brevoSender) Send(ctx context.Context, msg Message) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+	}
+
+	reqPayload, err := buildBrevoPayload(msg, s.cfg.SenderName, s.cfg.SenderEmail)
+	if err != nil {
+		return err
 	}
 
 	data, err := json.Marshal(reqPayload)
@@ -170,7 +179,9 @@ func (s *brevoSender) Send(ctx context.Context, msg Message) error {
 	if err != nil {
 		return fmt.Errorf("failed to send brevo email: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		bodyBytes, _ := io.ReadAll(resp.Body)
