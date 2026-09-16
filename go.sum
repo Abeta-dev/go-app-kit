@@ -109,8 +109,8 @@ github.com/tklauser/go-sysconf v0.4.0 h1:7H0uAN+7RkwWRaxhYXDLqa5V3LPrJeV8wmD9dRU
 github.com/tklauser/go-sysconf v0.4.0/go.mod h1:8mTNWyog7H+MpKijp4VmKJAd2bbYQ2zuUwkYRbUArPI=
 github.com/tklauser/numcpus v0.12.0 h1:NR85qdvHA9pFse3x3weVZ0r0ST8R6l5RHbZrlRaqob4=
 github.com/tklauser/numcpus v0.12.0/go.mod h1:ABHeXzJnr/qqwguhClkZKT1/8VABcYrsyUiUGobwWJg=
-github.com/umesh0492/go-fintech-india v0.2.1 h1:Ab+6YCYq+/kAj+mPYGvUimhhenvyOQH9jyy9Wed8Ekg=
-github.com/umesh0492/go-fintech-india v0.2.1/go.mod h1:UPKoeW7JKYkR0nQtY4rW1dmJ9oI20RzDOeE4s7fDrgc=
+github.com/umesh0492/go-fintech-india v0.2.2 h1:0A+yG6v41qRXOG8R83t+gDI6by1slBQLZ2vNaFvFuo0=
+github.com/umesh0492/go-fintech-india v0.2.2/go.mod h1:UPKoeW7JKYkR0nQtY4rW1dmJ9oI20RzDOeE4s7fDrgc=
 github.com/umesh0492/go-libs v0.1.0 h1:k5YrNxbh34vJGJidXEu8RvgPL6Mi9IxS7ct6MS4stek=
 github.com/umesh0492/go-libs v0.1.0/go.mod h1:R7gQaadUNwpnavd5P96ThNbhYyUUKyVbfKCR/mu29/o=
 github.com/yusufpapurcu/wmi v1.2.4 h1:zFUKzehAFReQwLys1b/iSMl+JQGSCSjtVqQn9bBrPo0=
