@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-09-17
+
+Clean-slate architecture: Decoupled PDF compilation and unified statutory Indian domain engine.
+
+### Added
+- pdf: Pluggable `Renderer` interface (`Renderer`, `WithRenderer`, `ErrNoRendererAvailable`) decoupling PDF generation from mandatory host `wkhtmltopdf` binaries.
+- india: Statutory validation, financial year arithmetic, and zero-allocation currency engines unified by delegating to `github.com/umesh0492/go-fintech-india@v0.2.2`.
+- outbox: PostgreSQL transactional outbox implementation with `SELECT FOR UPDATE SKIP LOCKED` lease fencing.
+
+### Changed
+- dependencies: Upgraded `github.com/umesh0492/go-fintech-india` to `v0.2.2` with zero-allocation `AppendINR`.
+
 ## [0.1.0] - 2026-09-15
 
 Initial public release. Production-grade enterprise application and domain accelerator kit for Go.

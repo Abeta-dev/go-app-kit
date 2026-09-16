@@ -1,4 +1,4 @@
-# go-app-kit · v0.1.0
+# go-app-kit · v0.2.0
 
 > This repository's public history begins from a single initial commit; see [CHANGELOG.md](CHANGELOG.md) for the version-by-version record of what shipped.
 
@@ -53,7 +53,7 @@ While [`go-libs`](https://github.com/umesh0492/go-libs) provides low-level, zero
 ### Standalone Import
 When consuming `go-app-kit` in your microservice:
 ```bash
-go get github.com/umesh0492/go-app-kit@v0.1.0
+go get github.com/umesh0492/go-app-kit@v0.2.0
 ```
 
 ### Multi-Module Local Development (`go.work`)

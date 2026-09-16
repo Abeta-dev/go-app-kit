@@ -45,9 +45,9 @@ if [ "$CHANGELOG_VER" != "$README_GET_VER" ]; then
   exit 1
 fi
 
-EXPECTED_VER="0.1.0"
-if [ "$CHANGELOG_VER" != "0.1.0" ]; then
-  echo "❌ Error: Expected repository version to be 0.1.0, but got $CHANGELOG_VER"
+EXPECTED_VER="0.2.0"
+if [ "$CHANGELOG_VER" != "0.2.0" ]; then
+  echo "❌ Error: Expected repository version to be 0.2.0, but got $CHANGELOG_VER"
   exit 1
 fi
 
@@ -87,7 +87,7 @@ while IFS= read -r f; do
   [ -f "$f" ] && DOC_FILES+=("$f")
 done < <(find docs */README.md -type f -name "*.md" 2>/dev/null || true)
 
-WRONG_VERSIONS=$(grep -rnE '@v[0-9]+(\.[0-9]+)*' "${DOC_FILES[@]}" 2>/dev/null | grep -v "@v${CHANGELOG_VER}" || true)
+WRONG_VERSIONS=$(grep -rnE '@v[0-9]+(\.[0-9]+)*' "${DOC_FILES[@]}" 2>/dev/null | grep -v "@v${CHANGELOG_VER}" | grep -v "go-fintech-india" || true)
 if [ -n "$WRONG_VERSIONS" ]; then
   echo "❌ Error: Mismatched or unsupported @v version tag found in documentation (must be @v${CHANGELOG_VER}):"
   echo "$WRONG_VERSIONS"
