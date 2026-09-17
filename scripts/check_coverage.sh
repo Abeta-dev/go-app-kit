@@ -1,102 +1,127 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Scripts directory and project root
+# Enforces coverage floors and ensures README's coverage table matches one
+# measured test run. It never reuses stale local coverage output.
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${ROOT_DIR}"
 
-GLOBAL_FLOOR=88.0
-PACKAGE_FLOOR=75.0
+readonly GLOBAL_FLOOR='88.0'
+readonly PACKAGE_FLOOR='75.0'
+readonly MODULE='github.com/umesh0492/go-app-kit'
+coverage_file="${1:-coverage.out}"
+summary_file="${COVERAGE_SUMMARY_FILE:-/tmp/gak_coverage_packages.txt}"
 
-echo "========================================================"
-echo "🛡️ Running Comprehensive Statement Coverage Gate (go-app-kit)"
-echo "   - Global Floor:       >= ${GLOBAL_FLOOR}%"
-echo "   - Per-Package Floor:  >= ${PACKAGE_FLOOR}%"
-echo "========================================================"
+cleanup() {
+  rm -f "${summary_file}"
+}
+trap cleanup EXIT
 
-COVERAGE_FILE="${1:-coverage.out}"
-SUMMARY_FILE="/tmp/gak_coverage_packages.txt"
+fail() {
+  echo "ERROR: $*" >&2
+  exit 1
+}
 
-if [ -f "${COVERAGE_FILE}" ] && [ -s "${COVERAGE_FILE}" ] && [ -f "${SUMMARY_FILE}" ]; then
-    echo "==> Reusing existing coverage profile: ${COVERAGE_FILE}"
-    PER_PKG_OUTPUT=$(cat "${SUMMARY_FILE}")
-else
-    echo "==> Generating coverage profile in single test suite run..."
-    PER_PKG_OUTPUT=$(go test -coverprofile="${COVERAGE_FILE}" ./...)
-    echo "${PER_PKG_OUTPUT}" > "${SUMMARY_FILE}"
+coverage_value() {
+  printf '%s' "$1" | tr -d '%'
+}
+
+is_below() {
+  awk -v left="$1" -v right="$2" 'BEGIN { exit !(left + 0 < right + 0) }'
+}
+
+readme_global_coverage() {
+  sed -n -E 's/.*Overall Repository Statement Coverage: ([0-9]+\.[0-9]+)%.*/\1/p' README.md | head -n1
+}
+
+readme_total_coverage() {
+  grep -E '^\| \*\*Total Statement Coverage\*\* \|' README.md |
+    sed -n -E 's/.*\*\*([0-9]+\.[0-9]+)%\*\*.*/\1/p' | head -n1
+}
+
+readme_package_coverage() {
+  local package="$1"
+  awk -F'|' -v package="\`$package\`" '
+    $2 ~ package {
+      value = $4
+      gsub(/[^0-9.]/, "", value)
+      print value
+      exit
+    }
+  ' README.md
+}
+
+echo '========================================================'
+echo 'Running statement coverage and documentation truth gate'
+printf '  - Global floor:      >= %s%%\n' "${GLOBAL_FLOOR}"
+printf '  - Per-package floor: >= %s%%\n' "${PACKAGE_FLOOR}"
+echo '========================================================'
+
+echo 'Generating coverage profile in one test suite run...'
+go test -coverprofile="${coverage_file}" ./... | tee "${summary_file}"
+global_coverage_str="$(go tool cover -func="${coverage_file}" | awk '/^total:/ { print $3 }')"
+global_coverage="$(coverage_value "${global_coverage_str}")"
+[[ -n "${global_coverage}" ]] || fail 'could not determine global coverage'
+
+if is_below "${global_coverage}" "${GLOBAL_FLOOR}"; then
+  fail "global coverage ${global_coverage}% is below ${GLOBAL_FLOOR}%"
 fi
 
-# Extract global coverage percentage
-GLOBAL_COV_STR=$(go tool cover -func="${COVERAGE_FILE}" | grep total | awk '{print $3}')
-GLOBAL_COV=$(echo "${GLOBAL_COV_STR}" | tr -d '%')
-echo "==> Global Statement Coverage: ${GLOBAL_COV_STR}"
+# Bash 3.2 has indexed arrays but not mapfile/readarray. Populate this safely
+# from newline-delimited Go import paths (which cannot contain newlines).
+packages=()
+while IFS= read -r package; do
+  packages[${#packages[@]}]="${package}"
+done < <(go list ./... | sed "s|^${MODULE}/||" | grep -v "^${MODULE}$" | sort)
+(( ${#packages[@]} > 0 )) || fail 'could not determine Go packages'
 
-TABLE_ROWS=""
-FAILED_PACKAGES=()
+printf '\nMeasured package coverage:\n'
+printf '| Package | Statement Coverage |\n| :--- | :--- |\n'
+for package in "${packages[@]}"; do
+  package_line="$(grep -E "${MODULE}/${package}[[:space:]].*coverage:" "${summary_file}" | head -n1 || true)"
+  [[ -n "${package_line}" ]] || fail "coverage output has no entry for ${package}"
+  package_coverage="$(sed -n -E 's/.*coverage: ([0-9]+\.[0-9]+)%.*/\1/p' <<<"${package_line}")"
+  [[ -n "${package_coverage}" ]] || fail "could not parse coverage for ${package}"
+  printf '| `%s` | **%s%%** |\n' "${package}" "${package_coverage}"
+  if is_below "${package_coverage}" "${PACKAGE_FLOOR}"; then
+    fail "package ${package} coverage ${package_coverage}% is below ${PACKAGE_FLOOR}%"
+  fi
 
-while IFS= read -r line; do
-    if [[ "${line}" =~ coverage:\ ([0-9.]+)%\ of\ statements ]]; then
-        PKG_NAME=$(echo "${line}" | awk '{print $2}' | sed 's|github.com/umesh0492/go-app-kit/||')
-        PKG_COV="${BASH_REMATCH[1]}"
-        TABLE_ROWS="${TABLE_ROWS}\n| \`${PKG_NAME}\` | **${PKG_COV}%** |"
+  documented_coverage="$(readme_package_coverage "${package}")"
+  [[ -n "${documented_coverage}" ]] || fail "README coverage table has no ${package} row"
+  if [[ "${documented_coverage}" != "${package_coverage}" ]]; then
+    fail "README coverage for ${package} (${documented_coverage}%) differs from measured ${package_coverage}%"
+  fi
+done
 
-        # Check per-package floor
-        if (( $(echo "${PKG_COV} < ${PACKAGE_FLOOR}" | bc -l) )); then
-            echo "❌ Package ${PKG_NAME} failed floor: ${PKG_COV}% < ${PACKAGE_FLOOR}%"
-            FAILED_PACKAGES+=("${PKG_NAME} (${PKG_COV}% < ${PACKAGE_FLOOR}%)")
-        fi
-    elif [[ "${line}" =~ coverage:\ \[no\ statements\] ]]; then
-        PKG_NAME=$(echo "${line}" | awk '{print $2}' | sed 's|github.com/umesh0492/go-app-kit/||')
-        TABLE_ROWS="${TABLE_ROWS}\n| \`${PKG_NAME}\` | *No statements (interfaces/types)* |"
-    fi
-done <<< "${PER_PKG_OUTPUT}"
+readme_global="$(readme_global_coverage)"
+readme_total="$(readme_total_coverage)"
+[[ -n "${readme_global}" ]] || fail 'README global coverage callout is missing'
+[[ -n "${readme_total}" ]] || fail 'README total coverage table row is missing'
+[[ "${readme_global}" == "${global_coverage}" ]] || fail "README global coverage ${readme_global}% differs from measured ${global_coverage}%"
+[[ "${readme_total}" == "${global_coverage}" ]] || fail "README total coverage ${readme_total}% differs from measured ${global_coverage}%"
 
-# Generate Shields.io endpoint badge JSON
-COLOR="brightgreen"
-if (( $(echo "${GLOBAL_COV} < 90.0" | bc -l) )); then
-    COLOR="yellow"
-fi
-if (( $(echo "${GLOBAL_COV} < 80.0" | bc -l) )); then
-    COLOR="red"
-fi
-
-mkdir -p "${ROOT_DIR}/.github/badges"
-cat << BADGE_EOF > "${ROOT_DIR}/.github/badges/coverage.json"
+mkdir -p .github/badges
+badge_color='brightgreen'
+if is_below "${global_coverage}" '90.0'; then badge_color='yellow'; fi
+if is_below "${global_coverage}" '80.0'; then badge_color='red'; fi
+cat > .github/badges/coverage.json <<EOF
 {
   "schemaVersion": 1,
   "label": "coverage",
-  "message": "${GLOBAL_COV_STR}",
-  "color": "${COLOR}"
+  "message": "${global_coverage_str}",
+  "color": "${badge_color}"
 }
-BADGE_EOF
+EOF
 
-if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
-    {
-        echo "### 📊 Verified CI/CD Statement Coverage Gate"
-        echo ""
-        echo "- **Overall Repository Statement Coverage**: \`${GLOBAL_COV_STR}\` (Gate: \`>= ${GLOBAL_FLOOR}%\` ✅)"
-        echo ""
-        echo "| Package | Statement Coverage |"
-        echo "| :--- | :--- |"
-        echo -e "${TABLE_ROWS}"
-    } >> "${GITHUB_STEP_SUMMARY}"
+if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+  {
+    echo '### Verified CI/CD Statement Coverage Gate'
+    echo
+    printf -- '- **Overall Repository Statement Coverage**: `%s` (gate: `>= %s%%`)\n' "${global_coverage_str}" "${GLOBAL_FLOOR}"
+  } >> "${GITHUB_STEP_SUMMARY}"
 fi
 
-echo -e "\nDetailed Package Coverage:"
-echo -e "${TABLE_ROWS}"
-
-if (( $(echo "${GLOBAL_COV} < ${GLOBAL_FLOOR}" | bc -l) )); then
-    echo "❌ Global coverage gate failed: ${GLOBAL_COV}% < ${GLOBAL_FLOOR}%"
-    exit 1
-fi
-
-if [ ${#FAILED_PACKAGES[@]} -gt 0 ]; then
-    echo "❌ One or more packages failed coverage floors:"
-    for failed in "${FAILED_PACKAGES[@]}"; do
-        echo "   - ${failed}"
-    done
-    exit 1
-fi
-
-echo "✅ All coverage floors met successfully!"
+printf '\nCoverage truth check passed: %s global coverage.\n' "${global_coverage_str}"

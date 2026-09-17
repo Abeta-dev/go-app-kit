@@ -496,4 +496,3 @@ func TestNewWkhtmlRenderer_EncapsulatedSemaphore(t *testing.T) {
 	assert.LessOrEqual(t, observedMax, int32(2), "concurrent executions must never exceed encapsulated semaphore bound of 2")
 	assert.Greater(t, observedMax, int32(0), "at least one task must have executed")
 }
-

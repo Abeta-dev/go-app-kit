@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/umesh0492/go-app-kit/audit"
-	"github.com/umesh0492/go-app-kit/india"
+	"github.com/umesh0492/go-app-kit/india" //nolint:staticcheck // Tests intentionally cover the compatibility façade used by the reference service.
 	"github.com/umesh0492/go-app-kit/notifications"
 	"github.com/umesh0492/go-app-kit/outbox"
 	"github.com/umesh0492/go-app-kit/pdf"

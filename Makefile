@@ -1,11 +1,11 @@
-.PHONY: all fmt-check test test-race cover test-integration lint vulncheck verify tidy build decouple couple workspace-init clean help
+.PHONY: all fmt-check test test-race cover test-integration lint vulncheck verify verify-release-baseline test-bash-compat tidy build couple decouple workspace-init clean help
 
 all: fmt-check verify lint test-race vulncheck build
 
 # Verify that all Go source files are formatted with gofmt
 fmt-check:
-	@test -z "$$(gofmt -l .)" || (echo "❌ Unformatted files detected. Run 'gofmt -w .':" && gofmt -l . && exit 1)
-	@echo "✅ All Go files are formatted with gofmt."
+	@UNFORMATTED="$$(gofmt -l $$(git ls-files '*.go'))"; test -z "$$UNFORMATTED" || (echo "❌ Unformatted tracked files:" && echo "$$UNFORMATTED" && exit 1)
+	@echo "✅ All tracked Go files are formatted with gofmt."
 
 test:
 	go test -v ./...
@@ -29,26 +29,30 @@ vulncheck:
 verify:
 	go mod verify
 
+verify-release-baseline:
+	./scripts/verify_release_baseline.sh
+
+test-bash-compat:
+	./scripts/test_bash_compat.sh
+
 tidy:
 	go mod tidy
 
 build:
 	go build -v ./examples/invoice_service
 
+# Deprecated compatibility aliases. go.mod must remain replacement-free; use a
+# caller-owned workspace (`make workspace-init`) for companion development.
+decouple:
+	@echo "DEPRECATED: go.mod is already decoupled and must not contain replace directives. Nothing to do."
+
+couple:
+	@echo "DEPRECATED: refusing to modify go.mod. Run 'make workspace-init' to use go-libs locally."
+
 # Clean build and test artifacts
 clean:
 	rm -f invoice_service examples/invoice_service/invoice_service coverage.out coverage.out.packages .packages coverage.txt coverage.html *.test
 	@echo "✅ Cleaned build and test artifacts."
-
-# Decouple go.mod by dropping the local replace directive for open-source distribution/release
-decouple:
-	go mod edit -dropreplace github.com/umesh0492/go-libs
-	@echo "Dropped replace directive in go.mod for standalone distribution."
-
-# Couple go.mod for local companion workspace development alongside ../go-libs
-couple:
-	go mod edit -replace github.com/umesh0492/go-libs=../go-libs
-	@echo "Configured replace directive in go.mod pointing to ../go-libs."
 
 # Initialize multi-module Go workspace at parent directory without needing replace in go.mod
 workspace-init:

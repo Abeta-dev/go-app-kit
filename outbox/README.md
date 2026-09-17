@@ -54,7 +54,7 @@ Guaranteed at-least-once domain event delivery eliminating the dual-write proble
 
 ### Initial Setup (`001_outbox_events.sql`)
 
-Run the included initial DDL ([`outbox/ddl/001_outbox_events.sql`](file:///Users/umesh/Downloads/Vendor-Portal-Design/go-app-kit/outbox/ddl/001_outbox_events.sql)):
+Run the included initial DDL ([`outbox/ddl/001_outbox_events.sql`](ddl/001_outbox_events.sql)):
 
 ```sql
 CREATE TABLE IF NOT EXISTS outbox_events (
@@ -87,7 +87,7 @@ CREATE INDEX IF NOT EXISTS idx_outbox_aggregate
 
 ### Migration for Existing Deployments (`002_outbox_concurrency_index.sql`)
 
-If migrating an existing table, apply [`outbox/ddl/002_outbox_concurrency_index.sql`](file:///Users/umesh/Downloads/Vendor-Portal-Design/go-app-kit/outbox/ddl/002_outbox_concurrency_index.sql):
+If migrating an existing table, apply [`outbox/ddl/002_outbox_concurrency_index.sql`](ddl/002_outbox_concurrency_index.sql):
 
 ```sql
 ALTER TABLE outbox_events 
