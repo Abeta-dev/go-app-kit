@@ -5,11 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
 ## [0.3.1] - 2026-09-17
 
 ### Changed
+- dependencies: Bump `github.com/umesh0492/go-libs` to `v0.3.0`.
 - ci: Replace all Bash 4+ `mapfile`/`readarray` built-ins with POSIX/Bash 3.2-compatible `while IFS= read -r` array loops in `scripts/check_version.sh` and `scripts/check_coverage.sh`, fixing macOS CI failures.
 - ci: Add `scripts/test_bash_compat.sh` — static compatibility guard integrated into CI, release workflow, and Makefile.
 - release: Remove fragile zero-retry isolated consumer step from `release.yml`; replaced with `scripts/verify_release.sh` using bounded exponential backoff (up to 12 attempts, per-attempt isolated GOMODCACHE).
