@@ -10,11 +10,13 @@ import (
 
 var (
 	// ErrInvalidPANLength indicates the PAN string does not have length 10.
-	ErrInvalidPANLength = errors.New("pan must be exactly 10 characters")
+	ErrInvalidPANLength = fintechin.ErrInvalidPANLength
 	// ErrInvalidPANFormat indicates the PAN format regex is invalid.
-	ErrInvalidPANFormat = errors.New("pan format is invalid")
+	ErrInvalidPANFormat = fintechin.ErrInvalidPANFormat
 	// ErrUnknownEntityType indicates the 4th character of PAN is not a recognized entity type.
-	ErrUnknownEntityType = errors.New("unknown pan entity type")
+	ErrUnknownEntityType = fintechin.ErrInvalidPANEntityType
+	// ErrInvalidPANEntityType is an alias for ErrUnknownEntityType.
+	ErrInvalidPANEntityType = fintechin.ErrInvalidPANEntityType
 
 	// Mapping of 4th character of PAN to legal entity type in India
 	entityTypes = map[byte]string{

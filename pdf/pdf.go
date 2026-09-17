@@ -4,10 +4,12 @@ package pdf
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"html/template"
 	"strings"
+	"sync"
 
 	wkhtml "github.com/SebastiaanKlippert/go-wkhtmltopdf"
 )
@@ -22,8 +24,32 @@ type Renderer interface {
 	Render(html string, opts Options) ([]byte, error)
 }
 
+// DefaultMaxConcurrency is the default upper bound for simultaneous wkhtmltopdf subprocesses.
+const DefaultMaxConcurrency = 10
+
+var (
+	semMapMu sync.Mutex
+	semMap   = make(map[int]chan struct{})
+)
+
+func getSemaphore(limit int) chan struct{} {
+	if limit <= 0 {
+		limit = DefaultMaxConcurrency
+	}
+	semMapMu.Lock()
+	defer semMapMu.Unlock()
+	sem, exists := semMap[limit]
+	if !exists {
+		sem = make(chan struct{}, limit)
+		semMap[limit] = sem
+	}
+	return sem
+}
+
 // WkhtmlRenderer is the default Renderer implementation backed by wkhtmltopdf.
-type WkhtmlRenderer struct{}
+type WkhtmlRenderer struct {
+	Semaphore chan struct{}
+}
 
 type pdfGenerator interface {
 	AddPage(*wkhtml.PageReader)
@@ -43,15 +69,53 @@ func (w *wkhtmlGenerator) Create() error {
 	return w.PDFGenerator.Create()
 }
 
+func (w *wkhtmlGenerator) CreateContext(ctx context.Context) error {
+	return w.PDFGenerator.CreateContext(ctx)
+}
+
 func (w *wkhtmlGenerator) Bytes() []byte {
 	return w.PDFGenerator.Bytes()
 }
 
-var generatorFactory = defaultGenerator
+var (
+	generatorFactoryMu sync.RWMutex
+	generatorFactory   = defaultGenerator
+)
 
-// Render compiles HTML into PDF bytes using wkhtmltopdf.
+func getGeneratorFactory() func(opts Options) (pdfGenerator, error) {
+	generatorFactoryMu.RLock()
+	defer generatorFactoryMu.RUnlock()
+	return generatorFactory
+}
+
+// Render compiles HTML into PDF bytes using wkhtmltopdf with concurrency bounding and context cancellation.
 func (w *WkhtmlRenderer) Render(html string, opts Options) ([]byte, error) {
-	pdfg, err := generatorFactory(opts)
+	ctx := opts.Context
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	sem := w.Semaphore
+	if sem == nil {
+		sem = opts.Semaphore
+	}
+	if sem == nil {
+		sem = getSemaphore(opts.MaxConcurrency)
+	}
+
+	select {
+	case sem <- struct{}{}:
+		defer func() { <-sem }()
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+
+	factory := getGeneratorFactory()
+	pdfg, err := factory(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +126,12 @@ func (w *WkhtmlRenderer) Render(html string, opts Options) ([]byte, error) {
 
 	pdfg.AddPage(page)
 
-	if err := pdfg.Create(); err != nil {
+	if cp, ok := pdfg.(interface{ CreateContext(context.Context) error }); ok {
+		err = cp.CreateContext(ctx)
+	} else {
+		err = pdfg.Create()
+	}
+	if err != nil {
 		return nil, fmt.Errorf("failed to render pdf: %w", err)
 	}
 
@@ -80,6 +149,9 @@ type Options struct {
 	MarginRight           uint   // Margins in mm (Default: 10)
 	Title                 string // Document title
 	EnableLocalFileAccess bool   // Default: false (prevents file:/// exfiltration)
+	MaxConcurrency        int    // Max simultaneous wkhtmltopdf executions (Default: 10)
+	Context               context.Context
+	Semaphore             chan struct{}
 	renderer              Renderer
 }
 
@@ -98,6 +170,33 @@ func DefaultOptions() Options {
 		MarginLeft:            10,
 		MarginRight:           10,
 		EnableLocalFileAccess: false,
+		MaxConcurrency:        DefaultMaxConcurrency,
+		Context:               context.Background(),
+	}
+}
+
+// WithContext sets the context for cancellation and timeout of the PDF generation process.
+func WithContext(ctx context.Context) Option {
+	return func(o *Options) {
+		if ctx != nil {
+			o.Context = ctx
+		}
+	}
+}
+
+// WithMaxConcurrency bounds the maximum number of simultaneous wkhtmltopdf processes (default: 10).
+func WithMaxConcurrency(n int) Option {
+	return func(o *Options) {
+		if n > 0 {
+			o.MaxConcurrency = n
+		}
+	}
+}
+
+// WithSemaphore configures a custom concurrency semaphore channel.
+func WithSemaphore(sem chan struct{}) Option {
+	return func(o *Options) {
+		o.Semaphore = sem
 	}
 }
 
@@ -183,6 +282,15 @@ func Generate(html string, opts ...Option) (*bytes.Buffer, error) {
 	return bytes.NewBuffer(data), nil
 }
 
+// GenerateWithContext accepts a context, raw HTML string, and optional configurations,
+// compiling it into a PDF bytes buffer with context cancellation support.
+func GenerateWithContext(ctx context.Context, html string, opts ...Option) (*bytes.Buffer, error) {
+	allOpts := make([]Option, 0, len(opts)+1)
+	allOpts = append(allOpts, WithContext(ctx))
+	allOpts = append(allOpts, opts...)
+	return Generate(html, allOpts...)
+}
+
 // RenderTemplate evaluates an HTML Go template string against a data context.
 func RenderTemplate(tmplStr string, data any) (string, error) {
 	tmpl, err := template.New("pdf").Funcs(template.FuncMap{
@@ -208,4 +316,14 @@ func GenerateFromTemplate(tmplStr string, data any, opts ...Option) (*bytes.Buff
 		return nil, err
 	}
 	return Generate(rendered, opts...)
+}
+
+// GenerateFromTemplateWithContext executes an HTML template with the given data context and
+// renders it into a PDF buffer with context cancellation support.
+func GenerateFromTemplateWithContext(ctx context.Context, tmplStr string, data any, opts ...Option) (*bytes.Buffer, error) {
+	rendered, err := RenderTemplate(tmplStr, data)
+	if err != nil {
+		return nil, err
+	}
+	return GenerateWithContext(ctx, rendered, opts...)
 }

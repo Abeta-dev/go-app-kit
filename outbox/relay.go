@@ -121,7 +121,15 @@ func (r *Relay) ProcessBatch(ctx context.Context) (int, error) {
 		}
 
 		pubCtx, cancel := context.WithTimeout(ctx, r.cfg.PublishTimeout)
-		pubErr := r.cfg.Publisher.Publish(pubCtx, event)
+		var pubErr error
+		func() {
+			defer func() {
+				if rec := recover(); rec != nil {
+					pubErr = fmt.Errorf("publisher panic: %v", rec)
+				}
+			}()
+			pubErr = r.cfg.Publisher.Publish(pubCtx, event)
+		}()
 		cancel()
 		if pubErr == nil {
 			var markErr error
@@ -172,7 +180,7 @@ func (r *Relay) ProcessBatch(ctx context.Context) (int, error) {
 		}
 		if failErr != nil {
 			r.cfg.Logger.Error("failed to record outbox failure state", "id", event.ID, "error", failErr)
-			return processedCount, fmt.Errorf("failed to record failure state for outbox event %s: %w", event.ID, failErr)
+			continue
 		}
 		processedCount++
 	}
@@ -205,6 +213,15 @@ func (r *Relay) Start(ctx context.Context) error {
 }
 
 func (r *Relay) runWorker(ctx context.Context, workerID int) {
+	defer func() {
+		if rec := recover(); rec != nil {
+			r.cfg.Logger.Error("outbox worker recovered from unexpected panic",
+				"worker_id", workerID,
+				"panic", rec,
+			)
+		}
+	}()
+
 	ticker := time.NewTicker(r.cfg.PollInterval)
 	defer ticker.Stop()
 

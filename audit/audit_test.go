@@ -288,6 +288,53 @@ func TestPGRecorder_RecordAsync_QueueFullPolicy(t *testing.T) {
 		}
 	})
 
+	t.Run("PolicyFallbackSync respects WithSyncFallbackTimeout bounding", func(t *testing.T) {
+		blockCh := make(chan struct{})
+		mockDB := &mockDBOperator{
+			execHook: func(ctx context.Context, sql string, args []any) {
+				if len(args) > 6 && args[6] == "BLOCKING_EVT" {
+					<-blockCh
+				}
+				if len(args) > 6 && args[6] == "SLOW_FALLBACK" {
+					select {
+					case <-time.After(100 * time.Millisecond):
+					case <-ctx.Done():
+					}
+				}
+			},
+		}
+
+		// 1 worker, 1 queue slot, and tight 10ms sync fallback timeout
+		recorder, err := audit.NewPGRecorder(audit.Config{
+			DB:              mockDB,
+			Workers:         1,
+			QueueSize:       1,
+			QueueFullPolicy: audit.PolicyFallbackSync,
+		}, audit.WithSyncFallbackTimeout(10*time.Millisecond))
+		if err != nil {
+			t.Fatalf("NewPGRecorder failed: %v", err)
+		}
+		defer recorder.Close()
+
+		// Fill the single worker
+		_ = recorder.RecordAsync(audit.Event{Action: "BLOCKING_EVT", EntityType: "Test", EntityID: "1"})
+		time.Sleep(10 * time.Millisecond)
+
+		// Fill the queue
+		_ = recorder.RecordAsync(audit.Event{Action: "QUEUED_EVT", EntityType: "Test", EntityID: "2"})
+
+		// Trigger fallback - should timeout because mock takes 100ms but fallback timeout is 10ms
+		err = recorder.RecordAsync(audit.Event{Action: "SLOW_FALLBACK", EntityType: "Test", EntityID: "3"})
+		if err == nil {
+			t.Fatalf("expected timeout error on slow fallback persist, got nil")
+		}
+		if !errors.Is(err, context.DeadlineExceeded) && !strings.Contains(err.Error(), "context deadline exceeded") {
+			t.Fatalf("expected context deadline exceeded error, got: %v", err)
+		}
+
+		close(blockCh)
+	})
+
 	t.Run("PolicyDrop returns ErrQueueFull when queue is full", func(t *testing.T) {
 		blockCh := make(chan struct{})
 		mockDB := &mockDBOperator{

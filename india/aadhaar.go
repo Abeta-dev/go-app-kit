@@ -10,13 +10,15 @@ import (
 
 var (
 	// ErrInvalidAadhaarLength indicates the Aadhaar number is not 12 digits.
-	ErrInvalidAadhaarLength = errors.New("aadhaar number must be exactly 12 digits")
+	ErrInvalidAadhaarLength = fintechin.ErrInvalidAadhaarLength
 	// ErrInvalidAadhaarFormat indicates the Aadhaar number contains invalid characters.
-	ErrInvalidAadhaarFormat = errors.New("aadhaar number must contain only numeric digits")
+	ErrInvalidAadhaarFormat = fintechin.ErrInvalidAadhaarFormat
 	// ErrInvalidAadhaarPrefix indicates the Aadhaar number starts with 0 or 1.
-	ErrInvalidAadhaarPrefix = errors.New("aadhaar number cannot start with 0 or 1")
+	ErrInvalidAadhaarPrefix = fintechin.ErrAadhaarStartsWithZeroOrOne
+	// ErrAadhaarStartsWithZeroOrOne is an alias for ErrInvalidAadhaarPrefix.
+	ErrAadhaarStartsWithZeroOrOne = fintechin.ErrAadhaarStartsWithZeroOrOne
 	// ErrInvalidAadhaarChecksum indicates the Aadhaar number fails the Verhoeff checksum.
-	ErrInvalidAadhaarChecksum = errors.New("aadhaar checksum validation failed (Verhoeff check)")
+	ErrInvalidAadhaarChecksum = fintechin.ErrInvalidAadhaarChecksum
 )
 
 // ValidateAadhaar verifies that an Aadhaar number is 12 digits, does not start with 0 or 1,

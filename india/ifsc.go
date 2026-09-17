@@ -9,9 +9,15 @@ import (
 
 var (
 	// ErrInvalidIFSCLength indicates the IFSC string does not have length 11.
-	ErrInvalidIFSCLength = errors.New("ifsc must be exactly 11 characters")
+	ErrInvalidIFSCLength = fintechin.ErrInvalidIFSCLength
 	// ErrInvalidIFSCFormat indicates the IFSC format is invalid (4 bank letters + 0 + 6 branch alphanumeric).
 	ErrInvalidIFSCFormat = errors.New("ifsc format is invalid (4 bank letters + 0 + 6 branch alphanumeric)")
+	// ErrInvalidIFSCBankCode indicates the first 4 characters are not alphabetic.
+	ErrInvalidIFSCBankCode = fintechin.ErrInvalidIFSCBankCode
+	// ErrInvalidIFSCFifthChar indicates the 5th character is not '0'.
+	ErrInvalidIFSCFifthChar = fintechin.ErrInvalidIFSCFifthChar
+	// ErrInvalidIFSCBranchCode indicates the last 6 characters are not alphanumeric.
+	ErrInvalidIFSCBranchCode = fintechin.ErrInvalidIFSCBranchCode
 )
 
 // ValidateIFSC checks the structural validity of an Indian Financial System Code.

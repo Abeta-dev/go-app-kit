@@ -162,6 +162,9 @@ const (
 	PolicyDrop QueueFullPolicy = "DROP"
 )
 
+// DefaultSyncFallbackTimeout defines the maximum duration allowed when falling back to synchronous database persist.
+const DefaultSyncFallbackTimeout = 3 * time.Second
+
 // Option configures pgRecorder behavior.
 type Option func(*pgRecorder)
 
@@ -178,24 +181,36 @@ func WithTableName(name string) Option {
 	}
 }
 
+// WithSyncFallbackTimeout configures the timeout for synchronous database persist when the async queue is full.
+// Defaults to 3 seconds.
+func WithSyncFallbackTimeout(d time.Duration) Option {
+	return func(r *pgRecorder) {
+		if d > 0 {
+			r.syncFallbackTimeout = d
+		}
+	}
+}
+
 // Config configures the PostgreSQL audit recorder.
 type Config struct {
-	DB              DBOperator
-	Workers         int
-	QueueSize       int
-	Logger          *slog.Logger
-	QueueFullPolicy QueueFullPolicy // default: PolicyFallbackSync
-	TableName       string          // optional custom table name (default: "audit_logs")
+	DB                  DBOperator
+	Workers             int
+	QueueSize           int
+	Logger              *slog.Logger
+	QueueFullPolicy     QueueFullPolicy // default: PolicyFallbackSync
+	TableName           string          // optional custom table name (default: "audit_logs")
+	SyncFallbackTimeout time.Duration   // fallback timeout when queue is full under PolicyFallbackSync (default: 3s)
 }
 
 type pgRecorder struct {
-	db              DBOperator
-	pool            *workerpool.Pool
-	logger          *slog.Logger
-	queueFullPolicy QueueFullPolicy
-	tableName       string
-	insertQuery     string
-	initErr         error
+	db                  DBOperator
+	pool                *workerpool.Pool
+	logger              *slog.Logger
+	queueFullPolicy     QueueFullPolicy
+	tableName           string
+	insertQuery         string
+	initErr             error
+	syncFallbackTimeout time.Duration
 }
 
 // NewPGRecorder initializes an audit recorder backed by PostgreSQL and a bounded workerpool.
@@ -224,14 +239,20 @@ func NewPGRecorder(cfg Config, opts ...Option) (Recorder, error) {
 		return nil, fmt.Errorf("%w: %q does not match identifier pattern '^[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)?$'", ErrInvalidTableName, tableName)
 	}
 
+	fallbackTimeout := cfg.SyncFallbackTimeout
+	if fallbackTimeout <= 0 {
+		fallbackTimeout = DefaultSyncFallbackTimeout
+	}
+
 	p := workerpool.New(cfg.Workers, cfg.QueueSize, workerpool.WithLogger(cfg.Logger))
 
 	r := &pgRecorder{
-		db:              cfg.DB,
-		pool:            p,
-		logger:          cfg.Logger,
-		queueFullPolicy: policy,
-		tableName:       tableName,
+		db:                  cfg.DB,
+		pool:                p,
+		logger:              cfg.Logger,
+		queueFullPolicy:     policy,
+		tableName:           tableName,
+		syncFallbackTimeout: fallbackTimeout,
 	}
 
 	for _, opt := range opts {
@@ -363,7 +384,11 @@ func (r *pgRecorder) RecordAsync(event Event) error {
 				"action", event.Action,
 				"entity_type", event.EntityType,
 			)
-			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			fallbackTimeout := r.syncFallbackTimeout
+			if fallbackTimeout <= 0 {
+				fallbackTimeout = DefaultSyncFallbackTimeout
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), fallbackTimeout)
 			defer cancel()
 			return r.Record(ctx, event)
 		case PolicyBlock:

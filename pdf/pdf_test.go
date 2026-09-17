@@ -1,9 +1,13 @@
 package pdf_test
 
 import (
+	"context"
 	"errors"
 	"os"
+	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	wkhtml "github.com/SebastiaanKlippert/go-wkhtmltopdf"
 	"github.com/stretchr/testify/assert"
@@ -314,3 +318,133 @@ func TestReceiptTemplate_Render(t *testing.T) {
 	require.NoError(t, err)
 	assert.Greater(t, len(rendered), 100)
 }
+
+func TestGenerateWithContext_Success(t *testing.T) {
+	var capturedCtx context.Context
+	mock := &pdf.MockPDFGenerator{
+		CreateContextFunc: func(ctx context.Context) error {
+			capturedCtx = ctx
+			return nil
+		},
+		BytesFunc: func() []byte { return []byte("PDF_WITH_CONTEXT") },
+	}
+	reset := pdf.SetGeneratorFactoryForTesting(func(opts pdf.Options) (pdf.MockPDFGeneratorTarget, error) {
+		return mock, nil
+	})
+	defer reset()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	buf, err := pdf.GenerateWithContext(ctx, "<html><body>Context Success</body></html>")
+	require.NoError(t, err)
+	require.NotNil(t, buf)
+	assert.Equal(t, "PDF_WITH_CONTEXT", buf.String())
+	assert.NotNil(t, capturedCtx)
+}
+
+func TestGenerateWithContext_Cancellation(t *testing.T) {
+	mock := &pdf.MockPDFGenerator{
+		CreateContextFunc: func(ctx context.Context) error {
+			<-ctx.Done()
+			return ctx.Err()
+		},
+	}
+	reset := pdf.SetGeneratorFactoryForTesting(func(opts pdf.Options) (pdf.MockPDFGeneratorTarget, error) {
+		return mock, nil
+	})
+	defer reset()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately
+
+	buf, err := pdf.GenerateWithContext(ctx, "<html><body>Canceled</body></html>")
+	require.Error(t, err)
+	assert.Nil(t, buf)
+	assert.ErrorIs(t, err, context.Canceled)
+}
+
+func TestGenerateFromTemplateWithContext(t *testing.T) {
+	mock := &pdf.MockPDFGenerator{
+		CreateContextFunc: func(ctx context.Context) error {
+			return nil
+		},
+		BytesFunc: func() []byte { return []byte("TEMPLATE_PDF_WITH_CTX") },
+	}
+	reset := pdf.SetGeneratorFactoryForTesting(func(opts pdf.Options) (pdf.MockPDFGeneratorTarget, error) {
+		return mock, nil
+	})
+	defer reset()
+
+	ctx := context.Background()
+	buf, err := pdf.GenerateFromTemplateWithContext(ctx, "<h1>{{.Title}}</h1>", map[string]string{"Title": "Invoice"})
+	require.NoError(t, err)
+	require.NotNil(t, buf)
+	assert.Equal(t, "TEMPLATE_PDF_WITH_CTX", buf.String())
+}
+
+func TestWkhtmlRenderer_ConcurrencyThrottling(t *testing.T) {
+	var currentActive int32
+	var maxActive int32
+
+	mock := &pdf.MockPDFGenerator{
+		CreateContextFunc: func(ctx context.Context) error {
+			active := atomic.AddInt32(&currentActive, 1)
+			for {
+				oldMax := atomic.LoadInt32(&maxActive)
+				if active <= oldMax || atomic.CompareAndSwapInt32(&maxActive, oldMax, active) {
+					break
+				}
+			}
+			time.Sleep(30 * time.Millisecond)
+			atomic.AddInt32(&currentActive, -1)
+			return nil
+		},
+		BytesFunc: func() []byte { return []byte("CONCURRENT_PDF") },
+	}
+	reset := pdf.SetGeneratorFactoryForTesting(func(opts pdf.Options) (pdf.MockPDFGeneratorTarget, error) {
+		return mock, nil
+	})
+	defer reset()
+
+	// Use custom semaphore bounded to 2 concurrent executions
+	sem := make(chan struct{}, 2)
+	concurrencyOpt := pdf.WithSemaphore(sem)
+
+	const totalTasks = 6
+	var wg sync.WaitGroup
+	errs := make([]error, totalTasks)
+
+	for i := 0; i < totalTasks; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			_, errs[idx] = pdf.Generate("<html><body>Throttle Test</body></html>", concurrencyOpt)
+		}(i)
+	}
+
+	wg.Wait()
+
+	for i, err := range errs {
+		require.NoError(t, err, "task %d should succeed", i)
+	}
+
+	observedMax := atomic.LoadInt32(&maxActive)
+	assert.LessOrEqual(t, observedMax, int32(2), "concurrent executions must never exceed semaphore bound of 2")
+	assert.Greater(t, observedMax, int32(0), "at least one task must have executed")
+}
+
+func TestWkhtmlRenderer_SemaphoreContextCancellation(t *testing.T) {
+	// Semaphore filled with 1 token to block incoming caller
+	sem := make(chan struct{}, 1)
+	sem <- struct{}{} // fill semaphore
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Millisecond)
+	defer cancel()
+
+	buf, err := pdf.GenerateWithContext(ctx, "<html><body>Timeout Test</body></html>", pdf.WithSemaphore(sem))
+	require.Error(t, err)
+	assert.Nil(t, buf)
+	assert.ErrorIs(t, err, context.DeadlineExceeded)
+}
+

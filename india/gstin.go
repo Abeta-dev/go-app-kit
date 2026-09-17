@@ -10,13 +10,15 @@ import (
 
 var (
 	// ErrInvalidGSTINLength indicates the GSTIN does not have exactly 15 characters.
-	ErrInvalidGSTINLength = errors.New("gstin must be exactly 15 characters")
+	ErrInvalidGSTINLength = fintechin.ErrInvalidGSTINLength
 	// ErrInvalidGSTINFormat indicates the GSTIN contains invalid characters or regex.
-	ErrInvalidGSTINFormat = errors.New("gstin format is invalid")
+	ErrInvalidGSTINFormat = fintechin.ErrInvalidGSTINFormat
+	// ErrInvalidGSTIN is an alias for ErrInvalidGSTINFormat.
+	ErrInvalidGSTIN = fintechin.ErrInvalidGSTINFormat
 	// ErrInvalidGSTINChecksum indicates the 15th character checksum mismatch.
-	ErrInvalidGSTINChecksum = errors.New("gstin checksum mismatch")
+	ErrInvalidGSTINChecksum = fintechin.ErrInvalidGSTINChecksum
 	// ErrInvalidStateCode indicates the 2-digit state code is invalid.
-	ErrInvalidStateCode = errors.New("gstin state code is invalid")
+	ErrInvalidStateCode = fintechin.ErrInvalidStateCode
 )
 
 // GSTINDetails represents parsed information from a valid GSTIN.

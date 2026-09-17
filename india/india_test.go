@@ -2,11 +2,13 @@ package india_test
 
 import (
 	"encoding/json"
+	"errors"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	fintechin "github.com/umesh0492/go-fintech-india"
 	"github.com/umesh0492/go-app-kit/india"
 )
 
@@ -793,6 +795,98 @@ func TestMoney(t *testing.T) {
 		}
 		if err := scanned.Scan([]byte("bad-bytes")); err == nil {
 			t.Fatalf("expected error on bad bytes string")
+		}
+	})
+}
+
+func TestSentinelErrorParity(t *testing.T) {
+	t.Run("Aadhaar sentinel parity", func(t *testing.T) {
+		if !errors.Is(india.ErrInvalidAadhaarLength, fintechin.ErrInvalidAadhaarLength) {
+			t.Errorf("ErrInvalidAadhaarLength does not match fintechin.ErrInvalidAadhaarLength")
+		}
+		if !errors.Is(india.ErrInvalidAadhaarFormat, fintechin.ErrInvalidAadhaarFormat) {
+			t.Errorf("ErrInvalidAadhaarFormat does not match fintechin.ErrInvalidAadhaarFormat")
+		}
+		if !errors.Is(india.ErrInvalidAadhaarPrefix, fintechin.ErrAadhaarStartsWithZeroOrOne) {
+			t.Errorf("ErrInvalidAadhaarPrefix does not match fintechin.ErrAadhaarStartsWithZeroOrOne")
+		}
+		if !errors.Is(india.ErrAadhaarStartsWithZeroOrOne, fintechin.ErrAadhaarStartsWithZeroOrOne) {
+			t.Errorf("ErrAadhaarStartsWithZeroOrOne does not match fintechin.ErrAadhaarStartsWithZeroOrOne")
+		}
+		if !errors.Is(india.ErrInvalidAadhaarChecksum, fintechin.ErrInvalidAadhaarChecksum) {
+			t.Errorf("ErrInvalidAadhaarChecksum does not match fintechin.ErrInvalidAadhaarChecksum")
+		}
+
+		// Verify returned error matches both
+		err := india.ValidateAadhaar("123")
+		if !errors.Is(err, india.ErrInvalidAadhaarLength) || !errors.Is(err, fintechin.ErrInvalidAadhaarLength) {
+			t.Errorf("ValidateAadhaar length error failed parity check: %v", err)
+		}
+	})
+
+	t.Run("GSTIN sentinel parity", func(t *testing.T) {
+		if !errors.Is(india.ErrInvalidGSTINLength, fintechin.ErrInvalidGSTINLength) {
+			t.Errorf("ErrInvalidGSTINLength does not match fintechin.ErrInvalidGSTINLength")
+		}
+		if !errors.Is(india.ErrInvalidGSTINFormat, fintechin.ErrInvalidGSTINFormat) {
+			t.Errorf("ErrInvalidGSTINFormat does not match fintechin.ErrInvalidGSTINFormat")
+		}
+		if !errors.Is(india.ErrInvalidGSTIN, fintechin.ErrInvalidGSTINFormat) {
+			t.Errorf("ErrInvalidGSTIN does not match fintechin.ErrInvalidGSTINFormat")
+		}
+		if !errors.Is(india.ErrInvalidGSTINChecksum, fintechin.ErrInvalidGSTINChecksum) {
+			t.Errorf("ErrInvalidGSTINChecksum does not match fintechin.ErrInvalidGSTINChecksum")
+		}
+		if !errors.Is(india.ErrInvalidStateCode, fintechin.ErrInvalidStateCode) {
+			t.Errorf("ErrInvalidStateCode does not match fintechin.ErrInvalidStateCode")
+		}
+
+		// Verify returned error matches both
+		err := india.ValidateGSTIN("short")
+		if !errors.Is(err, india.ErrInvalidGSTINLength) || !errors.Is(err, fintechin.ErrInvalidGSTINLength) {
+			t.Errorf("ValidateGSTIN length error failed parity check: %v", err)
+		}
+	})
+
+	t.Run("PAN sentinel parity", func(t *testing.T) {
+		if !errors.Is(india.ErrInvalidPANLength, fintechin.ErrInvalidPANLength) {
+			t.Errorf("ErrInvalidPANLength does not match fintechin.ErrInvalidPANLength")
+		}
+		if !errors.Is(india.ErrInvalidPANFormat, fintechin.ErrInvalidPANFormat) {
+			t.Errorf("ErrInvalidPANFormat does not match fintechin.ErrInvalidPANFormat")
+		}
+		if !errors.Is(india.ErrUnknownEntityType, fintechin.ErrInvalidPANEntityType) {
+			t.Errorf("ErrUnknownEntityType does not match fintechin.ErrInvalidPANEntityType")
+		}
+		if !errors.Is(india.ErrInvalidPANEntityType, fintechin.ErrInvalidPANEntityType) {
+			t.Errorf("ErrInvalidPANEntityType does not match fintechin.ErrInvalidPANEntityType")
+		}
+
+		// Verify returned error matches both
+		err := india.ValidatePAN("short")
+		if !errors.Is(err, india.ErrInvalidPANLength) || !errors.Is(err, fintechin.ErrInvalidPANLength) {
+			t.Errorf("ValidatePAN length error failed parity check: %v", err)
+		}
+	})
+
+	t.Run("IFSC sentinel parity", func(t *testing.T) {
+		if !errors.Is(india.ErrInvalidIFSCLength, fintechin.ErrInvalidIFSCLength) {
+			t.Errorf("ErrInvalidIFSCLength does not match fintechin.ErrInvalidIFSCLength")
+		}
+		if !errors.Is(india.ErrInvalidIFSCBankCode, fintechin.ErrInvalidIFSCBankCode) {
+			t.Errorf("ErrInvalidIFSCBankCode does not match fintechin.ErrInvalidIFSCBankCode")
+		}
+		if !errors.Is(india.ErrInvalidIFSCFifthChar, fintechin.ErrInvalidIFSCFifthChar) {
+			t.Errorf("ErrInvalidIFSCFifthChar does not match fintechin.ErrInvalidIFSCFifthChar")
+		}
+		if !errors.Is(india.ErrInvalidIFSCBranchCode, fintechin.ErrInvalidIFSCBranchCode) {
+			t.Errorf("ErrInvalidIFSCBranchCode does not match fintechin.ErrInvalidIFSCBranchCode")
+		}
+
+		// Verify returned error matches both
+		err := india.ValidateIFSC("short")
+		if !errors.Is(err, india.ErrInvalidIFSCLength) || !errors.Is(err, fintechin.ErrInvalidIFSCLength) {
+			t.Errorf("ValidateIFSC length error failed parity check: %v", err)
 		}
 	})
 }
