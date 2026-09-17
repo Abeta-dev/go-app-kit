@@ -1,11 +1,11 @@
-.PHONY: all fmt-check test test-race cover test-integration lint vulncheck verify verify-release-baseline tidy build workspace-init clean help
+.PHONY: all fmt-check test test-race cover test-integration lint vulncheck verify verify-release-baseline tidy build couple decouple workspace-init clean help
 
 all: fmt-check verify lint test-race vulncheck build
 
 # Verify that all Go source files are formatted with gofmt
 fmt-check:
-	@test -z "$$(gofmt -l .)" || (echo "❌ Unformatted files detected. Run 'gofmt -w .':" && gofmt -l . && exit 1)
-	@echo "✅ All Go files are formatted with gofmt."
+	@UNFORMATTED="$$(gofmt -l $$(git ls-files '*.go'))"; test -z "$$UNFORMATTED" || (echo "❌ Unformatted tracked files:" && echo "$$UNFORMATTED" && exit 1)
+	@echo "✅ All tracked Go files are formatted with gofmt."
 
 test:
 	go test -v ./...
@@ -37,6 +37,14 @@ tidy:
 
 build:
 	go build -v ./examples/invoice_service
+
+# Deprecated compatibility aliases. go.mod must remain replacement-free; use a
+# caller-owned workspace (`make workspace-init`) for companion development.
+decouple:
+	@echo "DEPRECATED: go.mod is already decoupled and must not contain replace directives. Nothing to do."
+
+couple:
+	@echo "DEPRECATED: refusing to modify go.mod. Run 'make workspace-init' to use go-libs locally."
 
 # Clean build and test artifacts
 clean:

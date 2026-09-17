@@ -7,11 +7,14 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing immutable tag to release (for example v0.3.1)'
+        description: 'Existing immutable tag to verify and release (for example v0.3.1)'
         required: true
         type: string
 
 permissions: read-all
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   release:
@@ -25,8 +28,8 @@ jobs:
           INPUT_TAG: ${{ inputs.tag }}
         run: |
           TAG="${INPUT_TAG:-${GITHUB_REF_NAME}}"
-          if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Release tag must use vMAJOR.MINOR.PATCH: $TAG" >&2
+          if ! [[ "$TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$ ]]; then
+            echo "Release tag must use vMAJOR.MINOR.PATCH[-PRERELEASE]: $TAG" >&2
             exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
@@ -41,30 +44,30 @@ jobs:
         uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
         with:
           go-version: '1.26.x'
-          cache: true
+          cache: false
 
-      - name: Verify immutable tag identity
-        env:
-          TAG: ${{ steps.release.outputs.tag }}
-        run: |
-          LOCAL_OBJECT=$(git rev-parse "refs/tags/${TAG}")
-          LOCAL_COMMIT=$(git rev-parse "${TAG}^{}")
-          REMOTE_OBJECT=$(git ls-remote --tags --refs origin "refs/tags/${TAG}" | awk 'NR == 1 {print $1}')
-          REMOTE_COMMIT=$(git ls-remote origin "refs/tags/${TAG}^{}" | awk 'NR == 1 {print $1}')
-          [ -n "$REMOTE_OBJECT" ] || { echo "Remote tag ${TAG} is missing." >&2; exit 1; }
-          REMOTE_COMMIT=${REMOTE_COMMIT:-$REMOTE_OBJECT}
-          [ "$LOCAL_OBJECT" = "$REMOTE_OBJECT" ] || { echo "Remote tag object differs from checkout." >&2; exit 1; }
-          [ "$LOCAL_COMMIT" = "$REMOTE_COMMIT" ] || { echo "Remote tag commit differs from checkout." >&2; exit 1; }
-
-      - name: Verify source and baseline
-        env:
-          RELEASE_CANDIDATE_TAG: ${{ steps.release.outputs.tag }}
+      - name: Verify source quality
         run: |
           go mod verify
           go test ./...
-          ./scripts/verify_release_baseline.sh
+          ./scripts/check_version.sh
 
-      - name: Verify published module from isolated consumer
+      - name: Verify immutable release and write manifest
+        id: verify_release
+        env:
+          GIT_TAG: ${{ steps.release.outputs.tag }}
+        run: ./scripts/verify_release.sh "$GIT_TAG"
+
+      - name: Upload release verification manifest
+        if: always()
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: release-manifest-${{ steps.release.outputs.tag || github.run_id }}
+          path: release-manifest.json
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Verify published module from an isolated consumer
         env:
           TAG: ${{ steps.release.outputs.tag }}
         run: |
@@ -72,37 +75,36 @@ jobs:
           trap 'rm -rf "$SCRATCH_DIR"' EXIT
           cd "$SCRATCH_DIR"
           GOWORK=off go mod init example.com/go-app-kit-consumer
-          GOPROXY=https://proxy.golang.org GOWORK=off go get "github.com/umesh0492/go-app-kit/india@${TAG}"
+          # Fetch the stable export package, not the deprecated india facade.
+          GOPROXY=https://proxy.golang.org GOWORK=off go get "github.com/umesh0492/go-app-kit/export@${TAG}"
           cat > main.go <<'EOF'
           package main
 
           import (
+              "bytes"
               "fmt"
-              "github.com/umesh0492/go-app-kit/india"
+
+              kitexport "github.com/umesh0492/go-app-kit/export"
           )
 
-          func main() { fmt.Println(india.ValidatePAN("ABCDE1234F")) }
+          func main() {
+              var output bytes.Buffer
+              writer := kitexport.NewCSVStreamer[struct{}](&output, nil)
+              fmt.Println(writer.Close())
+          }
           EOF
           GOPROXY=https://proxy.golang.org GOWORK=off go build .
 
-      - name: Check release status
-        id: release-status
+      - name: Create release or replace only its manifest asset
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ steps.release.outputs.tag }}
         run: |
+          test -s release-manifest.json
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "Release $TAG already exists; leaving its immutable artifact unchanged."
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Release $TAG exists; replacing only release-manifest.json."
+            gh release upload "$TAG" release-manifest.json --clobber
+            exit 0
           fi
-
-      - name: Create GitHub release
-        if: steps.release-status.outputs.exists == 'false'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.release.outputs.tag }}
-        run: |
-          gh release create "$TAG" --verify-tag --title "$TAG" \
+          gh release create "$TAG" release-manifest.json --verify-tag --title "$TAG" \
             --notes-file <(awk -v ver="${TAG#v}" 'index($0, "## [" ver "]") == 1 { found=1; print; next } found && /^## \[/ { exit } found { print }' CHANGELOG.md)

@@ -41,16 +41,21 @@ Run the following from the repository root:
 ./scripts/verify_release_baseline.sh
 ```
 
-The second command validates immutable remote tags, proxy zip and `go.mod`
-SHA-256 values, and Go checksum database identities for the published baseline.
-It also creates an isolated consumer with `GOWORK=off` and builds imports from
-the module proxy, so neither a checkout nor a local replacement can satisfy the
-check.
+`check_version.sh` is deterministic and suitable for pull requests: it checks
+version/documentation/package/coverage truth against the checkout. The second
+command performs live immutable remote-tag, proxy zip and `go.mod` SHA-256, and
+Go checksum database verification. It also creates an isolated `GOWORK=off`
+consumer importing the stable `export` package, so neither a checkout nor a
+local replacement can satisfy the check. It is intentionally run only on the
+scheduled/manual baseline workflow and during release investigations, not on
+every pull request.
 
-For a future release, invoke the same script with the new tag after it has been
-pushed and the module proxy has resolved it. The release workflow validates
-source, tag identity, proxy resolution, and the isolated consumer before it
-creates a missing GitHub release. Existing releases are left unchanged.
+For a future release, invoke `./scripts/verify_release.sh vX.Y.Z` after the tag
+has been pushed and the module proxy has resolved it. The release workflow uses
+that script's bounded, fresh-cache proxy retries and uploads its manifest even
+on failure. It creates a missing GitHub release or replaces only the
+`release-manifest.json` asset on an existing release; tags and other assets are
+never changed.
 
 ## Next release recommendation
 
