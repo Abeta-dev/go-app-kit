@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/umesh0492/go-app-kit/audit"
-	"github.com/umesh0492/go-app-kit/india"
+	"github.com/umesh0492/go-app-kit/india" //nolint:staticcheck // Reference coverage intentionally exercises the compatibility façade.
 	"github.com/umesh0492/go-app-kit/notifications"
 	"github.com/umesh0492/go-app-kit/outbox"
 	"github.com/umesh0492/go-app-kit/pdf"
