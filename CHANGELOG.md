@@ -7,9 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-17
+
 ### Changed
-- dependencies: Require verified published `github.com/umesh0492/go-libs@v0.2.1` and `github.com/umesh0492/go-fintech-india@v0.2.3`; remove the machine-specific local replacement.
-- release: Record immutable module and tag evidence, including the separate lightweight `v0.3.0` artifact, and verify proxy-only isolated consumers before a release.
+- ci: Replace all Bash 4+ `mapfile`/`readarray` built-ins with POSIX/Bash 3.2-compatible `while IFS= read -r` array loops in `scripts/check_version.sh` and `scripts/check_coverage.sh`, fixing macOS CI failures.
+- ci: Add `scripts/test_bash_compat.sh` — static compatibility guard integrated into CI, release workflow, and Makefile.
+- release: Remove fragile zero-retry isolated consumer step from `release.yml`; replaced with `scripts/verify_release.sh` using bounded exponential backoff (up to 12 attempts, per-attempt isolated GOMODCACHE).
+- release: Add `scripts/test_verify_release.sh` — unit-tests proxy retry logic, backoff timing, manifest generation, and pre-release SemVer parsing.
+- ci: Add `scripts/verify_release_baseline.sh` — post-merge downstream consumer integrity check.
+- docs: Add `docs/RELEASE_BASELINE.md` documenting full release procedure and version gates.
 
 ## [0.2.1] - 2026-09-17
 
