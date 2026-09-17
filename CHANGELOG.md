@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-09-17
+
+Encapsulated PDF subprocess semaphore, india façade deprecation notice, and go-libs v0.2.1 dependency bump.
+
+### Added
+- pdf: Encapsulated instance semaphore and constructor `NewWkhtmlRenderer` for bounded wkhtmltopdf subprocess concurrency.
+
+### Deprecated
+- india: Package marked deprecated in favor of direct imports of `github.com/umesh0492/go-fintech-india` for canonical statutory Indian primitives.
+
+### Changed
+- dependencies: Bumped `github.com/umesh0492/go-libs` to `v0.2.1`.
+- pdf: Removed package-global semaphore maps in favor of struct-encapsulated semaphore bounding on `WkhtmlRenderer`.
+
 ## [0.2.0] - 2026-09-17
 
 Clean-slate architecture: Decoupled PDF compilation and unified statutory Indian domain engine.

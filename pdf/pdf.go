@@ -27,28 +27,46 @@ type Renderer interface {
 // DefaultMaxConcurrency is the default upper bound for simultaneous wkhtmltopdf subprocesses.
 const DefaultMaxConcurrency = 10
 
-var (
-	semMapMu sync.Mutex
-	semMap   = make(map[int]chan struct{})
-)
-
-func getSemaphore(limit int) chan struct{} {
-	if limit <= 0 {
-		limit = DefaultMaxConcurrency
-	}
-	semMapMu.Lock()
-	defer semMapMu.Unlock()
-	sem, exists := semMap[limit]
-	if !exists {
-		sem = make(chan struct{}, limit)
-		semMap[limit] = sem
-	}
-	return sem
-}
-
 // WkhtmlRenderer is the default Renderer implementation backed by wkhtmltopdf.
+// Concurrency is bounded per renderer instance via an encapsulated semaphore channel.
 type WkhtmlRenderer struct {
 	Semaphore chan struct{}
+	sem       chan struct{}
+	semOnce   sync.Once
+}
+
+// NewWkhtmlRenderer constructs a WkhtmlRenderer with an encapsulated semaphore of capacity maxConcurrency.
+// If maxConcurrency <= 0, DefaultMaxConcurrency (10) is used.
+func NewWkhtmlRenderer(maxConcurrency ...int) *WkhtmlRenderer {
+	limit := DefaultMaxConcurrency
+	if len(maxConcurrency) > 0 && maxConcurrency[0] > 0 {
+		limit = maxConcurrency[0]
+	}
+	r := &WkhtmlRenderer{
+		sem: make(chan struct{}, limit),
+	}
+	r.semOnce.Do(func() {})
+	return r
+}
+
+func (w *WkhtmlRenderer) getSemaphore(opts Options) chan struct{} {
+	if w.Semaphore != nil {
+		return w.Semaphore
+	}
+	if opts.Semaphore != nil {
+		return opts.Semaphore
+	}
+	if w.sem != nil {
+		return w.sem
+	}
+	w.semOnce.Do(func() {
+		limit := opts.MaxConcurrency
+		if limit <= 0 {
+			limit = DefaultMaxConcurrency
+		}
+		w.sem = make(chan struct{}, limit)
+	})
+	return w.sem
 }
 
 type pdfGenerator interface {
@@ -99,13 +117,7 @@ func (w *WkhtmlRenderer) Render(html string, opts Options) ([]byte, error) {
 		return nil, err
 	}
 
-	sem := w.Semaphore
-	if sem == nil {
-		sem = opts.Semaphore
-	}
-	if sem == nil {
-		sem = getSemaphore(opts.MaxConcurrency)
-	}
+	sem := w.getSemaphore(opts)
 
 	select {
 	case sem <- struct{}{}:
@@ -262,6 +274,8 @@ func defaultGenerator(opts Options) (pdfGenerator, error) {
 	return &wkhtmlGenerator{PDFGenerator: g}, nil
 }
 
+var defaultRenderer = NewWkhtmlRenderer(DefaultMaxConcurrency)
+
 // Generate accepts a raw HTML string and optional configurations, compiling it into a PDF bytes buffer.
 func Generate(html string, opts ...Option) (*bytes.Buffer, error) {
 	config := DefaultOptions()
@@ -271,7 +285,11 @@ func Generate(html string, opts ...Option) (*bytes.Buffer, error) {
 
 	renderer := config.renderer
 	if renderer == nil {
-		renderer = &WkhtmlRenderer{}
+		if config.MaxConcurrency > 0 && config.MaxConcurrency != DefaultMaxConcurrency {
+			renderer = NewWkhtmlRenderer(config.MaxConcurrency)
+		} else {
+			renderer = defaultRenderer
+		}
 	}
 
 	data, err := renderer.Render(html, config)

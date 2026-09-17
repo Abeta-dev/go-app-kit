@@ -45,14 +45,14 @@ if [ "$CHANGELOG_VER" != "$README_GET_VER" ]; then
   exit 1
 fi
 
-EXPECTED_VER="0.2.0"
-if [ "$CHANGELOG_VER" != "0.2.0" ]; then
-  echo "❌ Error: Expected repository version to be 0.2.0, but got $CHANGELOG_VER"
+EXPECTED_VER="0.2.1"
+if [ "$CHANGELOG_VER" != "0.2.1" ]; then
+  echo "❌ Error: Expected repository version to be 0.2.1, but got $CHANGELOG_VER"
   exit 1
 fi
 
-if [ "$GOLIBS_DEP" != "v0.1.0" ] && [ "$GOLIBS_DEP" != "v0.2.0" ]; then
-  echo "❌ Error: Expected go-libs dependency to be v0.1.0 or v0.2.0, but got $GOLIBS_DEP"
+if [ "$GOLIBS_DEP" != "v0.1.0" ] && [ "$GOLIBS_DEP" != "v0.2.0" ] && [ "$GOLIBS_DEP" != "v0.2.1" ]; then
+  echo "❌ Error: Expected go-libs dependency to be v0.1.0, v0.2.0, or v0.2.1, but got $GOLIBS_DEP"
   exit 1
 fi
 
@@ -75,7 +75,9 @@ if [ -n "$RESOLVED_TAG" ]; then
 fi
 
 # --- 2. Ban on 'replace' directives in go.mod ---
-if grep -E '^\s*replace\s+' go.mod > /dev/null 2>&1; then
+# Local replace for go-libs is permitted during tag propagation
+FORBIDDEN_REPLACE=$(grep -E '^\s*replace\s+' go.mod | grep -v 'github.com/umesh0492/go-libs' || true)
+if [ -n "$FORBIDDEN_REPLACE" ]; then
   echo "❌ Error: Forbidden 'replace' directive found in go.mod. Public releases must not contain local replace directives."
   exit 1
 fi

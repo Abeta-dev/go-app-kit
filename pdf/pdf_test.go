@@ -447,3 +447,53 @@ func TestWkhtmlRenderer_SemaphoreContextCancellation(t *testing.T) {
 	assert.Nil(t, buf)
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
+
+func TestNewWkhtmlRenderer_EncapsulatedSemaphore(t *testing.T) {
+	var currentActive int32
+	var maxActive int32
+
+	mock := &pdf.MockPDFGenerator{
+		CreateContextFunc: func(ctx context.Context) error {
+			active := atomic.AddInt32(&currentActive, 1)
+			for {
+				oldMax := atomic.LoadInt32(&maxActive)
+				if active <= oldMax || atomic.CompareAndSwapInt32(&maxActive, oldMax, active) {
+					break
+				}
+			}
+			time.Sleep(30 * time.Millisecond)
+			atomic.AddInt32(&currentActive, -1)
+			return nil
+		},
+		BytesFunc: func() []byte { return []byte("ENCAPSULATED_PDF") },
+	}
+	reset := pdf.SetGeneratorFactoryForTesting(func(opts pdf.Options) (pdf.MockPDFGeneratorTarget, error) {
+		return mock, nil
+	})
+	defer reset()
+
+	renderer := pdf.NewWkhtmlRenderer(2)
+
+	const totalTasks = 6
+	var wg sync.WaitGroup
+	errs := make([]error, totalTasks)
+
+	for i := 0; i < totalTasks; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			_, errs[idx] = renderer.Render("<html><body>Encapsulated Test</body></html>", pdf.DefaultOptions())
+		}(i)
+	}
+
+	wg.Wait()
+
+	for i, err := range errs {
+		require.NoError(t, err, "task %d should succeed", i)
+	}
+
+	observedMax := atomic.LoadInt32(&maxActive)
+	assert.LessOrEqual(t, observedMax, int32(2), "concurrent executions must never exceed encapsulated semaphore bound of 2")
+	assert.Greater(t, observedMax, int32(0), "at least one task must have executed")
+}
+

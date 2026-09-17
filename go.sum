@@ -111,8 +111,6 @@ github.com/tklauser/numcpus v0.12.0 h1:NR85qdvHA9pFse3x3weVZ0r0ST8R6l5RHbZrlRaqo
 github.com/tklauser/numcpus v0.12.0/go.mod h1:ABHeXzJnr/qqwguhClkZKT1/8VABcYrsyUiUGobwWJg=
 github.com/umesh0492/go-fintech-india v0.2.2 h1:0A+yG6v41qRXOG8R83t+gDI6by1slBQLZ2vNaFvFuo0=
 github.com/umesh0492/go-fintech-india v0.2.2/go.mod h1:UPKoeW7JKYkR0nQtY4rW1dmJ9oI20RzDOeE4s7fDrgc=
-github.com/umesh0492/go-libs v0.1.0 h1:k5YrNxbh34vJGJidXEu8RvgPL6Mi9IxS7ct6MS4stek=
-github.com/umesh0492/go-libs v0.1.0/go.mod h1:R7gQaadUNwpnavd5P96ThNbhYyUUKyVbfKCR/mu29/o=
 github.com/yusufpapurcu/wmi v1.2.4 h1:zFUKzehAFReQwLys1b/iSMl+JQGSCSjtVqQn9bBrPo0=
 github.com/yusufpapurcu/wmi v1.2.4/go.mod h1:SBZ9tNy3G9/m5Oi98Zks0QjeHVDvuK0qfxQmPyzfmi0=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=

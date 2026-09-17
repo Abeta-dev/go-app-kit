@@ -1,4 +1,4 @@
-# go-app-kit · v0.2.0
+# go-app-kit · v0.2.1
 
 > This repository's public history begins from a single initial commit; see [CHANGELOG.md](CHANGELOG.md) for the version-by-version record of what shipped.
 
@@ -53,7 +53,7 @@ While [`go-libs`](https://github.com/umesh0492/go-libs) provides low-level, zero
 ### Standalone Import
 When consuming `go-app-kit` in your microservice:
 ```bash
-go get github.com/umesh0492/go-app-kit@v0.2.0
+go get github.com/umesh0492/go-app-kit@v0.2.1
 ```
 
 ### Multi-Module Local Development (`go.work`)
@@ -253,7 +253,7 @@ go test -v ./...
 
 Coverage across packages in `go-app-kit` is measured using Go's statement-level coverage tool (`go test -coverprofile=coverage.out ./...`):
 
-> **Overall Repository Statement Coverage: 90.6%** (Zero data races across `-race`)
+> **Overall Repository Statement Coverage: 90.5%** (Zero data races across `-race`)
 
 | Package | Purpose | Statement Coverage |
 |---|---|---|
@@ -262,9 +262,9 @@ Coverage across packages in `go-app-kit` is measured using Go's statement-level 
 | `notifications` | Multi-channel notification broker (SMTP Email, Slack, Webhook HMAC-SHA256 & versioning) | **92.3%** |
 | `outbox` | PostgreSQL transactional outbox engine with row-level locked poller & lease fencing | **90.0%** |
 | `audit` | Partitioned PostgreSQL audit logging with automated JSON diffing & append-only triggers | **89.5%** |
-| `pdf` | In-memory HTML-to-PDF compilation & embedded GST invoice templates | **81.2%** |
+| `pdf` | In-memory HTML-to-PDF compilation & embedded GST invoice templates | **80.7%** |
 | `examples/invoice_service` | Reference microservice with end-to-end integration test & exact paise math | **82.9%** |
-| **Total Statement Coverage** | **Cumulative across all packages** | **90.6%** |
+| **Total Statement Coverage** | **Cumulative across all packages** | **90.5%** |
 
 ---
 
