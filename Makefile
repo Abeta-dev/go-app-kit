@@ -1,4 +1,4 @@
-.PHONY: all fmt-check test test-race cover test-integration lint vulncheck verify verify-release-baseline tidy build couple decouple workspace-init clean help
+.PHONY: all fmt-check test test-race cover test-integration lint vulncheck verify verify-release-baseline test-bash-compat tidy build couple decouple workspace-init clean help
 
 all: fmt-check verify lint test-race vulncheck build
 
@@ -31,6 +31,9 @@ verify:
 
 verify-release-baseline:
 	./scripts/verify_release_baseline.sh
+
+test-bash-compat:
+	./scripts/test_bash_compat.sh
 
 tidy:
 	go mod tidy

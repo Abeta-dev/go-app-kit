@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Exercise retry, final diagnostics, failed manifests, portable SHA selection,
-# and prerelease parsing without contacting the module proxy.
+# Exercise retry (module root and isolated consumer), final diagnostics, failed
+# manifests, portable SHA selection, and prerelease parsing without a proxy.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
@@ -32,13 +32,19 @@ if [[ "$1" == 'list' ]]; then
   printf '%s\n' 'github.com/umesh0492/go-app-kit'
   exit 0
 fi
-if [[ "$1" == 'mod' && "$2" == 'download' ]]; then
+if [[ "$1" == 'mod' && "$2" == 'init' ]]; then
+  exit 0
+fi
+if [[ "$1" == 'mod' && "$2" == 'download' ]] || [[ "$1" == 'get' ]]; then
   attempt=$(cat "$FAKE_GO_STATE" 2>/dev/null || printf '0')
   attempt=$((attempt + 1))
   printf '%s\n' "$attempt" > "$FAKE_GO_STATE"
-  if (( attempt < 3 )); then
+  if (( attempt == 1 || attempt == 3 )); then
     echo "synthetic proxy failure ${attempt}" >&2
     exit 1
+  fi
+  if [[ "$1" == 'get' ]]; then
+    exit 0
   fi
   cat <<JSON
 {
@@ -48,6 +54,9 @@ if [[ "$1" == 'mod' && "$2" == 'download' ]]; then
   "GoModSum": "h1:synthetic-go-mod-sum"
 }
 JSON
+  exit 0
+fi
+if [[ "$1" == 'build' ]]; then
   exit 0
 fi
 echo "unexpected fake go invocation: $*" >&2
@@ -76,9 +85,9 @@ output=$(cd "${TEST_REPO}" && \
   RELEASE_MANIFEST_PATH="${MANIFEST_PATH}" GIT_REMOTE=origin \
   ./scripts/verify_release.sh v0.2.1 2>&1)
 printf '%s\n' "${output}" | grep -F 'attempt 1/3'
-printf '%s\n' "${output}" | grep -F 'attempt 2/3'
-[[ "$(cat "${STATE_FILE}")" == '3' ]]
-printf '1\n2\n' | cmp -s - "${SLEEP_LOG}"
+printf '%s\n' "${output}" | grep -F 'attempt 1/3 for github.com/umesh0492/go-app-kit/export@v0.2.1 isolated consumer'
+[[ "$(cat "${STATE_FILE}")" == '4' ]]
+printf '1\n1\n' | cmp -s - "${SLEEP_LOG}"
 grep -F '"verification_status": "verified"' "${MANIFEST_PATH}"
 grep -F 'h1:synthetic-module-sum' "${MANIFEST_PATH}"
 
@@ -113,4 +122,4 @@ if printf '%s\n' "${prerelease_output}" | grep -F 'usage:' >/dev/null; then
   exit 1
 fi
 
-printf '%s\n' 'verify_release.sh retry, diagnostics, manifest, and prerelease tests passed'
+printf '%s\n' 'verify_release.sh module-root and consumer retry, diagnostics, manifest, and prerelease tests passed'

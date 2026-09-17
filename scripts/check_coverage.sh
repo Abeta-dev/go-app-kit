@@ -69,7 +69,12 @@ if is_below "${global_coverage}" "${GLOBAL_FLOOR}"; then
   fail "global coverage ${global_coverage}% is below ${GLOBAL_FLOOR}%"
 fi
 
-mapfile -t packages < <(go list ./... | sed "s|^${MODULE}/||" | grep -v "^${MODULE}$" | sort)
+# Bash 3.2 has indexed arrays but not mapfile/readarray. Populate this safely
+# from newline-delimited Go import paths (which cannot contain newlines).
+packages=()
+while IFS= read -r package; do
+  packages[${#packages[@]}]="${package}"
+done < <(go list ./... | sed "s|^${MODULE}/||" | grep -v "^${MODULE}$" | sort)
 (( ${#packages[@]} > 0 )) || fail 'could not determine Go packages'
 
 printf '\nMeasured package coverage:\n'

@@ -78,13 +78,24 @@ fi
 [[ "${golibs_version}" == 'v0.2.1' ]] || fail "go.mod must require go-libs v0.2.1, got ${golibs_version:-none}"
 [[ "${fintech_version}" == 'v0.2.3' ]] || fail "go.mod must require go-fintech-india v0.2.3, got ${fintech_version:-none}"
 
-mapfile -t go_files < <(git ls-files '*.go')
+# Bash 3.2 has indexed arrays but not mapfile/readarray. Populate arrays with
+# newline-delimited paths; repository file names must not contain newlines.
+go_files=()
+while IFS= read -r go_file; do
+  go_files[${#go_files[@]}]="${go_file}"
+done < <(git ls-files '*.go')
 if (( ${#go_files[@]} > 0 )); then
-  mapfile -t unformatted < <(gofmt -l "${go_files[@]}")
+  unformatted=()
+  while IFS= read -r go_file; do
+    unformatted[${#unformatted[@]}]="${go_file}"
+  done < <(gofmt -l "${go_files[@]}")
   (( ${#unformatted[@]} == 0 )) || fail "unformatted tracked Go files: ${unformatted[*]}"
 fi
 
-mapfile -t docs < <(find . -path './.git' -prune -o -name '*.md' -type f -print | sort)
+docs=()
+while IFS= read -r doc; do
+  docs[${#docs[@]}]="${doc}"
+done < <(find . -path './.git' -prune -o -name '*.md' -type f -print | sort)
 for doc in "${docs[@]}"; do
   if grep -nE 'Go[[:space:]]+1\.(1[0-9]|2[0-5])\b|go1\.(1[0-9]|2[0-5])\b' "${doc}"; then
     fail "${doc#./} claims an unsupported Go baseline"

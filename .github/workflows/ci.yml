@@ -59,6 +59,9 @@ jobs:
       - name: Verify Go Module Integrity
         run: go mod verify
 
+      - name: Verify Bash 3.2 Script Compatibility
+        run: ./scripts/test_bash_compat.sh
+
       - name: Verify Version & Documentation Synchronization
         run: ./scripts/check_version.sh
 

@@ -50,6 +50,7 @@ jobs:
         run: |
           go mod verify
           go test ./...
+          ./scripts/test_bash_compat.sh
           ./scripts/check_version.sh
 
       - name: Verify immutable release and write manifest
@@ -66,34 +67,6 @@ jobs:
           path: release-manifest.json
           if-no-files-found: warn
           retention-days: 90
-
-      - name: Verify published module from an isolated consumer
-        env:
-          TAG: ${{ steps.release.outputs.tag }}
-        run: |
-          SCRATCH_DIR=$(mktemp -d)
-          trap 'rm -rf "$SCRATCH_DIR"' EXIT
-          cd "$SCRATCH_DIR"
-          GOWORK=off go mod init example.com/go-app-kit-consumer
-          # Fetch the stable export package, not the deprecated india facade.
-          GOPROXY=https://proxy.golang.org GOWORK=off go get "github.com/umesh0492/go-app-kit/export@${TAG}"
-          cat > main.go <<'EOF'
-          package main
-
-          import (
-              "bytes"
-              "fmt"
-
-              kitexport "github.com/umesh0492/go-app-kit/export"
-          )
-
-          func main() {
-              var output bytes.Buffer
-              writer := kitexport.NewCSVStreamer[struct{}](&output, nil)
-              fmt.Println(writer.Close())
-          }
-          EOF
-          GOPROXY=https://proxy.golang.org GOWORK=off go build .
 
       - name: Create release or replace only its manifest asset
         env:
