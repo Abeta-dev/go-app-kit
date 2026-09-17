@@ -94,6 +94,51 @@ func NewRelay(cfg RelayConfig) (*Relay, error) {
 	return &Relay{cfg: cfg}, nil
 }
 
+func (r *Relay) publishWithRecovery(ctx context.Context, event Event) (pubErr error) {
+	pubCtx, cancel := context.WithTimeout(ctx, r.cfg.PublishTimeout)
+	defer cancel()
+
+	defer func() {
+		if rec := recover(); rec != nil {
+			pubErr = fmt.Errorf("publisher panic: %v", rec)
+		}
+	}()
+
+	return r.cfg.Publisher.Publish(pubCtx, event)
+}
+
+func (r *Relay) handlePublishFailure(ctx context.Context, event Event, pubErr error) error {
+	newRetryCount := event.RetryCount + 1
+	isPoisonPill := IsNonRetryable(pubErr)
+	finalFail := newRetryCount >= event.MaxRetries || isPoisonPill
+
+	maxDelay := r.cfg.BackoffMax
+	if maxDelay <= 0 {
+		maxDelay = 1 * time.Minute
+	}
+	if maxDelay < r.cfg.BackoffBase {
+		maxDelay = r.cfg.BackoffBase
+	}
+	backoff := BackoffWithJitter(event.RetryCount, r.cfg.BackoffBase, maxDelay)
+	nextRetry := time.Now().UTC().Add(backoff)
+
+	r.cfg.Logger.Warn("outbox event publish failed",
+		"id", event.ID,
+		"event_type", event.EventType,
+		"retry_count", newRetryCount,
+		"max_retries", event.MaxRetries,
+		"final_fail", finalFail,
+		"poison_pill", isPoisonPill,
+		"backoff", backoff,
+		"error", pubErr,
+	)
+
+	if event.LeaseToken != nil {
+		return r.cfg.Store.MarkFailed(ctx, event.ID, pubErr.Error(), nextRetry, finalFail, *event.LeaseToken)
+	}
+	return r.cfg.Store.MarkFailed(ctx, event.ID, pubErr.Error(), nextRetry, finalFail)
+}
+
 // ProcessBatch retrieves and dispatches a single batch of events.
 // Returns the count of processed events in this iteration.
 func (r *Relay) ProcessBatch(ctx context.Context) (int, error) {
@@ -106,6 +151,7 @@ func (r *Relay) ProcessBatch(ctx context.Context) (int, error) {
 		return 0, nil
 	}
 
+	var batchErr error
 	processedCount := 0
 	for _, event := range events {
 		select {
@@ -120,17 +166,7 @@ func (r *Relay) ProcessBatch(ctx context.Context) (int, error) {
 			continue
 		}
 
-		pubCtx, cancel := context.WithTimeout(ctx, r.cfg.PublishTimeout)
-		var pubErr error
-		func() {
-			defer func() {
-				if rec := recover(); rec != nil {
-					pubErr = fmt.Errorf("publisher panic: %v", rec)
-				}
-			}()
-			pubErr = r.cfg.Publisher.Publish(pubCtx, event)
-		}()
-		cancel()
+		pubErr := r.publishWithRecovery(ctx, event)
 		if pubErr == nil {
 			var markErr error
 			if event.LeaseToken != nil {
@@ -146,46 +182,16 @@ func (r *Relay) ProcessBatch(ctx context.Context) (int, error) {
 			continue
 		}
 
-		// Handle failure & exponential backoff calculation
-		newRetryCount := event.RetryCount + 1
-		isPoisonPill := IsNonRetryable(pubErr)
-		finalFail := newRetryCount >= event.MaxRetries || isPoisonPill
-
-		maxDelay := r.cfg.BackoffMax
-		if maxDelay <= 0 {
-			maxDelay = 1 * time.Minute
-		}
-		if maxDelay < r.cfg.BackoffBase {
-			maxDelay = r.cfg.BackoffBase
-		}
-		backoff := BackoffWithJitter(event.RetryCount, r.cfg.BackoffBase, maxDelay)
-		nextRetry := time.Now().UTC().Add(backoff)
-
-		r.cfg.Logger.Warn("outbox event publish failed",
-			"id", event.ID,
-			"event_type", event.EventType,
-			"retry_count", newRetryCount,
-			"max_retries", event.MaxRetries,
-			"final_fail", finalFail,
-			"poison_pill", isPoisonPill,
-			"backoff", backoff,
-			"error", pubErr,
-		)
-
-		var failErr error
-		if event.LeaseToken != nil {
-			failErr = r.cfg.Store.MarkFailed(ctx, event.ID, pubErr.Error(), nextRetry, finalFail, *event.LeaseToken)
-		} else {
-			failErr = r.cfg.Store.MarkFailed(ctx, event.ID, pubErr.Error(), nextRetry, finalFail)
-		}
+		failErr := r.handlePublishFailure(ctx, event, pubErr)
 		if failErr != nil {
 			r.cfg.Logger.Error("failed to record outbox failure state", "id", event.ID, "error", failErr)
+			batchErr = errors.Join(batchErr, fmt.Errorf("failed to record failure state for outbox event %s: %w", event.ID, failErr))
 			continue
 		}
 		processedCount++
 	}
 
-	return processedCount, nil
+	return processedCount, batchErr
 }
 
 // Start begins the polling loop, blocking until the context is canceled.

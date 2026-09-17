@@ -24,6 +24,9 @@ func (m *mockDBOperator) Exec(ctx context.Context, sql string, args ...any) (pgc
 	if m.execHook != nil {
 		m.execHook(ctx, sql, args)
 	}
+	if err := ctx.Err(); err != nil {
+		return pgconn.CommandTag{}, err
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.execErr != nil {
@@ -290,6 +293,8 @@ func TestPGRecorder_RecordAsync_QueueFullPolicy(t *testing.T) {
 
 	t.Run("PolicyFallbackSync respects WithSyncFallbackTimeout bounding", func(t *testing.T) {
 		blockCh := make(chan struct{})
+		var once sync.Once
+		defer once.Do(func() { close(blockCh) })
 		mockDB := &mockDBOperator{
 			execHook: func(ctx context.Context, sql string, args []any) {
 				if len(args) > 6 && args[6] == "BLOCKING_EVT" {
@@ -332,11 +337,13 @@ func TestPGRecorder_RecordAsync_QueueFullPolicy(t *testing.T) {
 			t.Fatalf("expected context deadline exceeded error, got: %v", err)
 		}
 
-		close(blockCh)
+		once.Do(func() { close(blockCh) })
 	})
 
 	t.Run("PolicyDrop returns ErrQueueFull when queue is full", func(t *testing.T) {
 		blockCh := make(chan struct{})
+		var once sync.Once
+		defer once.Do(func() { close(blockCh) })
 		mockDB := &mockDBOperator{
 			execHook: func(ctx context.Context, sql string, args []any) {
 				if len(args) > 6 && args[6] == "BLOCKING_EVT" {
@@ -366,8 +373,7 @@ func TestPGRecorder_RecordAsync_QueueFullPolicy(t *testing.T) {
 			t.Fatalf("expected error from PolicyDrop on full queue, got nil")
 		}
 
-		close(blockCh)
-		recorder.Close()
+		once.Do(func() { close(blockCh) })
 	})
 }
 

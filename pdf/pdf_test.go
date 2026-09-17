@@ -447,4 +447,3 @@ func TestWkhtmlRenderer_SemaphoreContextCancellation(t *testing.T) {
 	assert.Nil(t, buf)
 	assert.ErrorIs(t, err, context.DeadlineExceeded)
 }
-

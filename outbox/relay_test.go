@@ -103,7 +103,8 @@ func TestRelay_ProcessBatch_MarkFailedError_DoesNotStallBatch(t *testing.T) {
 
 	// Processing batch must not abort on evt1 MarkFailed error, and must continue to evt2
 	count, err := relay.ProcessBatch(ctx)
-	require.NoError(t, err)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "db error: failed to record failure state")
 	assert.Equal(t, 1, count, "evt2 was published successfully, evt1 skipped after MarkFailed error")
 
 	// Verify evt2 was published
