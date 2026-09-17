@@ -43,7 +43,7 @@ Structured audit logging engine with automated JSON state diffing, actor context
 
 ## Schema Setup
 
-Run the included DDL ([`audit/ddl/001_audit_logs.sql`](file:///Users/umesh/Downloads/Vendor-Portal-Design/go-app-kit/audit/ddl/001_audit_logs.sql)):
+Run the included DDL ([`audit/ddl/001_audit_logs.sql`](ddl/001_audit_logs.sql)):
 
 ```sql
 CREATE TABLE IF NOT EXISTS audit_logs (

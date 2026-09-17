@@ -1,10 +1,10 @@
-# go-app-kit · v0.2.1
+# go-app-kit · current main-line published v0.2.1
 
-> This repository's public history begins from a single initial commit; see [CHANGELOG.md](CHANGELOG.md) for the version-by-version record of what shipped.
+> `v0.2.1` is the annotated main-line published module. The lightweight `v0.3.0` tag points to an earlier commit and is an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
 [![CI](https://github.com/umesh0492/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/umesh0492/go-app-kit/actions/workflows/ci.yml)
 [![Code Quality: golangci-lint](https://img.shields.io/badge/code%20quality-golangci--lint-brightgreen?logo=go)](https://golangci-lint.run/)
-[![Go Version](https://img.shields.io/badge/Go-%3E%3D1.25.0-00ADD8?logo=go)](https://go.dev/)
+[![Go Version](https://img.shields.io/badge/Go-1.26.0-00ADD8?logo=go)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Vulnerabilities](https://img.shields.io/badge/govulncheck-0%20vulns-brightgreen)](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck)
 
@@ -67,7 +67,7 @@ go work init ./go-app-kit ./go-libs
 With `go.work` in place, any changes in `go-libs` are immediately reflected in `go-app-kit` during compilation, testing, and debugging.
 
 ### Standard Distribution
-`go-app-kit` contains zero local `replace` directives by default and publishes clean, reproducible builds that fetch `github.com/umesh0492/go-libs` from the Go proxy.
+`go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/umesh0492/go-libs@v0.2.1` and `github.com/umesh0492/go-fintech-india@v0.2.3` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md).
 
 ### Concurrency Architecture & Dependency on `go-libs/workerpool`
 `go-app-kit`'s asynchronous background execution in `notifications` (async multi-channel fan-out) and `audit` (asynchronous audit log ingestion) imports [`go-libs/workerpool`](https://github.com/umesh0492/go-libs/tree/main/workerpool) directly. It leverages bounded concurrency, graceful draining, panic resilience, and Prometheus saturation metrics without maintaining any duplicated forks.
@@ -275,6 +275,9 @@ Run the full verification suite locally:
 ```bash
 # Run all tests with race detector
 make test-race
+
+# Verify release/module provenance and a proxy-only isolated consumer
+make verify-release-baseline
 
 # Run linter
 make lint

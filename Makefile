@@ -1,4 +1,4 @@
-.PHONY: all fmt-check test test-race cover test-integration lint vulncheck verify tidy build decouple couple workspace-init clean help
+.PHONY: all fmt-check test test-race cover test-integration lint vulncheck verify verify-release-baseline tidy build workspace-init clean help
 
 all: fmt-check verify lint test-race vulncheck build
 
@@ -29,6 +29,9 @@ vulncheck:
 verify:
 	go mod verify
 
+verify-release-baseline:
+	./scripts/verify_release_baseline.sh
+
 tidy:
 	go mod tidy
 
@@ -39,16 +42,6 @@ build:
 clean:
 	rm -f invoice_service examples/invoice_service/invoice_service coverage.out coverage.out.packages .packages coverage.txt coverage.html *.test
 	@echo "✅ Cleaned build and test artifacts."
-
-# Decouple go.mod by dropping the local replace directive for open-source distribution/release
-decouple:
-	go mod edit -dropreplace github.com/umesh0492/go-libs
-	@echo "Dropped replace directive in go.mod for standalone distribution."
-
-# Couple go.mod for local companion workspace development alongside ../go-libs
-couple:
-	go mod edit -replace github.com/umesh0492/go-libs=../go-libs
-	@echo "Configured replace directive in go.mod pointing to ../go-libs."
 
 # Initialize multi-module Go workspace at parent directory without needing replace in go.mod
 workspace-init:

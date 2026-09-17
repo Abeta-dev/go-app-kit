@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- dependencies: Require verified published `github.com/umesh0492/go-libs@v0.2.1` and `github.com/umesh0492/go-fintech-india@v0.2.3`; remove the machine-specific local replacement.
+- release: Record immutable module and tag evidence, including the separate lightweight `v0.3.0` artifact, and verify proxy-only isolated consumers before a release.
+
 ## [0.2.1] - 2026-09-17
 
 Encapsulated PDF subprocess semaphore, india façade deprecation notice, and go-libs v0.2.1 dependency bump.
