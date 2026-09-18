@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Git pre-push hook: intercepts git push attempting to push a tag refs/tags/v*
+# Verifies version, changelog, and test gates via check_version.sh.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+cd "${ROOT_DIR}"
+
+remote="$1"
+url="$2"
+
+readonly ZERO="0000000000000000000000000000000000000000"
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  # Skip deletion of refs
+  if [[ "${local_sha}" == "${ZERO}" || "${local_ref}" == "(delete)" ]]; then
+    continue
+  fi
+
+  tag=""
+  if [[ "${remote_ref}" =~ ^refs/tags/(v[0-9]+.*) ]]; then
+    tag="${BASH_REMATCH[1]}"
+  elif [[ "${local_ref}" =~ ^refs/tags/(v[0-9]+.*) ]]; then
+    tag="${BASH_REMATCH[1]}"
+  fi
+
+  if [[ -n "${tag}" ]]; then
+    echo "🔒 [pre-push hook] Release tag detected: ${tag}. Running release verification gates..."
+    if ! GIT_TAG="${tag}" ./scripts/check_version.sh; then
+      echo "❌ [pre-push hook] Push aborted! Version and release checks failed for ${tag}." >&2
+      echo "   Run './scripts/check_tag_readiness.sh ${tag}' to diagnose and verify release requirements." >&2
+      exit 1
+    fi
+    echo "✅ [pre-push hook] Release tag ${tag} verified successfully."
+  fi
+done
+
+exit 0

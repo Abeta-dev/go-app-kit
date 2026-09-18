@@ -10,7 +10,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.44.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.44.0
 	github.com/umesh0492/go-fintech-india v0.2.3
-	github.com/umesh0492/go-libs v0.2.1
+	github.com/umesh0492/go-libs v0.3.0
 )
 
 require (

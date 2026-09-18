@@ -1,6 +1,6 @@
 # go-app-kit
 
-> Current main-line published release: `v0.2.1`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
+> Current main-line published release: `v0.3.2`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
 [![CI](https://github.com/umesh0492/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/umesh0492/go-app-kit/actions/workflows/ci.yml)
 [![Code Quality: golangci-lint](https://img.shields.io/badge/code%20quality-golangci--lint-brightgreen?logo=go)](https://golangci-lint.run/)
@@ -53,7 +53,7 @@ While [`go-libs`](https://github.com/umesh0492/go-libs) provides low-level, zero
 ### Standalone Import
 When consuming `go-app-kit` in your microservice:
 ```bash
-go get github.com/umesh0492/go-app-kit@v0.2.1
+go get github.com/umesh0492/go-app-kit@v0.3.2
 ```
 
 ### Multi-Module Local Development (`go.work`)
