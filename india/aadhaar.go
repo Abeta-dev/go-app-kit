@@ -23,7 +23,7 @@ var (
 
 // ValidateAadhaar verifies that an Aadhaar number is 12 digits, does not start with 0 or 1,
 // and satisfies the official UIDAI Verhoeff dihedral D5 checksum.
-// Delegates statutory validation to github.com/umesh0492/go-fintech-india.
+// Delegates statutory validation to Abeta go-fintech-india.
 func ValidateAadhaar(aadhaar string) error {
 	clean := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(aadhaar), "-", ""), " ", "")
 	if len(clean) != 12 {
@@ -65,7 +65,7 @@ func MaskAadhaar(aadhaar string) string {
 }
 
 // FormatAadhaar formats an Aadhaar into standard 4-digit groups (e.g., "1234 5678 9012").
-// Delegates formatting to github.com/umesh0492/go-fintech-india.
+// Delegates formatting to Abeta go-fintech-india.
 func FormatAadhaar(aadhaar string) string {
 	clean := strings.ReplaceAll(strings.ReplaceAll(strings.TrimSpace(aadhaar), "-", ""), " ", "")
 	if len(clean) != 12 {

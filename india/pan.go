@@ -41,7 +41,7 @@ type PANDetails struct {
 }
 
 // ValidatePAN verifies the structural validity of a 10-character Indian PAN card number.
-// Delegates statutory validation to github.com/umesh0492/go-fintech-india.
+// Delegates statutory validation to Abeta go-fintech-india.
 func ValidatePAN(pan string) error {
 	clean := strings.ToUpper(strings.TrimSpace(pan))
 	if len(clean) != 10 {

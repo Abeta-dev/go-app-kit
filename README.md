@@ -2,7 +2,7 @@
 
 > Current main-line published release: `v0.3.2`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
-[![CI](https://github.com/umesh0492/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/umesh0492/go-app-kit/actions/workflows/ci.yml)
+[![CI](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml)
 [![Code Quality: golangci-lint](https://img.shields.io/badge/code%20quality-golangci--lint-brightgreen?logo=go)](https://golangci-lint.run/)
 [![Go Version](https://img.shields.io/badge/Go-1.26.0-00ADD8?logo=go)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -10,7 +10,7 @@
 
 **Production-grade enterprise application and domain accelerator kit for Go.**
 
-While [`go-libs`](https://github.com/umesh0492/go-libs) provides low-level, zero-dependency microservice systems engineering (resilience, concurrency pools, rate limiting, SRE golden signals), **`go-app-kit`** delivers high-velocity business capabilities: **Indian localized fintech helpers (GSTIN, PAN, IFSC, Aadhaar), transactional outbox with PostgreSQL DDL, multi-channel notifications, PDF document generation with GST invoice templates, partitioned compliance audit logging, and streaming data exports**.
+While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero-dependency microservice systems engineering (resilience, concurrency pools, rate limiting, SRE golden signals), **`go-app-kit`** delivers high-velocity business capabilities: **Indian localized fintech helpers (GSTIN, PAN, IFSC, Aadhaar), transactional outbox with PostgreSQL DDL, multi-channel notifications, PDF document generation with GST invoice templates, partitioned compliance audit logging, and streaming data exports**.
 
 ---
 
@@ -70,7 +70,7 @@ With `go.work` in place, any changes in `go-libs` are immediately reflected in `
 `go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/umesh0492/go-libs@v0.2.1` and `github.com/umesh0492/go-fintech-india@v0.2.3` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md).
 
 ### Concurrency Architecture & Dependency on `go-libs/workerpool`
-`go-app-kit`'s asynchronous background execution in `notifications` (async multi-channel fan-out) and `audit` (asynchronous audit log ingestion) imports [`go-libs/workerpool`](https://github.com/umesh0492/go-libs/tree/main/workerpool) directly. It leverages bounded concurrency, graceful draining, panic resilience, and Prometheus saturation metrics without maintaining any duplicated forks.
+`go-app-kit`'s asynchronous background execution in `notifications` (async multi-channel fan-out) and `audit` (asynchronous audit log ingestion) imports [`go-libs/workerpool`](https://github.com/Abeta-dev/go-libs/tree/main/workerpool) directly. It leverages bounded concurrency, graceful draining, panic resilience, and Prometheus saturation metrics without maintaining any duplicated forks.
 
 ---
 
@@ -127,7 +127,7 @@ pdfBuf, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, invoiceData,
 ---
 
 ### 3. `notifications` - Multi-Channel Notification Dispatcher
-Central broker powered by bounded workerpools (adhering to the [`go-libs/workerpool`](https://github.com/umesh0492/go-libs/tree/main/workerpool) concurrency architecture) supporting sync and async delivery:
+Central broker powered by bounded workerpools (adhering to the [`go-libs/workerpool`](https://github.com/Abeta-dev/go-libs/tree/main/workerpool) concurrency architecture) supporting sync and async delivery:
 - **SMTP Email** (`NewEmailSender`): RFC 2822 / MIME multipart messaging (text/plain, text/html, attachments, and authentication).
 - **Slack** (`NewSlackSender`): Structured Slack Webhook adapter with priority color bars (Red for Critical, Orange for High, Blue for Normal, Green for Low) and metadata fields.
 - **Webhook** (`NewWebhookSender`, `VerifyWebhook`, `WebhookVerifier`): HTTP POST webhook with `X-Signature-SHA256` HMAC tamper-proofing, replay prevention via timestamp binding, and constant-time signature verification.

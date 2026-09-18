@@ -20,7 +20,7 @@ var (
 
 // Money represents a monetary value in Indian Rupees stored as an exact integer count of paise (1 INR = 100 paise).
 // This eliminates IEEE-754 floating-point inaccuracies in financial and accounting operations.
-// Delegates underlying monetary arithmetic to github.com/umesh0492/go-fintech-india.
+// Delegates underlying monetary arithmetic to Abeta go-fintech-india.
 type Money struct {
 	inner fintechin.Money
 }
