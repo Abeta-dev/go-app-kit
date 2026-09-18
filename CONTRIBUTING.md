@@ -151,5 +151,5 @@ This removes local build binaries (`invoice_service`, `examples/invoice_service/
 
 ## 6. Need Help?
 
-- **Questions & Discussions**: Open a [GitHub Discussion](https://github.com/umesh0492/go-app-kit/discussions) for architecture or design questions.
+- **Questions & Discussions**: Open a [GitHub Discussion](https://github.com/Abeta-dev/go-app-kit/discussions) for architecture or design questions.
 - **Security Inquiries**: Please consult [SECURITY.md](SECURITY.md) for our private vulnerability disclosure process. Do NOT file public issues for security vulnerabilities.

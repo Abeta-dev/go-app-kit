@@ -32,7 +32,7 @@ type GSTINDetails struct {
 }
 
 // ValidateGSTIN checks length, regex format, state code, and the official mod-36 checksum.
-// Delegates statutory validation to github.com/umesh0492/go-fintech-india.
+// Delegates statutory validation to Abeta go-fintech-india.
 func ValidateGSTIN(gstin string) error {
 	clean := strings.ToUpper(strings.TrimSpace(gstin))
 	if len(clean) != 15 {
@@ -81,7 +81,7 @@ func ParseGSTIN(gstin string) (*GSTINDetails, error) {
 }
 
 // CalculateGSTINCheckDigit computes the official mod-36 checksum character for the first 14 chars.
-// Delegates calculation to github.com/umesh0492/go-fintech-india.
+// Delegates calculation to Abeta go-fintech-india.
 func CalculateGSTINCheckDigit(input14 string) byte {
 	clean := strings.ToUpper(strings.TrimSpace(input14))
 	check, err := fintechin.CalculateGSTINChecksum(clean)

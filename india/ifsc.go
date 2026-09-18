@@ -21,7 +21,7 @@ var (
 )
 
 // ValidateIFSC checks the structural validity of an Indian Financial System Code.
-// Delegates statutory validation to github.com/umesh0492/go-fintech-india.
+// Delegates statutory validation to Abeta go-fintech-india.
 func ValidateIFSC(code string) error {
 	clean := strings.ToUpper(strings.TrimSpace(code))
 	if len(clean) != 11 {
@@ -44,7 +44,7 @@ func IsValidIFSC(code string) bool {
 }
 
 // GetBankCode extracts the 4-letter bank identifier prefix from an IFSC code.
-// Delegates extraction to github.com/umesh0492/go-fintech-india.
+// Delegates extraction to Abeta go-fintech-india.
 func GetBankCode(code string) (string, error) {
 	if err := ValidateIFSC(code); err != nil {
 		return "", err
@@ -54,7 +54,7 @@ func GetBankCode(code string) (string, error) {
 }
 
 // GetBranchCode extracts the 6-character branch identifier from an IFSC code.
-// Delegates extraction to github.com/umesh0492/go-fintech-india.
+// Delegates extraction to Abeta go-fintech-india.
 func GetBranchCode(code string) (string, error) {
 	if err := ValidateIFSC(code); err != nil {
 		return "", err

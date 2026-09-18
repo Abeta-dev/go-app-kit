@@ -49,7 +49,7 @@ type FinancialYear struct {
 // Converts timestamps to Asia/Kolkata IST location before computing calendar year, month, or day boundaries
 // to prevent 5.5h/day UTC shift errors.
 // In India, the Financial Year begins on April 1st and ends on March 31st.
-// Delegates statutory financial year calculation to github.com/umesh0492/go-fintech-india.
+// Delegates statutory financial year calculation to Abeta go-fintech-india.
 func GetFinancialYear(t time.Time) FinancialYear {
 	tIST := t.In(istLocation)
 	finFY := fintechin.FYFromDate(tIST)
