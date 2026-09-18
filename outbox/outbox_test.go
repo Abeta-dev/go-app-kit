@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/umesh0492/go-app-kit/outbox"
 )
 
@@ -1020,6 +1021,10 @@ func (m *mockRows) RawValues() [][]byte {
 }
 
 func (m *mockRows) Conn() *pgx.Conn {
+	return nil
+}
+
+func (m *mockRows) TypeMap() *pgtype.Map {
 	return nil
 }
 

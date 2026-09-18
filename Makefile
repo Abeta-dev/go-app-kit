@@ -1,4 +1,4 @@
-.PHONY: all fmt-check test test-race cover test-integration lint vulncheck verify verify-release-baseline test-bash-compat tidy build couple decouple workspace-init clean help
+.PHONY: all fmt-check test test-race cover test-integration lint vulncheck verify verify-release-baseline test-bash-compat tidy build couple decouple workspace-init install-hooks check-release-readiness tag-release clean help
 
 all: fmt-check verify lint test-race vulncheck build
 
@@ -48,6 +48,22 @@ decouple:
 
 couple:
 	@echo "DEPRECATED: refusing to modify go.mod. Run 'make workspace-init' to use go-libs locally."
+
+# Install git hooks to enforce release and pre-push verification
+install-hooks:
+	@git config core.hooksPath scripts/git-hooks || (mkdir -p .git/hooks && cp scripts/git-hooks/* .git/hooks/)
+	@chmod +x scripts/git-hooks/* 2>/dev/null || true
+	@echo "✅ Git hooks configured to scripts/git-hooks"
+
+# Verify that the repository is completely ready for a release tag (usage: make check-release-readiness TAG=v0.3.2)
+check-release-readiness:
+	@if [ -z "$(TAG)" ]; then echo "❌ TAG is required. Usage: make check-release-readiness TAG=vX.Y.Z" >&2; exit 1; fi
+	./scripts/check_tag_readiness.sh $(TAG)
+
+# Check release readiness and create an annotated git tag (usage: make tag-release TAG=v0.3.2)
+tag-release: check-release-readiness
+	git tag -a $(TAG) -m "Release $(TAG)"
+	@echo "✅ Successfully created annotated release tag $(TAG)."
 
 # Clean build and test artifacts
 clean:
