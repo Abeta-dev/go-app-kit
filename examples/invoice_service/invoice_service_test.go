@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,9 +20,13 @@ import (
 
 type mockAuditRecorder struct {
 	events []audit.Event
+	err    error
 }
 
 func (m *mockAuditRecorder) Record(ctx context.Context, event audit.Event) error {
+	if m.err != nil {
+		return m.err
+	}
 	m.events = append(m.events, event)
 	return nil
 }
@@ -35,9 +41,13 @@ func (m *mockAuditRecorder) Close() {}
 type mockOutboxStore struct {
 	events []outbox.Event
 	lastTx outbox.DBOperator
+	err    error
 }
 
 func (m *mockOutboxStore) Insert(ctx context.Context, op outbox.DBOperator, event outbox.Event) error {
+	if m.err != nil {
+		return m.err
+	}
 	m.lastTx = op
 	m.events = append(m.events, event)
 	return nil
@@ -285,4 +295,126 @@ type mockRendererImpl struct{}
 
 func (m *mockRendererImpl) Render(html string, opts pdf.Options) ([]byte, error) {
 	return []byte("%PDF-1.4 Mock Invoice"), nil
+}
+
+type mockErrRendererImpl struct{}
+
+func (m *mockErrRendererImpl) Render(html string, opts pdf.Options) ([]byte, error) {
+	return nil, errors.New("simulated pdf generation failure")
+}
+
+func TestMainFunc(t *testing.T) {
+	main()
+}
+
+func TestProcessInvoice_PipelineFailures(t *testing.T) {
+	suppBase := "27AAPFU0939F1Z"
+	suppCheck, _ := fintech.CalculateGSTINChecksum(suppBase)
+	supplierGSTIN := suppBase + string(suppCheck)
+
+	buyerBase := "29AAPFU0939F1Z"
+	buyerCheck, _ := fintech.CalculateGSTINChecksum(buyerBase)
+	buyerGSTIN := buyerBase + string(buyerCheck)
+
+	validReq := InvoiceRequest{
+		InvoiceNumber: "INV-FAIL-001",
+		SupplierGSTIN: supplierGSTIN,
+		SupplierName:  "Test Supplier",
+		BuyerGSTIN:    buyerGSTIN,
+		BuyerName:     "Test Buyer",
+		BuyerEmail:    "test@example.com",
+		Description:   "Test Item",
+		BankName:      "HDFC Bank",
+		BankAccount:   "1234567890",
+		BankIFSC:      "HDFC0000123",
+		Branch:        "Koramangala",
+		TaxableAmount: fintech.NewMoneyFromRupees(1000),
+		CGSTRate:      9.0,
+		SGSTRate:      9.0,
+	}
+
+	// 1. PDF failure
+	pdfErrSvc := NewInvoiceService(
+		&mockAuditRecorder{},
+		&mockOutboxStore{},
+		&mockNotificationBroker{},
+		pdf.WithRenderer(&mockErrRendererImpl{}),
+	)
+	_, err := pdfErrSvc.ProcessInvoice(context.Background(), nil, validReq)
+	if err == nil || !strings.Contains(err.Error(), "failed to compile invoice PDF") {
+		t.Fatalf("expected pdf generation error, got: %v", err)
+	}
+
+	// 2. Audit failure
+	auditErrSvc := NewInvoiceService(
+		&mockAuditRecorder{err: errors.New("audit disk full")},
+		&mockOutboxStore{},
+		&mockNotificationBroker{},
+		pdf.WithRenderer(&mockRendererImpl{}),
+	)
+	_, err = auditErrSvc.ProcessInvoice(context.Background(), nil, validReq)
+	if err == nil || !strings.Contains(err.Error(), "audit log recording failed") {
+		t.Fatalf("expected audit failure error, got: %v", err)
+	}
+
+	// 3. Outbox failure
+	outboxErrSvc := NewInvoiceService(
+		&mockAuditRecorder{},
+		&mockOutboxStore{err: errors.New("db connection closed")},
+		&mockNotificationBroker{},
+		pdf.WithRenderer(&mockRendererImpl{}),
+	)
+	_, err = outboxErrSvc.ProcessInvoice(context.Background(), nil, validReq)
+	if err == nil || !strings.Contains(err.Error(), "outbox insert failed") {
+		t.Fatalf("expected outbox failure error, got: %v", err)
+	}
+}
+
+func TestProcessInvoice_ItemCalculationVariants(t *testing.T) {
+	suppBase := "27AAPFU0939F1Z"
+	suppCheck, _ := fintech.CalculateGSTINChecksum(suppBase)
+	supplierGSTIN := suppBase + string(suppCheck)
+
+	buyerBase := "29AAPFU0939F1Z"
+	buyerCheck, _ := fintech.CalculateGSTINChecksum(buyerBase)
+	buyerGSTIN := buyerBase + string(buyerCheck)
+
+	svc := NewInvoiceService(
+		&mockAuditRecorder{},
+		&mockOutboxStore{},
+		&mockNotificationBroker{},
+		pdf.WithRenderer(&mockRendererImpl{}),
+	)
+
+	req := InvoiceRequest{
+		InvoiceNumber: "INV-VAR-001",
+		SupplierGSTIN: supplierGSTIN,
+		SupplierName:  "Test Supplier",
+		BuyerGSTIN:    buyerGSTIN,
+		BuyerName:     "Test Buyer",
+		BuyerEmail:    "test@example.com",
+		Description:   "Test Items",
+		BankName:      "HDFC Bank",
+		BankAccount:   "1234567890",
+		BankIFSC:      "HDFC0000123",
+		Branch:        "Koramangala",
+		CGSTRate:      9.0,
+		SGSTRate:      9.0,
+		Items: []InvoiceItem{
+			{
+				Index:       0, // will default to i+1
+				Quantity:    0, // will default to 1
+				UnitPrice:   fintech.NewMoneyFromRupees(500),
+				Description: "Widget A",
+			},
+		},
+	}
+
+	pdfBytes, err := svc.ProcessInvoice(context.Background(), nil, req)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(pdfBytes) == 0 {
+		t.Fatalf("expected non-empty pdf bytes")
+	}
 }

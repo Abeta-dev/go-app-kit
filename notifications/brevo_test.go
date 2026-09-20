@@ -232,3 +232,39 @@ func TestBrevoSender_BrokerIntegration(t *testing.T) {
 		t.Fatal("timed out waiting for brevo message delivery")
 	}
 }
+
+func TestBrevoSender_EdgeCases(t *testing.T) {
+	sender, err := NewBrevoSender(BrevoConfig{
+		APIKey:      "xkeysib-mock",
+		SenderEmail: "sender@example.com",
+	})
+	require.NoError(t, err)
+
+	// 1. Send with cancelled context
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err = sender.Send(ctx, Message{Recipients: []string{"test@example.com"}})
+	assert.ErrorIs(t, err, context.Canceled)
+
+	// 2. buildBrevoPayload with blank-only recipients
+	_, err = buildBrevoPayload(Message{Recipients: []string{"   ", "\t"}}, "Sender", "sender@example.com")
+	assert.ErrorIs(t, err, ErrEmptyRecipients)
+
+	// 3. buildBrevoPayload with text body only (generates HTML fallback)
+	payload, err := buildBrevoPayload(Message{
+		Recipients: []string{"a@b.com"},
+		Body:       "Line 1\nLine 2",
+	}, "Sender", "sender@example.com")
+	require.NoError(t, err)
+	assert.Equal(t, "<div>Line 1<br/>Line 2</div>", payload.HTMLContent)
+	assert.Equal(t, "Line 1\nLine 2", payload.TextContent)
+
+	// 4. buildBrevoPayload with HTML body only (generates text fallback)
+	payload2, err := buildBrevoPayload(Message{
+		Recipients: []string{"a@b.com"},
+		HTMLBody:   "<p>Hello</p>",
+	}, "Sender", "sender@example.com")
+	require.NoError(t, err)
+	assert.Equal(t, "<p>Hello</p>", payload2.HTMLContent)
+	assert.Equal(t, "<p>Hello</p>", payload2.TextContent)
+}

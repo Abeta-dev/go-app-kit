@@ -448,3 +448,126 @@ func TestWithTableName_SanitizationAndExecution(t *testing.T) {
 		}
 	}
 }
+
+func TestRecord_JSONMarshalFailures(t *testing.T) {
+	mockDB := &mockDBOperator{}
+	recorder, err := audit.NewPGRecorder(audit.Config{DB: mockDB})
+	if err != nil {
+		t.Fatalf("NewPGRecorder failed: %v", err)
+	}
+	defer recorder.Close()
+
+	ctx := context.Background()
+
+	// 1. BeforeState unmarshalable
+	err = recorder.Record(ctx, audit.Event{
+		Action:      "UPDATE",
+		EntityType:  "Item",
+		EntityID:    "1",
+		BeforeState: map[string]any{"unsupported": make(chan int)},
+	})
+	if err == nil || !strings.Contains(err.Error(), "failed to marshal before_state") {
+		t.Errorf("expected before_state marshal error, got: %v", err)
+	}
+
+	// 2. AfterState unmarshalable
+	err = recorder.Record(ctx, audit.Event{
+		Action:     "UPDATE",
+		EntityType: "Item",
+		EntityID:   "1",
+		AfterState: map[string]any{"unsupported": make(chan int)},
+	})
+	if err == nil || !strings.Contains(err.Error(), "failed to marshal after_state") {
+		t.Errorf("expected after_state marshal error, got: %v", err)
+	}
+
+	// 3. Diff unmarshalable
+	err = recorder.Record(ctx, audit.Event{
+		Action:     "UPDATE",
+		EntityType: "Item",
+		EntityID:   "1",
+		Diff:       map[string]audit.FieldDiff{"field": {Old: make(chan int)}},
+	})
+	if err == nil || !strings.Contains(err.Error(), "failed to marshal diff") {
+		t.Errorf("expected diff marshal error, got: %v", err)
+	}
+}
+
+func TestRecord_DBExecFailure(t *testing.T) {
+	failingDB := &mockDBOperator{
+		execErr: errors.New("db disk I/O error"),
+	}
+	recorder, err := audit.NewPGRecorder(audit.Config{DB: failingDB})
+	if err != nil {
+		t.Fatalf("NewPGRecorder failed: %v", err)
+	}
+	defer recorder.Close()
+
+	err = recorder.Record(context.Background(), audit.Event{
+		Action:     "CREATE",
+		EntityType: "User",
+		EntityID:   "U1",
+	})
+	if err == nil || !strings.Contains(err.Error(), "failed to insert audit log") {
+		t.Errorf("expected insert audit log error, got: %v", err)
+	}
+}
+
+func TestRecordAsync_TaskErrorAndPolicyBlock(t *testing.T) {
+	// 1. Task error logging
+	failingDB := &mockDBOperator{
+		execErr: errors.New("async write error"),
+	}
+	recorder, err := audit.NewPGRecorder(audit.Config{
+		DB:              failingDB,
+		Workers:         1,
+		QueueSize:       5,
+		QueueFullPolicy: audit.PolicyFallbackSync,
+	})
+	if err != nil {
+		t.Fatalf("NewPGRecorder failed: %v", err)
+	}
+	defer recorder.Close()
+
+	_ = recorder.RecordAsync(audit.Event{Action: "ASYNC_FAIL", EntityType: "Order", EntityID: "1"})
+	time.Sleep(50 * time.Millisecond)
+
+	// 2. PolicyBlock with Queue Full
+	var blockCh = make(chan struct{})
+	var once sync.Once
+	blockingDB := &mockDBOperator{
+		execHook: func(ctx context.Context, sql string, args []any) {
+			if strings.Contains(sql, "BLOCKING_EVT") {
+				<-blockCh
+			}
+		},
+	}
+
+	blockRecorder, err := audit.NewPGRecorder(audit.Config{
+		DB:              blockingDB,
+		Workers:         1,
+		QueueSize:       1,
+		QueueFullPolicy: audit.PolicyBlock,
+	})
+	if err != nil {
+		t.Fatalf("NewPGRecorder failed: %v", err)
+	}
+	defer blockRecorder.Close()
+
+	_ = blockRecorder.RecordAsync(audit.Event{Action: "BLOCKING_EVT", EntityType: "Test", EntityID: "1"})
+	time.Sleep(10 * time.Millisecond)
+
+	// Fill the single buffer slot
+	_ = blockRecorder.RecordAsync(audit.Event{Action: "QUEUED_EVT", EntityType: "Test", EntityID: "2"})
+
+	// Block in background and then unblock
+	go func() {
+		time.Sleep(50 * time.Millisecond)
+		once.Do(func() { close(blockCh) })
+	}()
+
+	err = blockRecorder.RecordAsync(audit.Event{Action: "UNBLOCKED_EVT", EntityType: "Test", EntityID: "3"})
+	if err != nil {
+		t.Fatalf("expected PolicyBlock to succeed once unblocked, got: %v", err)
+	}
+}

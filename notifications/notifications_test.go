@@ -999,3 +999,171 @@ func TestWebhook_ReplayRejectionTable(t *testing.T) {
 		})
 	}
 }
+
+func TestSenders_ChannelMethods(t *testing.T) {
+	slackSender := notifications.NewSlackSender(notifications.SlackConfig{})
+	if slackSender.Channel() != notifications.ChannelSlack {
+		t.Errorf("expected ChannelSlack, got %v", slackSender.Channel())
+	}
+
+	webhookSender := notifications.NewWebhookSender(notifications.WebhookConfig{})
+	if webhookSender.Channel() != notifications.ChannelWebhook {
+		t.Errorf("expected ChannelWebhook, got %v", webhookSender.Channel())
+	}
+
+	emailSender := notifications.NewEmailSender(notifications.EmailConfig{})
+	if emailSender.Channel() != notifications.ChannelEmail {
+		t.Errorf("expected ChannelEmail, got %v", emailSender.Channel())
+	}
+}
+
+func TestEmailSender_AttachmentVariants(t *testing.T) {
+	var sentAddr string
+	var sentMsg []byte
+
+	sender := notifications.NewEmailSender(notifications.EmailConfig{
+		Host:     "smtp.test.local",
+		Port:     25,
+		From:     "billing@app.com",
+		FromName: "Billing System",
+		SendMailFunc: func(addr string, a smtp.Auth, from string, to []string, msg []byte) error {
+			sentAddr = addr
+			sentMsg = msg
+			return nil
+		},
+	})
+
+	// 120 bytes of data to exceed 76 chars base64 boundary
+	largeData := bytes.Repeat([]byte("ABCDEFGHIJ"), 12)
+	msg := notifications.Message{
+		ID:         "msg-att",
+		Title:      "Monthly Statement",
+		Body:       "Please find attached statement.",
+		Recipients: []string{"user@test.com"},
+		Attachments: []notifications.Attachment{
+			{
+				Filename:    "reçu_annuel.pdf", // Non-ASCII filename triggers RFC 2047 encoded-word
+				ContentType: "application/pdf",
+				Data:        largeData,
+			},
+		},
+	}
+
+	err := sender.Send(context.Background(), msg)
+	if err != nil {
+		t.Fatalf("Send failed: %v", err)
+	}
+	if sentAddr != "smtp.test.local:25" {
+		t.Errorf("expected addr 'smtp.test.local:25', got: %s", sentAddr)
+	}
+	if !strings.Contains(string(sentMsg), "=?UTF-8?b?") {
+		t.Errorf("expected RFC 2047 encoded filename in MIME headers")
+	}
+	if !strings.Contains(string(sentMsg), "\r\n") {
+		t.Errorf("expected CRLF in base64 output")
+	}
+}
+
+func TestBroker_EdgeCases(t *testing.T) {
+	// 1. NewBroker with empty config defaults
+	b := notifications.NewBroker(notifications.Config{})
+	if b == nil {
+		t.Fatalf("expected non-nil broker")
+	}
+
+	// 2. Double Close
+	b.Close()
+	b.Close()
+
+	// 3. Send to closed broker returns ErrBrokerClosed
+	err := b.Send(context.Background(), notifications.Message{
+		Recipients: []string{"user@test.com"},
+	})
+	if !errors.Is(err, notifications.ErrBrokerClosed) {
+		t.Errorf("expected ErrBrokerClosed, got: %v", err)
+	}
+
+	// 4. SendAsync with canceled context returns context error
+	b2 := notifications.NewBroker(notifications.Config{Workers: 1, QueueSize: 5})
+	defer b2.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	err = b2.SendAsync(ctx, notifications.Message{Recipients: []string{"user@test.com"}})
+	if !errors.Is(err, context.Canceled) {
+		t.Errorf("expected context.Canceled, got: %v", err)
+	}
+
+	// 5. SendAsync with empty recipients executes background worker logging
+	err = b2.SendAsync(context.Background(), notifications.Message{
+		ID:         "bad-async",
+		Title:      "Missing Recipients",
+		Recipients: []string{},
+	})
+	if err != nil {
+		t.Fatalf("SendAsync failed: %v", err)
+	}
+	time.Sleep(50 * time.Millisecond)
+}
+
+func TestParseWebhookTimestamp_Variants(t *testing.T) {
+	// 1. Milliseconds
+	msTime, err := notifications.ParseWebhookTimestamp("1700000000000")
+	if err != nil {
+		t.Fatalf("ParseWebhookTimestamp ms failed: %v", err)
+	}
+	if msTime.Unix() != 1700000000 {
+		t.Errorf("expected unix 1700000000, got %d", msTime.Unix())
+	}
+
+	// 2. Seconds
+	sTime, err := notifications.ParseWebhookTimestamp("1700000000")
+	if err != nil {
+		t.Fatalf("ParseWebhookTimestamp s failed: %v", err)
+	}
+	if sTime.Unix() != 1700000000 {
+		t.Errorf("expected unix 1700000000, got %d", sTime.Unix())
+	}
+
+	// 3. RFC3339
+	rfcTime, err := notifications.ParseWebhookTimestamp("2026-09-20T12:00:00Z")
+	if err != nil {
+		t.Fatalf("ParseWebhookTimestamp RFC3339 failed: %v", err)
+	}
+	if rfcTime.Year() != 2026 {
+		t.Errorf("expected year 2026, got %d", rfcTime.Year())
+	}
+
+	// 4. Empty returns ErrMissingTimestamp
+	_, err = notifications.ParseWebhookTimestamp("   ")
+	if !errors.Is(err, notifications.ErrMissingTimestamp) {
+		t.Errorf("expected ErrMissingTimestamp, got: %v", err)
+	}
+
+	// 5. Invalid format returns ErrInvalidTimestamp
+	_, err = notifications.ParseWebhookTimestamp("not-a-timestamp")
+	if !errors.Is(err, notifications.ErrInvalidTimestamp) {
+		t.Errorf("expected ErrInvalidTimestamp, got: %v", err)
+	}
+}
+
+func TestWebhookVerifier_EdgeCases(t *testing.T) {
+	payload := []byte(`{"event":"test"}`)
+
+	// 1. Empty signature
+	v := notifications.NewWebhookVerifier("secret", 0)
+	if err := v.Verify("1700000000", "", payload); !errors.Is(err, notifications.ErrInvalidSignature) {
+		t.Errorf("expected ErrInvalidSignature on empty sig, got: %v", err)
+	}
+
+	// 2. Empty secret
+	vNoSecret := notifications.NewWebhookVerifier("", 5*time.Minute)
+	if err := vNoSecret.Verify("1700000000", "v1=abcd", payload); !errors.Is(err, notifications.ErrInvalidSignature) {
+		t.Errorf("expected ErrInvalidSignature on empty secret, got: %v", err)
+	}
+
+	// 3. Missing timestamp in both arg and sig
+	if err := v.Verify("", "v1=abcdef", payload); !errors.Is(err, notifications.ErrMissingTimestamp) {
+		t.Errorf("expected ErrMissingTimestamp, got: %v", err)
+	}
+}

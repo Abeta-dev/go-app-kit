@@ -237,6 +237,110 @@ func TestPGStore_InsertAndMark(t *testing.T) {
 	}
 }
 
+func TestPGStore_Insert_EdgeCases(t *testing.T) {
+	mockOp := &mockDBOperator{
+		execFunc: func(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+			return pgconn.NewCommandTag("INSERT 1"), nil
+		},
+	}
+
+	store := outbox.NewPGStore(mockOp)
+	evt, _ := outbox.NewEvent("User", "usr-1", "UserRegistered", map[string]string{"name": "Alice"})
+	evt.NextRetryAt = time.Now().Add(5 * time.Minute)
+
+	// 1. op == nil uses default db
+	if err := store.Insert(context.Background(), nil, *evt); err != nil {
+		t.Fatalf("Insert with nil op failed: %v", err)
+	}
+
+	// 2. Invalid table name
+	badStore := outbox.NewPGStore(mockOp, outbox.WithTableName("bad;table"))
+	if err := badStore.Insert(context.Background(), mockOp, *evt); !errors.Is(err, outbox.ErrInvalidTableName) {
+		t.Fatalf("expected ErrInvalidTableName, got: %v", err)
+	}
+
+	// 3. Simulated execution failure
+	failingOp := &mockDBOperator{
+		execFunc: func(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+			return pgconn.CommandTag{}, errors.New("connection closed")
+		},
+	}
+	failingStore := outbox.NewPGStore(failingOp)
+	if err := failingStore.Insert(context.Background(), nil, *evt); err == nil {
+		t.Fatalf("expected error from failing exec, got nil")
+	}
+}
+
+func TestOutbox_AdditionalEdgeCases(t *testing.T) {
+	// 1. NewEvent with unmarshalable payload
+	_, err := outbox.NewEvent("Agg", "1", "Type", make(chan int))
+	if err == nil {
+		t.Fatalf("expected error from unmarshalable payload, got nil")
+	}
+
+	// 2. NewEvent with negative maxRetries defaults to 5
+	evt, err := outbox.NewEvent("Agg", "1", "Type", map[string]string{"k": "v"}, -1)
+	if err != nil {
+		t.Fatalf("NewEvent failed: %v", err)
+	}
+	if evt.MaxRetries != 5 {
+		t.Errorf("expected default 5 maxRetries, got %d", evt.MaxRetries)
+	}
+
+	// 3. BackoffWithJitter edge cases
+	if d := outbox.BackoffWithJitter(1, 0, 10*time.Second); d != 0 {
+		t.Errorf("expected 0 for non-positive baseDelay, got %v", d)
+	}
+	if d := outbox.BackoffWithJitter(-5, 100*time.Millisecond, 1*time.Second); d > 1*time.Second {
+		t.Errorf("expected duration within bound for negative attempt, got %v", d)
+	}
+	if d := outbox.BackoffWithJitter(40, 100*time.Millisecond, 500*time.Millisecond); d > 500*time.Millisecond {
+		t.Errorf("expected duration capped at maxDelay for large attempt, got %v", d)
+	}
+
+	// 4. NewPGStore with lease duration < 5s defaults to 60s
+	mockOp := &mockDBOperator{
+		execFunc: func(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error) {
+			return pgconn.NewCommandTag("INSERT 1"), nil
+		},
+	}
+	store := outbox.NewPGStore(mockOp, outbox.WithLeaseDuration(1*time.Second))
+	if store == nil {
+		t.Fatalf("expected non-nil store")
+	}
+
+	// 5. Relay with BackoffMax < BackoffBase is normalized in validateConfig
+	storeMock := newMockStore()
+	pubCallCount := 0
+	publisher := outbox.PublisherFunc(func(ctx context.Context, evt outbox.Event) error {
+		pubCallCount++
+		return errors.New("transient pub failure")
+	})
+	r, err := outbox.NewRelay(outbox.RelayConfig{
+		Store:          storeMock,
+		Publisher:      publisher,
+		LeaseDuration:  30 * time.Second,
+		PublishTimeout: 5 * time.Second,
+		BackoffBase:    10 * time.Second,
+		BackoffMax:     2 * time.Second, // lower than base
+	})
+	if err != nil {
+		t.Fatalf("NewRelay failed: %v", err)
+	}
+	if r == nil {
+		t.Fatalf("expected non-nil relay")
+	}
+
+	// 6. Event with nil LeaseToken handled by handlePublishFailure
+	nilTokenEvt, _ := outbox.NewEvent("Order", "ord-1", "Created", map[string]string{"id": "1"}, 1)
+	nilTokenEvt.LeaseToken = nil
+	_ = storeMock.Insert(context.Background(), nil, *nilTokenEvt)
+	_, _ = r.ProcessBatch(context.Background())
+	if pubCallCount == 0 {
+		t.Errorf("expected publisher to be called")
+	}
+}
+
 func TestRelay_ProcessBatch_Success(t *testing.T) {
 	store := newMockStore()
 	evt1, _ := outbox.NewEvent("Invoice", "INV-1", "InvoiceCreated", map[string]string{"inv": "1"})
@@ -662,6 +766,29 @@ func TestIsNonRetryable_Contract(t *testing.T) {
 	transientErr := errors.New("dial tcp: connection reset by peer")
 	if outbox.IsNonRetryable(transientErr) {
 		t.Errorf("expected transient error to be retryable (false)")
+	}
+
+	// 8. MarkNonRetryable(nil) returns nil
+	if outbox.MarkNonRetryable(nil) != nil {
+		t.Errorf("expected MarkNonRetryable(nil) to return nil")
+	}
+
+	// 9. NonRetryableError with nil Err has default message
+	nilNre := &outbox.NonRetryableError{}
+	if nilNre.Error() != "non-retryable error" {
+		t.Errorf("expected 'non-retryable error', got %q", nilNre.Error())
+	}
+
+	// 10. NonRetryableError Unwrap
+	customWrap := errors.New("underlying root")
+	nreWithErr := &outbox.NonRetryableError{Err: customWrap}
+	if !errors.Is(nreWithErr.Unwrap(), customWrap) {
+		t.Errorf("expected Unwrap() to return underlying error")
+	}
+
+	// 11. NonRetryable method returns true
+	if !nilNre.NonRetryable() {
+		t.Errorf("expected NonRetryable() to return true")
 	}
 }
 
