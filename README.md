@@ -1,6 +1,6 @@
 # go-app-kit
 
-> Current main-line published release: `v0.3.2`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
+> Current main-line published release: `v0.4.0`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
 [![CI](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml)
 [![Code Quality: golangci-lint](https://img.shields.io/badge/code%20quality-golangci--lint-brightgreen?logo=go)](https://golangci-lint.run/)
@@ -10,7 +10,7 @@
 
 **Production-grade enterprise application and domain accelerator kit for Go.**
 
-While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero-dependency microservice systems engineering (resilience, concurrency pools, rate limiting, SRE golden signals), **`go-app-kit`** delivers high-velocity business capabilities: **Indian localized fintech helpers (GSTIN, PAN, IFSC, Aadhaar), transactional outbox with PostgreSQL DDL, multi-channel notifications, PDF document generation with GST invoice templates, partitioned compliance audit logging, and streaming data exports**.
+While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero-dependency microservice systems engineering (resilience, concurrency pools, rate limiting, SRE golden signals), **`go-app-kit`** delivers 5 core enterprise application infrastructure packages: **transactional outbox with PostgreSQL DDL, PDF document generation with GST invoice templates, multi-channel notifications, partitioned compliance audit logging, and streaming data exports** (composing seamlessly with statutory companion [`go-fintech-india`](https://github.com/Abeta-dev/go-fintech-india)).
 
 ---
 
@@ -20,21 +20,20 @@ While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                           Enterprise Microservices                             │
 │                     (Invoicing, Orders, Fintech, B2B SaaS)                     │
-└──────────────────────────────────────┬─────────────────────────────────────────┘
-                                       │ imports
-                                       ▼
-┌────────────────────────────────────────────────────────────────────────────────┐
-│                       github.com/umesh0492/go-app-kit                          │
-│                                                                                │
-│   ├── india/           GSTIN (mod-36), PAN, IFSC, Aadhaar (Verhoeff D5), INR   │
-│   ├── pdf/             HTML-to-PDF compilation & embedded GST Invoice template │
-│   ├── notifications/   Multi-channel broker (Email, Slack, Webhook HMAC-SHA256)│
-│   ├── outbox/          Postgres Transactional Outbox (SKIP LOCKED + backoff)   │
-│   ├── audit/           Partitioned compliance audit trails & JSON state diffs  │
-│   └── export/          Low-memory streaming CSV exporter with Excel UTF-8 BOM  │
-└──────────────────────────────────────┬─────────────────────────────────────────┘
-                                       │ builds upon
-                                       ▼
+└─────────────────────────┬────────────────────────────┬─────────────────────────┘
+                          │ imports                    │ imports
+                          ▼                            ▼
+┌─────────────────────────────────────────┐  ┌───────────────────────────────────┐
+│     github.com/umesh0492/go-app-kit     │  │ github.com/umesh0492/             │
+│                                         │  │   go-fintech-india (Companion)    │
+│   ├── outbox/        PostgreSQL Outbox  │  │                                   │
+│   ├── pdf/           HTML-to-PDF / GST  │  │   ├── GSTIN (mod-36), PAN, IFSC   │
+│   ├── notifications/ Multi-channel      │  │   ├── Aadhaar (Verhoeff D5)       │
+│   ├── audit/         Compliance Trails  │  │   ├── Money (exact paise math)    │
+│   └── export/        Streaming CSV/BOM  │  │   └── FY & AP/AR Aging            │
+└────────────────────┬────────────────────┘  └───────────────────────────────────┘
+                     │ builds upon
+                     ▼
 ┌────────────────────────────────────────────────────────────────────────────────┐
 │                        github.com/umesh0492/go-libs                            │
 │                                                                                │
@@ -53,7 +52,7 @@ While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero
 ### Standalone Import
 When consuming `go-app-kit` in your microservice:
 ```bash
-go get github.com/umesh0492/go-app-kit@v0.3.2
+go get github.com/umesh0492/go-app-kit@v0.4.0
 ```
 
 ### Multi-Module Local Development (`go.work`)
@@ -67,7 +66,7 @@ go work init ./go-app-kit ./go-libs
 With `go.work` in place, any changes in `go-libs` are immediately reflected in `go-app-kit` during compilation, testing, and debugging.
 
 ### Standard Distribution
-`go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/umesh0492/go-libs@v0.2.1` and `github.com/umesh0492/go-fintech-india@v0.2.3` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md).
+`go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/umesh0492/go-libs@v0.3.0` and `github.com/umesh0492/go-fintech-india@v0.2.3` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md).
 
 ### Concurrency Architecture & Dependency on `go-libs/workerpool`
 `go-app-kit`'s asynchronous background execution in `notifications` (async multi-channel fan-out) and `audit` (asynchronous audit log ingestion) imports [`go-libs/workerpool`](https://github.com/Abeta-dev/go-libs/tree/main/workerpool) directly. It leverages bounded concurrency, graceful draining, panic resilience, and Prometheus saturation metrics without maintaining any duplicated forks.
@@ -76,32 +75,33 @@ With `go.work` in place, any changes in `go-libs` are immediately reflected in `
 
 ## Package Modules
 
-### 1. `india` - Localized Fintech & Enterprise Compliance Helpers
-Zero external dependencies. Implements statutory Indian validation algorithms and formatting:
-- **GSTIN** (`ValidateGSTIN`, `ParseGSTIN`, `CalculateGSTINCheckDigit`): 15-character Goods and Services Tax Identification Number validation with official mod-36 check digit calculation and 38 state/UT registries.
-- **PAN** (`ValidatePAN`, `ParsePAN`): 10-character Permanent Account Number validation with 4th-character entity mapping (Company, Individual, LLP, HUF, Trust, Government Agency).
-- **IFSC** (`ValidateIFSC`, `GetBankCode`, `GetBranchCode`): 11-character RBI Financial System Code validation and branch code extraction.
-- **Aadhaar** (`ValidateAadhaar`, `MaskAadhaar`, `FormatAadhaar`): 12-digit UIDAI validation using the official **Verhoeff Dihedral $D_5$ algorithm** with privacy masking (`XXXX-XXXX-1234`).
-- **Phone** (`ValidatePhone`, `FormatE164`, `FormatNational`): Indian mobile number validation (`+91`, `91`, or `0` prefix) and standard E.164 normalization.
-- **Fintech Money Type** (`india.Money`, `NewMoney`, `NewMoneyFromRupees`, `NewMoneyFromFloat`): Exact integer paise-based arithmetic (`Add`, `Sub`, `Mul`, `MulBasisPoints`, `Percentage`, `Split`), eliminating floating-point rounding errors with JSON and SQL serialization.
-- **Currency & Words** (`FormatINRPaise`, `AmountToWordsINR`): Indian number system formatting (`12,34,567.89`) and recursive words converter supporting arbitrary Crores.
-- **Financial Year** (`GetFinancialYear`, `CurrentFinancialYear`): Indian fiscal calendar calculation (April 1 to March 31) with fiscal quarters (Q1–Q4).
-- **AP/AR Aging Buckets** (`AgingBucket`, `DaysOverdue`): Standard statutory accounts payable/receivable overdue aging (Current, 1-30, 31-60, 61-90, 90+).
+### 1. `outbox` - PostgreSQL Transactional Outbox Engine
+Guarantees at-least-once message delivery without dual-write race conditions:
+
+> [!IMPORTANT]
+> **Store Interface & Reference Implementation**: `NewPGStore(db DBOperator, opts ...StoreOption) Store` is the production-ready reference implementation for PostgreSQL DDL (`ddl/001_outbox_events.sql` and `ddl/002_outbox_concurrency_index.sql`), implementing SKIP LOCKED worker leasing, lease-token fencing, and retry backoff.
+>
+> This package defines the Store interface; production use requires implementing Store against your schema; see outbox_integration_test.go as the reference for correct SKIP LOCKED + fencing semantics.
+
+- **DDL** (`001_outbox_events.sql` & `002_outbox_concurrency_index.sql`): Production PostgreSQL schema with composite index `idx_outbox_poll ON outbox_events (status, next_retry_at, created_at)` for high-throughput, contention-free polling, `lease_token UUID` fencing, and `idx_outbox_aggregate ON outbox_events (aggregate_type, aggregate_id, created_at DESC)` for entity history lookups.
+- **PostgreSQL Exclusivity**: Operates exclusively with PostgreSQL via `github.com/jackc/pgx/v5` parameterized queries (`$1, $2, ...`). *(Note: No MySQL dialect support is implemented or supported at runtime).*
+- **Relay Poller** (`NewRelay`): Queries ready events using `SELECT ... FOR UPDATE SKIP LOCKED` and atomic lease renewal (`WithLeaseDuration`) with fencing tokens to allow multiple service replicas to poll concurrently without duplicate dispatches or lease clobbering.
+- **Dead-Lettering & Backoff**: Full-jitter exponential backoff and configurable max retries transitioning unresolvable poison pills or exhausted retries to `DEAD_LETTER`.
 
 ```go
-import "github.com/umesh0492/go-app-kit/india"
+import "github.com/umesh0492/go-app-kit/outbox"
 
-// Exact fintech Money arithmetic
-taxable := india.NewMoneyFromFloat(15000.50)
-cgst := taxable.Percentage(9.0) // 9% GST
-total := taxable.Add(cgst).Add(cgst)
-fmt.Println(total.Format()) // "17,700.59"
+// Transactionally write domain event inside database transaction
+evt, _ := outbox.NewEvent("Invoice", "INV-100", "InvoiceIssued", invoicePayload)
+err := outboxStore.Insert(ctx, tx, *evt)
 
-// Validate GSTIN with official mod-36 checksum
-err := india.ValidateGSTIN("27AAPFU0939F1ZV")
-
-// Validate Aadhaar using Verhoeff D5 dihedral algorithm
-isValid := india.IsValidAadhaar("234567890128")
+// Autonomous background relay
+relay, _ := outbox.NewRelay(outbox.RelayConfig{
+    Store:        outboxStore,
+    Publisher:    kafkaPublisher,
+    PollInterval: 1 * time.Second,
+})
+go relay.Start(ctx)
 ```
 
 ---
@@ -154,38 +154,7 @@ err := broker.SendAsync(ctx, notifications.Message{
 
 ---
 
-### 4. `outbox` - PostgreSQL Transactional Outbox Engine
-Guarantees at-least-once message delivery without dual-write race conditions:
-
-> [!IMPORTANT]
-> **Store Interface & Reference Implementation**: `NewPGStore(db DBOperator, opts ...StoreOption) Store` is the production-ready reference implementation for PostgreSQL DDL (`ddl/001_outbox_events.sql` and `ddl/002_outbox_concurrency_index.sql`), implementing SKIP LOCKED worker leasing, lease-token fencing, and retry backoff.
->
-> This package defines the Store interface; production use requires implementing Store against your schema; see outbox_integration_test.go as the reference for correct SKIP LOCKED + fencing semantics.
-
-- **DDL** (`001_outbox_events.sql` & `002_outbox_concurrency_index.sql`): Production PostgreSQL schema with composite index `idx_outbox_poll ON outbox_events (status, next_retry_at, created_at)` for high-throughput, contention-free polling, `lease_token UUID` fencing, and `idx_outbox_aggregate ON outbox_events (aggregate_type, aggregate_id, created_at DESC)` for entity history lookups.
-- **PostgreSQL Exclusivity**: Operates exclusively with PostgreSQL via `github.com/jackc/pgx/v5` parameterized queries (`$1, $2, ...`). *(Note: No MySQL dialect support is implemented or supported at runtime).*
-- **Relay Poller** (`NewRelay`): Queries ready events using `SELECT ... FOR UPDATE SKIP LOCKED` and atomic lease renewal (`WithLeaseDuration`) with fencing tokens to allow multiple service replicas to poll concurrently without duplicate dispatches or lease clobbering.
-- **Dead-Lettering & Backoff**: Full-jitter exponential backoff and configurable max retries transitioning unresolvable poison pills or exhausted retries to `DEAD_LETTER`.
-
-```go
-import "github.com/umesh0492/go-app-kit/outbox"
-
-// Transactionally write domain event inside database transaction
-evt, _ := outbox.NewEvent("Invoice", "INV-100", "InvoiceIssued", invoicePayload)
-err := outboxStore.Insert(ctx, tx, *evt)
-
-// Autonomous background relay
-relay, _ := outbox.NewRelay(outbox.RelayConfig{
-    Store:        outboxStore,
-    Publisher:    kafkaPublisher,
-    PollInterval: 1 * time.Second,
-})
-go relay.Start(ctx)
-```
-
----
-
-### 5. `audit` - Audit Trail & State Diffing
+### 4. `audit` - Audit Trail & State Diffing
 Structured audit logging with relational persistence and change tracking:
 - **DDL** (`001_audit_logs.sql`): Partitioned by range on `created_at` with trigger-enforced append-only constraints (`trg_prevent_audit_log_modification`).
 - **State Diffing** (`ComputeDiff`): Computes field-level property changes (`Old` vs `New`) between before and after JSON states.
@@ -201,18 +170,21 @@ recorder.RecordAsync(event)
 
 ---
 
-### 6. `export` - Streaming Data Exporter
+### 5. `export` - Streaming Data Exporter
 High-throughput, low-memory CSV streaming:
 - Stream directly to `io.Writer` or `http.ResponseWriter` without buffering complete datasets in memory.
 - Prepend UTF-8 BOM (`\xEF\xBB\xBF`) for seamless Microsoft Excel rendering.
 - Configurable delimiters (`,`, `;`, `\t`), CRLF endings, and row batch flushing.
 
 ```go
-import "github.com/umesh0492/go-app-kit/export"
+import (
+    fintech "github.com/umesh0492/go-fintech-india"
+    "github.com/umesh0492/go-app-kit/export"
+)
 
 columns := []export.Column[InvoiceRow]{
     {Header: "Invoice ID", Extractor: func(i InvoiceRow) string { return i.ID }},
-    {Header: "Amount (INR)", Extractor: func(i InvoiceRow) string { return india.FormatINRPaise(i.AmountPaise) }},
+    {Header: "Amount (INR)", Extractor: func(i InvoiceRow) string { return fintech.FormatINRPaise(i.AmountPaise) }},
     {Header: "GSTIN", Extractor: func(i InvoiceRow) string { return i.BuyerGSTIN }},
 }
 
@@ -225,11 +197,41 @@ streamer.Flush()
 
 ---
 
+### Companion Architecture: Indian Statutory Compliance (go-fintech-india)
+
+For pure domain statutory checks, zero-allocation paise arithmetic, and Indian banking/tax validation, developers should import [`github.com/umesh0492/go-fintech-india`](https://github.com/Abeta-dev/go-fintech-india) directly as a companion library:
+
+```go
+import (
+    "fmt"
+    fintech "github.com/umesh0492/go-fintech-india"
+)
+
+// 1. Exact Paise Integer Arithmetic (Zero floating-point inaccuracies)
+taxable := fintech.NewMoneyFromFloat(15000.50) // 1500050 paise
+cgst := fintech.NewMoney(taxable.Paise() * 9 / 100) // 9% CGST
+sgst := fintech.NewMoney(taxable.Paise() * 9 / 100) // 9% SGST
+total := taxable.Add(cgst).Add(sgst)
+fmt.Println(total.String()) // "17,700.59"
+
+// 2. Statutory GSTIN Mod-36 Checksum Validation
+if err := fintech.ValidateGSTIN("27AAPFU0939F1ZV"); err != nil {
+    fmt.Printf("Invalid GSTIN: %v\n", err)
+}
+
+// 3. Aadhaar UIDAI Verhoeff D5 Dihedral Checksum & Masking
+if fintech.IsValidAadhaar("234567890128") {
+    fmt.Printf("Masked: %s\n", fintech.MaskAadhaar("234567890128"))
+}
+```
+
+---
+
 ## When, Where, and Why to Use
 
 | Problem | Recommended Module | Why Use It |
 | :--- | :--- | :--- |
-| **Indian Tax & Banking Compliance** | `go-app-kit/india` | Zero dependencies; verifies GST mod-36 checksum, Aadhaar Verhoeff $D_5$, PAN legal entities, and IFSC codes. |
+| **Indian Tax & Banking Compliance** | [`go-fintech-india`](https://github.com/Abeta-dev/go-fintech-india) *(Companion)* | Zero dependencies; pure domain statutory primitives for GSTIN mod-36, Aadhaar Verhoeff $D_5$, PAN legal entities, IFSC codes, and integer paise math. |
 | **B2B Billing Documents** | `go-app-kit/pdf` | Pre-bundled GST tax invoice & payment receipt templates; in-memory byte rendering with customizable layout. |
 | **Cross-Service Dual-Write Safety** | `go-app-kit/outbox` | Atomically commits domain state and events in the same Postgres TX; `SKIP LOCKED` scales poller across $N$ instances. |
 | **Multi-Channel User Alerts** | `go-app-kit/notifications` | Unified broker routing to SMTP, Slack, and HMAC-signed webhooks; non-blocking delivery via `workerpool`. |
@@ -253,18 +255,17 @@ go test -v ./...
 
 Coverage across packages in `go-app-kit` is measured using Go's statement-level coverage tool (`go test -coverprofile=coverage.out ./...`):
 
-> **Overall Repository Statement Coverage: 90.5%** (Zero data races across `-race`)
+> **Overall Repository Statement Coverage: 89.4%** (Zero data races across `-race`)
 
 | Package | Purpose | Statement Coverage |
 |---|---|---|
-| `india` | Statutory Indian validations (GSTIN mod-36, PAN, IFSC, Aadhaar Verhoeff D5, INR Money, Aging) | **95.5%** |
 | `export` | Low-memory streaming CSV exporter with Excel UTF-8 BOM & formula injection protection | **93.8%** |
 | `notifications` | Multi-channel notification broker (SMTP Email, Slack, Webhook HMAC-SHA256 & versioning) | **92.3%** |
 | `outbox` | PostgreSQL transactional outbox engine with row-level locked poller & lease fencing | **90.0%** |
 | `audit` | Partitioned PostgreSQL audit logging with automated JSON diffing & append-only triggers | **89.5%** |
 | `pdf` | In-memory HTML-to-PDF compilation & embedded GST invoice templates | **80.7%** |
-| `examples/invoice_service` | Reference microservice with end-to-end integration test & exact paise math | **82.9%** |
-| **Total Statement Coverage** | **Cumulative across all packages** | **90.5%** |
+| `examples/invoice_service` | Reference microservice with end-to-end integration test & exact paise math | **84.1%** |
+| **Total Statement Coverage** | **Cumulative across all packages** | **89.4%** |
 
 ---
 

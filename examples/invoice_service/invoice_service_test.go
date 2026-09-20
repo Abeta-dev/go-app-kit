@@ -10,10 +10,10 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/umesh0492/go-app-kit/audit"
-	"github.com/umesh0492/go-app-kit/india" //nolint:staticcheck // Tests intentionally cover the compatibility façade used by the reference service.
 	"github.com/umesh0492/go-app-kit/notifications"
 	"github.com/umesh0492/go-app-kit/outbox"
 	"github.com/umesh0492/go-app-kit/pdf"
+	fintech "github.com/umesh0492/go-fintech-india"
 )
 
 type mockAuditRecorder struct {
@@ -93,11 +93,11 @@ func TestProcessInvoice_EndToEnd(t *testing.T) {
 	svc := NewInvoiceService(ar, os, nb, pdf.WithRenderer(&mockRendererImpl{}))
 
 	suppBase := "27AAPFU0939F1Z"
-	suppCheck := india.CalculateGSTINCheckDigit(suppBase)
+	suppCheck, _ := fintech.CalculateGSTINChecksum(suppBase)
 	supplierGSTIN := suppBase + string(suppCheck)
 
 	buyerBase := "29AAPFU0939F1Z"
-	buyerCheck := india.CalculateGSTINCheckDigit(buyerBase)
+	buyerCheck, _ := fintech.CalculateGSTINChecksum(buyerBase)
 	buyerGSTIN := buyerBase + string(buyerCheck)
 
 	req := InvoiceRequest{
@@ -108,7 +108,7 @@ func TestProcessInvoice_EndToEnd(t *testing.T) {
 		BuyerName:     "Deccan Enterprises Ltd",
 		BuyerEmail:    "accounts@deccan.in",
 		Description:   "Kubernetes Architecture Consulting",
-		TaxableAmount: india.NewMoneyFromRupees(100000),
+		TaxableAmount: fintech.NewMoneyFromRupees(100000),
 		CGSTRate:      9.0,
 		SGSTRate:      9.0,
 		BankIFSC:      "HDFC0001234",
@@ -184,19 +184,19 @@ func TestProcessInvoice_MultiItemMoney(t *testing.T) {
 	svc := NewInvoiceService(ar, os, nb, pdf.WithRenderer(&mockRendererImpl{}))
 
 	suppBase := "27AAPFU0939F1Z"
-	suppCheck := india.CalculateGSTINCheckDigit(suppBase)
+	suppCheck, _ := fintech.CalculateGSTINChecksum(suppBase)
 	supplierGSTIN := suppBase + string(suppCheck)
 
 	buyerBase := "29AAPFU0939F1Z"
-	buyerCheck := india.CalculateGSTINCheckDigit(buyerBase)
+	buyerCheck, _ := fintech.CalculateGSTINChecksum(buyerBase)
 	buyerGSTIN := buyerBase + string(buyerCheck)
 
 	item1 := InvoiceItem{
 		Index:         1,
 		Description:   "Frontend Design Tokens",
 		Quantity:      2,
-		UnitPrice:     india.NewMoneyFromRupees(25000),
-		TaxableAmount: india.NewMoneyFromRupees(50000),
+		UnitPrice:     fintech.NewMoneyFromRupees(25000),
+		TaxableAmount: fintech.NewMoneyFromRupees(50000),
 		CGSTRate:      9.0,
 		SGSTRate:      9.0,
 	}
@@ -204,8 +204,8 @@ func TestProcessInvoice_MultiItemMoney(t *testing.T) {
 		Index:         2,
 		Description:   "Outbox Relay Architecture",
 		Quantity:      1,
-		UnitPrice:     india.NewMoneyFromRupees(50000),
-		TaxableAmount: india.NewMoneyFromRupees(50000),
+		UnitPrice:     fintech.NewMoneyFromRupees(50000),
+		TaxableAmount: fintech.NewMoneyFromRupees(50000),
 		CGSTRate:      9.0,
 		SGSTRate:      9.0,
 	}
@@ -254,7 +254,7 @@ func TestProcessInvoice_ValidationErrors(t *testing.T) {
 	}
 
 	suppBase := "27AAPFU0939F1Z"
-	suppCheck := india.CalculateGSTINCheckDigit(suppBase)
+	suppCheck, _ := fintech.CalculateGSTINChecksum(suppBase)
 	supplierGSTIN := suppBase + string(suppCheck)
 
 	// Invalid Buyer GSTIN
@@ -267,7 +267,7 @@ func TestProcessInvoice_ValidationErrors(t *testing.T) {
 	}
 
 	buyerBase := "29AAPFU0939F1Z"
-	buyerCheck := india.CalculateGSTINCheckDigit(buyerBase)
+	buyerCheck, _ := fintech.CalculateGSTINChecksum(buyerBase)
 	buyerGSTIN := buyerBase + string(buyerCheck)
 
 	// Invalid Bank IFSC

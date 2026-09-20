@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-09-20
+
+### Removed
+- india: Discontinued deprecated backward-compatibility façade. Canonical statutory Indian primitives (GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, Money) should be imported directly from `github.com/umesh0492/go-fintech-india`.
+
+### Changed
+- examples/invoice_service: Migrated reference billing pipeline to import `github.com/umesh0492/go-fintech-india` directly.
+- docs: Refactored documentation portal, architecture diagrams, and README to showcase the 5 core enterprise application infrastructure packages (outbox, pdf, notifications, audit, export) and direct companion composition with `go-fintech-india`.
+
 ## [0.3.2] - 2026-09-18
 
 ### Changed
