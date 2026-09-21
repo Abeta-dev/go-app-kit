@@ -84,12 +84,15 @@ func TestOptions_ConcurrencyAndContext(t *testing.T) {
 		t.Errorf("expected MaxConcurrency to remain 5, got %d", opts.MaxConcurrency)
 	}
 
-	ctx := context.WithValue(context.Background(), struct{}{}, "val")
+	type testContextKey string
+	const ctxKey testContextKey = "testKey"
+	ctx := context.WithValue(context.Background(), ctxKey, "val")
 	WithContext(ctx)(&opts)
 	if opts.Context != ctx {
 		t.Errorf("expected context to be set")
 	}
-	WithContext(nil)(&opts)
+	var nilCtx context.Context
+	WithContext(nilCtx)(&opts)
 	if opts.Context != ctx {
 		t.Errorf("expected context to remain unchanged on nil")
 	}
@@ -217,7 +220,7 @@ func TestWkhtmlRenderer_Render_LegacyGeneratorAndConcurrency(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Generate with custom concurrency failed: %v", err)
 	}
-	if string(buf.Bytes()) != "%PDF-1.4 Legacy" {
+	if buf.String() != "%PDF-1.4 Legacy" {
 		t.Errorf("unexpected buffer: %s", buf.String())
 	}
 }
