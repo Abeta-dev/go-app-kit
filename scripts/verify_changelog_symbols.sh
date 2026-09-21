@@ -32,6 +32,9 @@ FAILED=0
 # Whitelist of known non-symbol technical terms/acronyms appearing in bullets
 WHITELIST="PostgreSQL|RFC|MIME|HMAC|SHA256|DDL|CSV|JSON|SQL|GST|GSTIN|PAN|Aadhaar|IFSC|INR|BOM|UTF8|API|UUID|CPU|RAM|HTTP|SMTP|PGRecorder|StreamWriter|ExportConfig|Compiler|InvoiceData|EmailMessage"
 
+# Extract packages documented under '### Removed' to avoid auditing symbols of discontinued packages
+REMOVED_PACKAGES=$(awk '/^### Removed/{flag=1; next} /^###|^##/{flag=0} flag && /^[-*]/' "$CHANGELOG_FILE" | sed -n -E 's/^[[:space:]]*[-*][[:space:]]*([^:]+):.*/\1/p' | tr -d '`' | tr -d '[:space:]')
+
 while IFS= read -r bullet; do
     [ -z "$bullet" ] && continue
     echo "  -> Auditing bullet: $bullet"
@@ -43,6 +46,12 @@ while IFS= read -r bullet; do
         PREFIX=$(echo "$PREFIX" | tr -d '`' | tr -d '[:space:]')
     fi
     
+    # Skip auditing for packages that were explicitly documented as removed
+    if [ -n "$PREFIX" ] && echo "$REMOVED_PACKAGES" | grep -qw "$PREFIX" 2>/dev/null; then
+        echo "     ℹ️  Skipped removed package: '$PREFIX'"
+        continue
+    fi
+
     # Verify package directory exists and contains Go files
     if [ -n "$PREFIX" ]; then
         if [ ! -d "$PREFIX" ] || ! ls "$PREFIX"/*.go >/dev/null 2>&1; then

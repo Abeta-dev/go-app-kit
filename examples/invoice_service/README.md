@@ -1,6 +1,6 @@
 # `examples/invoice_service`
 
-End-to-end reference enterprise microservice demonstrating the composition of `india`, `pdf`, `outbox`, `notifications`, and `audit` packages within a production billing pipeline.
+End-to-end reference enterprise microservice demonstrating the composition of `go-fintech-india` (statutory foundation), `pdf`, `outbox`, `notifications`, and `audit` packages within a production billing pipeline.
 
 ---
 
@@ -19,7 +19,7 @@ sequenceDiagram
     autonumber
     actor Client as Billing API Client
     participant Svc as InvoiceService
-    participant India as india (Statutory)
+    participant India as go-fintech-india (Statutory Foundation)
     participant PDF as pdf (Document)
     participant Outbox as outbox (Dual-Write)
     participant Audit as audit (Compliance)
@@ -82,7 +82,7 @@ import (
 
     "github.com/jackc/pgx/v5/pgxpool"
     "github.com/umesh0492/go-app-kit/audit"
-    "github.com/umesh0492/go-app-kit/india"
+    fintech "github.com/umesh0492/go-fintech-india"
     "github.com/umesh0492/go-app-kit/notifications"
     "github.com/umesh0492/go-app-kit/outbox"
 )
@@ -123,7 +123,7 @@ func main() {
         BuyerName:     "Zenith Retail Enterprises",
         BuyerEmail:    "accounts@zenithretail.in",
         Description:   "Cloud Infrastructure Migration Consulting",
-        TaxableAmount: india.NewMoneyFromRupees(150000),
+        TaxableAmount: fintech.NewMoneyFromRupees(150000),
         CGSTRate:      9.0,
         SGSTRate:      9.0,
         BankIFSC:      "HDFC0000060",

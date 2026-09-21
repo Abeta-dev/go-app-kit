@@ -3,28 +3,30 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
+	"strings"
 	"time"
 
 	"github.com/umesh0492/go-app-kit/audit"
-	"github.com/umesh0492/go-app-kit/india" //nolint:staticcheck // Reference coverage intentionally exercises the compatibility façade.
 	"github.com/umesh0492/go-app-kit/notifications"
 	"github.com/umesh0492/go-app-kit/outbox"
 	"github.com/umesh0492/go-app-kit/pdf"
+	fintech "github.com/umesh0492/go-fintech-india"
 )
 
 // InvoiceItem models an individual invoice line item with exact monetary precision.
 type InvoiceItem struct {
-	Index         int         `json:"index"`
-	Description   string      `json:"description"`
-	HSN           string      `json:"hsn"`
-	Quantity      int         `json:"quantity"`
-	UnitPrice     india.Money `json:"unit_price"`
-	TaxableAmount india.Money `json:"taxable_amount"`
-	CGSTRate      float64     `json:"cgst_rate"`
-	CGSTAmount    india.Money `json:"cgst_amount"`
-	SGSTRate      float64     `json:"sgst_rate"`
-	SGSTAmount    india.Money `json:"sgst_amount"`
-	TotalAmount   india.Money `json:"total_amount"`
+	Index         int           `json:"index"`
+	Description   string        `json:"description"`
+	HSN           string        `json:"hsn"`
+	Quantity      int           `json:"quantity"`
+	UnitPrice     fintech.Money `json:"unit_price"`
+	TaxableAmount fintech.Money `json:"taxable_amount"`
+	CGSTRate      float64       `json:"cgst_rate"`
+	CGSTAmount    fintech.Money `json:"cgst_amount"`
+	SGSTRate      float64       `json:"sgst_rate"`
+	SGSTAmount    fintech.Money `json:"sgst_amount"`
+	TotalAmount   fintech.Money `json:"total_amount"`
 }
 
 // InvoiceRequest contains inputs for creating a GST compliant invoice.
@@ -37,7 +39,7 @@ type InvoiceRequest struct {
 	BuyerName     string
 	BuyerEmail    string
 	Description   string
-	TaxableAmount india.Money // migrated from float64 to india.Money (integer paise precision)
+	TaxableAmount fintech.Money // migrated from float64 to fintech.Money (integer paise precision)
 	CGSTRate      float64
 	SGSTRate      float64
 	BankIFSC      string
@@ -65,6 +67,33 @@ func NewInvoiceService(ar audit.Recorder, os outbox.Store, nb notifications.Brok
 	}
 }
 
+type gstinDetails struct {
+	GSTIN     string
+	StateCode string
+	StateName string
+	PAN       string
+}
+
+func parseGSTIN(gstin string) gstinDetails {
+	clean := strings.ToUpper(strings.TrimSpace(gstin))
+	stateCode := fintech.StateCode(clean)
+	stateName, _ := fintech.StateName(stateCode)
+	return gstinDetails{
+		GSTIN:     clean,
+		StateCode: stateCode,
+		StateName: stateName,
+		PAN:       fintech.ExtractPAN(clean),
+	}
+}
+
+func formatMoney(m fintech.Money) string {
+	return fintech.FormatINR(m.Paise())
+}
+
+func percentageMoney(m fintech.Money, rate float64) fintech.Money {
+	return fintech.NewMoney(int64(math.Round(float64(m.Paise()) * (rate / 100.0))))
+}
+
 // ProcessInvoice executes end-to-end invoice creation, PDF generation, audit recording, and notifications.
 // It persists the domain event to the outbox store using the provided active database transaction.
 func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperator, req InvoiceRequest) ([]byte, error) {
@@ -72,23 +101,23 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 		tx = req.Tx
 	}
 	// 1. Validate Indian localized financial credentials
-	if err := india.ValidateGSTIN(req.SupplierGSTIN); err != nil {
+	if err := fintech.ValidateGSTIN(req.SupplierGSTIN); err != nil {
 		return nil, fmt.Errorf("invalid supplier GSTIN: %w", err)
 	}
-	if err := india.ValidateGSTIN(req.BuyerGSTIN); err != nil {
+	if err := fintech.ValidateGSTIN(req.BuyerGSTIN); err != nil {
 		return nil, fmt.Errorf("invalid buyer GSTIN: %w", err)
 	}
-	if err := india.ValidateIFSC(req.BankIFSC); err != nil {
+	if err := fintech.ValidateIFSC(req.BankIFSC); err != nil {
 		return nil, fmt.Errorf("invalid bank IFSC: %w", err)
 	}
 
-	supplierDetails, _ := india.ParseGSTIN(req.SupplierGSTIN)
-	buyerDetails, _ := india.ParseGSTIN(req.BuyerGSTIN)
-	fy := india.CurrentFinancialYear()
+	supplierDetails := parseGSTIN(req.SupplierGSTIN)
+	buyerDetails := parseGSTIN(req.BuyerGSTIN)
+	fy := fintech.CurrentFY()
 
 	// 2. Compute Tax Amounts & Currency Words with integer paise precision
 	var items []map[string]any
-	var taxableMoney, cgstMoney, sgstMoney, totalMoney india.Money
+	var taxableMoney, cgstMoney, sgstMoney, totalMoney fintech.Money
 
 	if len(req.Items) > 0 {
 		for i, item := range req.Items {
@@ -114,11 +143,11 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 			}
 			itemCGST := item.CGSTAmount
 			if itemCGST.IsZero() && cgstRate > 0 {
-				itemCGST = itemTaxable.Percentage(cgstRate)
+				itemCGST = percentageMoney(itemTaxable, cgstRate)
 			}
 			itemSGST := item.SGSTAmount
 			if itemSGST.IsZero() && sgstRate > 0 {
-				itemSGST = itemTaxable.Percentage(sgstRate)
+				itemSGST = percentageMoney(itemTaxable, sgstRate)
 			}
 			itemTotal := item.TotalAmount
 			if itemTotal.IsZero() {
@@ -147,20 +176,20 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 				"Description":   desc,
 				"HSN":           hsn,
 				"Quantity":      qty,
-				"UnitPrice":     unitPrice.Format(),
-				"TaxableAmount": itemTaxable.Format(),
+				"UnitPrice":     formatMoney(unitPrice),
+				"TaxableAmount": formatMoney(itemTaxable),
 				"CGSTRate":      cgstRate,
-				"CGSTAmount":    itemCGST.Format(),
+				"CGSTAmount":    formatMoney(itemCGST),
 				"SGSTRate":      sgstRate,
-				"SGSTAmount":    itemSGST.Format(),
-				"TotalAmount":   itemTotal.Format(),
+				"SGSTAmount":    formatMoney(itemSGST),
+				"TotalAmount":   formatMoney(itemTotal),
 			})
 		}
 		totalMoney = taxableMoney.Add(cgstMoney).Add(sgstMoney)
 	} else {
 		taxableMoney = req.TaxableAmount
-		cgstMoney = taxableMoney.Percentage(req.CGSTRate)
-		sgstMoney = taxableMoney.Percentage(req.SGSTRate)
+		cgstMoney = percentageMoney(taxableMoney, req.CGSTRate)
+		sgstMoney = percentageMoney(taxableMoney, req.SGSTRate)
 		totalMoney = taxableMoney.Add(cgstMoney).Add(sgstMoney)
 
 		items = []map[string]any{
@@ -169,18 +198,18 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 				"Description":   req.Description,
 				"HSN":           "998313",
 				"Quantity":      1,
-				"UnitPrice":     taxableMoney.Format(),
-				"TaxableAmount": taxableMoney.Format(),
+				"UnitPrice":     formatMoney(taxableMoney),
+				"TaxableAmount": formatMoney(taxableMoney),
 				"CGSTRate":      req.CGSTRate,
-				"CGSTAmount":    cgstMoney.Format(),
+				"CGSTAmount":    formatMoney(cgstMoney),
 				"SGSTRate":      req.SGSTRate,
-				"SGSTAmount":    sgstMoney.Format(),
-				"TotalAmount":   totalMoney.Format(),
+				"SGSTAmount":    formatMoney(sgstMoney),
+				"TotalAmount":   formatMoney(totalMoney),
 			},
 		}
 	}
 
-	totalInWords := totalMoney.Words()
+	totalInWords := fintech.InWords(totalMoney)
 
 	templateData := map[string]any{
 		"InvoiceNumber": req.InvoiceNumber,
@@ -192,7 +221,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 		"PONumber":      "PO-REF-2026",
 		"PODate":        time.Now().Format("02-Jan-2006"),
 		"PaymentTerms":  "Due on Receipt",
-		"FinancialYear": fy.Label,
+		"FinancialYear": fy.Label(),
 		"Supplier": map[string]string{
 			"Name":      req.SupplierName,
 			"Address":   "Bandra Kurla Complex, Mumbai",
@@ -211,10 +240,10 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 			"PAN":       buyerDetails.PAN,
 		},
 		"Items":         items,
-		"SubTotal":      taxableMoney.Format(),
-		"TotalCGST":     cgstMoney.Format(),
-		"TotalSGST":     sgstMoney.Format(),
-		"GrandTotal":    totalMoney.Format(),
+		"SubTotal":      formatMoney(taxableMoney),
+		"TotalCGST":     formatMoney(cgstMoney),
+		"TotalSGST":     formatMoney(sgstMoney),
+		"GrandTotal":    formatMoney(totalMoney),
 		"AmountInWords": totalInWords,
 		"BankDetails": map[string]string{
 			"BankName":      req.BankName,
@@ -233,7 +262,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 	// 4. Record Compliance Audit Trail
 	auditEvt := audit.NewEvent(ctx, "INVOICE_GENERATED", "Invoice", req.InvoiceNumber, nil, map[string]any{
 		"invoice_number": req.InvoiceNumber,
-		"grand_total":    totalMoney.Format(),
+		"grand_total":    formatMoney(totalMoney),
 		"total_paise":    totalMoney.Paise(),
 		"currency":       "INR",
 		"buyer_gstin":    req.BuyerGSTIN,
@@ -245,7 +274,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 	// 5. Enqueue Domain Event to Transactional Outbox
 	outboxEvt, err := outbox.NewEvent("Invoice", req.InvoiceNumber, "InvoiceIssued", map[string]any{
 		"invoice_number": req.InvoiceNumber,
-		"grand_total":    totalMoney.Format(),
+		"grand_total":    formatMoney(totalMoney),
 		"total_paise":    totalMoney.Paise(),
 		"currency":       "INR",
 		"buyer_email":    req.BuyerEmail,
@@ -260,7 +289,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 	// 6. Dispatch Customer Notification with PDF Attachment
 	notifMsg := notifications.Message{
 		Title:      fmt.Sprintf("Invoice %s Ready", req.InvoiceNumber),
-		Body:       fmt.Sprintf("Dear %s, your invoice for %s is ready. Total: ₹ %s", req.BuyerName, req.Description, totalMoney.Format()),
+		Body:       fmt.Sprintf("Dear %s, your invoice for %s is ready. Total: ₹ %s", req.BuyerName, req.Description, formatMoney(totalMoney)),
 		Priority:   notifications.PriorityHigh,
 		Recipients: []string{req.BuyerEmail},
 		Channels:   []notifications.Channel{notifications.ChannelEmail},

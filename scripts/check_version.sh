@@ -104,10 +104,10 @@ done
 
 # Only current-package installation examples must use the documented current
 # release. Historical changelog/baseline evidence is intentionally immutable.
-wrong_module_versions="$(grep -rnE "${MODULE}@v${SEMVER_PATTERN}" README.md CONTRIBUTING.md SECURITY.md docs audit export examples india notifications outbox pdf 2>/dev/null | grep -v "${MODULE}@v${expected_version}" || true)"
+wrong_module_versions="$(grep -rnE "${MODULE}@v${SEMVER_PATTERN}" README.md CONTRIBUTING.md SECURITY.md docs audit export examples notifications outbox pdf 2>/dev/null | grep -v "${MODULE}@v${expected_version}" || true)"
 [[ -z "${wrong_module_versions}" ]] || fail "current documentation contains a mismatched ${MODULE} version:\n${wrong_module_versions}"
 
-declare -a packages=(india pdf notifications outbox audit export)
+declare -a packages=(outbox pdf notifications audit export)
 actual_package_count=0
 for package in "${packages[@]}"; do
   [[ -f "${package}/README.md" ]] || fail "missing ${package}/README.md"

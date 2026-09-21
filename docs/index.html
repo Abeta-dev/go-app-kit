@@ -1096,7 +1096,7 @@
       <a href="#" class="brand">
         <div class="brand-logo">G</div>
         <span>go-app-kit</span>
-        <span class="brand-badge">v0.3.2</span>
+        <span class="brand-badge">v0.4.0</span>
       </a>
       <ul class="nav-links">
         <li><a href="#features">Features</a></li>
@@ -1125,23 +1125,23 @@
       </div>
       <h1>Enterprise Domain Acceleration with Uncompromising Engineering Rigor</h1>
       <p class="hero-sub">
-        High-velocity business primitives: Indian localized fintech (GSTIN, PAN, IFSC, Aadhaar), transactional outbox with SKIP LOCKED, multi-channel notifications, PDF tax invoices, partitioned audit trails, and streaming CSV export.
+        High-velocity business capabilities: transactional outbox with SKIP LOCKED, multi-channel notifications, PDF tax invoices, partitioned audit trails, streaming CSV export, and companion statutory integration (<a href="https://github.com/Abeta-dev/go-fintech-india" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline;">go-fintech-india</a>).
       </p>
 
       <!-- Terminal Install Block -->
       <div class="install-box">
         <span class="install-prompt">$</span>
-        <code class="install-code">go get github.com/umesh0492/go-app-kit@v0.3.2</code>
-        <button class="copy-btn" onclick="copyText('go get github.com/umesh0492/go-app-kit@v0.3.2', this)">Copy</button>
+        <code class="install-code">go get github.com/umesh0492/go-app-kit@v0.4.0</code>
+        <button class="copy-btn" onclick="copyText('go get github.com/umesh0492/go-app-kit@v0.4.0', this)">Copy</button>
       </div>
 
       <!-- Badges Row -->
       <div class="badges-row">
-        <img src="https://img.shields.io/badge/release-v0.3.2-38bdf8.svg?logo=go" alt="Release v0.3.2">
+        <img src="https://img.shields.io/badge/release-v0.4.0-38bdf8.svg?logo=go" alt="Release v0.4.0">
         <img src="https://img.shields.io/badge/CI-passing-10b981.svg?logo=github-actions" alt="CI: Passing">
         <img src="https://img.shields.io/badge/Go-1.26.0-00ADD8.svg?logo=go" alt="Go 1.26.0">
         <img src="https://img.shields.io/badge/govulncheck-0%20vulns-10b981.svg" alt="0 Vulns">
-        <img src="https://img.shields.io/badge/coverage-90.5%25-10b981.svg" alt="90.5% Coverage">
+        <img src="https://img.shields.io/badge/coverage-94.1%25-10b981.svg" alt="94.1% Coverage">
         <img src="https://img.shields.io/badge/code%20quality-golangci--lint-10b981.svg?logo=go" alt="GolangCI-Lint">
         <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License MIT">
       </div>
@@ -1149,7 +1149,7 @@
       <!-- Stats Grid -->
       <div class="stats-grid">
         <div class="stat-card">
-          <div class="stat-val">90.5%</div>
+          <div class="stat-val">94.1%</div>
           <div class="stat-lbl">Global Statement Coverage</div>
         </div>
         <div class="stat-card">
@@ -1161,8 +1161,8 @@
           <div class="stat-lbl">Vulnerabilities (govulncheck)</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val">6</div>
-          <div class="stat-lbl">Core Business Modules</div>
+          <div class="stat-val">5</div>
+          <div class="stat-lbl">Core Enterprise Modules</div>
         </div>
         <div class="stat-card">
           <div class="stat-val">100%</div>
@@ -1203,19 +1203,12 @@
           <span class="layer-title">
             <span style="color: #38bdf8;">●</span> Layer 2: github.com/umesh0492/go-app-kit
           </span>
-          <span class="layer-pill" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">Domain & Business Accelerator</span>
+          <span class="layer-pill" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">Enterprise Infrastructure Kit</span>
         </div>
         <div class="layer-desc">
-          Statutory compliance algorithms, dual-write safety, document compilation, multi-channel dispatching, and streaming data export.
+          Transactional outbox dual-write safety, in-memory PDF compilation, multi-channel notification dispatching, partitioned compliance audit trails, and streaming data export.
         </div>
         <div class="layer-modules">
-          <div class="module-item">
-            <div class="module-item-top">
-              <span class="module-name">india</span>
-              <span class="module-cov">95.5%</span>
-            </div>
-            <div class="module-summary">GSTIN (mod-36), PAN classification, IFSC, Aadhaar (Verhoeff D5), Money (paise math), INR words.</div>
-          </div>
           <div class="module-item">
             <div class="module-item-top">
               <span class="module-name">outbox</span>
@@ -1225,17 +1218,17 @@
           </div>
           <div class="module-item">
             <div class="module-item-top">
-              <span class="module-name">notifications</span>
-              <span class="module-cov">92.3%</span>
-            </div>
-            <div class="module-summary">Multi-channel broker (SMTP Email, Slack Webhooks, HMAC-SHA256 Signed Webhooks) via workerpool.</div>
-          </div>
-          <div class="module-item">
-            <div class="module-item-top">
               <span class="module-name">pdf</span>
               <span class="module-cov">80.7%</span>
             </div>
             <div class="module-summary">HTML-to-PDF in-memory compiler with pluggable Renderer and embedded GST Tax Invoice template.</div>
+          </div>
+          <div class="module-item">
+            <div class="module-item-top">
+              <span class="module-name">notifications</span>
+              <span class="module-cov">92.3%</span>
+            </div>
+            <div class="module-summary">Multi-channel broker (SMTP Email, Slack Webhooks, HMAC-SHA256 Signed Webhooks) via workerpool.</div>
           </div>
           <div class="module-item">
             <div class="module-item-top">
@@ -1255,27 +1248,33 @@
       </div>
 
       <div class="layer-arrow">
-        <span>▼ builds upon</span>
+        <span>▼ builds upon & composes with</span>
       </div>
 
-      <!-- Tier 1: go-libs -->
-      <div class="layer-card" style="border-left: 4px solid #10b981;">
-        <div class="layer-header">
-          <span class="layer-title">
-            <span style="color: #10b981;">●</span> Layer 1: github.com/umesh0492/go-libs
-          </span>
-          <span class="layer-pill" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">Microservice Systems Engineering</span>
+      <!-- Companion Tier: go-fintech-india & go-libs -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+        <div class="layer-card" style="border-left: 4px solid #f59e0b; background: rgba(30, 41, 59, 0.7);">
+          <div class="layer-header">
+            <span class="layer-title">
+              <span style="color: #f59e0b;">●</span> Companion: go-fintech-india
+            </span>
+            <span class="layer-pill" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">Statutory Primitives</span>
+          </div>
+          <div class="layer-desc">
+            Canonical statutory validation: GSTIN mod-36, PAN, IFSC, Aadhaar Verhoeff D5, UPI VPAs, and zero-allocation integer paise Money arithmetic.
+          </div>
         </div>
-        <div class="layer-desc">
-          Hardened concurrency primitives, zero-dependency resilience patterns, circuit breakers, rate limiters, and SRE logging.
-        </div>
-        <div class="pipeline-flow" style="margin-top: 10px;">
-          <span class="pipe-step">workerpool</span>
-          <span class="pipe-step">circuitbreaker</span>
-          <span class="pipe-step">ratelimit</span>
-          <span class="pipe-step">retry (jittered)</span>
-          <span class="pipe-step">logger (slog)</span>
-          <span class="pipe-step">metrics</span>
+
+        <div class="layer-card" style="border-left: 4px solid #10b981; background: rgba(30, 41, 59, 0.7);">
+          <div class="layer-header">
+            <span class="layer-title">
+              <span style="color: #10b981;">●</span> Layer 1: go-libs
+            </span>
+            <span class="layer-pill" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">Systems Engineering</span>
+          </div>
+          <div class="layer-desc">
+            Hardened concurrency primitives: bounded workerpool, circuit breakers, sliding window rate limiters, and SRE logging.
+          </div>
         </div>
       </div>
 
@@ -1287,9 +1286,9 @@
         <div class="pipeline-flow">
           <span class="pipe-step active">1. Client Request</span>
           <span class="pipe-arrow">➔</span>
-          <span class="pipe-step">2. india.ValidateGSTIN</span>
+          <span class="pipe-step" style="border-color: #f59e0b; color: #fde68a;">2. go-fintech-india: ValidateGSTIN</span>
           <span class="pipe-arrow">➔</span>
-          <span class="pipe-step">3. india.Money Calc</span>
+          <span class="pipe-step" style="border-color: #f59e0b; color: #fde68a;">3. go-fintech-india: Money Calc</span>
           <span class="pipe-arrow">➔</span>
           <span class="pipe-step">4. pdf.GenerateFromTemplate</span>
           <span class="pipe-arrow">➔</span>
@@ -1303,60 +1302,29 @@
     </div>
   </section>
 
-  <!-- 6 Interactive Feature Cards -->
+  <!-- 5 Interactive Feature Cards + Companion Spotlight -->
   <section id="features" class="container" style="padding: 40px 0;">
     <div class="section-head">
       <h2>Core Business Accelerators</h2>
-      <p>Six hardened packages architected for zero data races, high concurrency, and statutory precision.</p>
+      <p>Five hardened enterprise packages architected for zero data races, high concurrency, and direct statutory companion composition.</p>
     </div>
 
     <!-- Filter & Search Bar -->
     <div class="filter-bar">
       <input type="text" id="featSearch" class="search-input" placeholder="🔍 Search capabilities, algorithms, exported types (e.g. GSTIN, SKIP LOCKED, Money, BOM, SMTP)...">
       <div class="category-pills">
-        <button class="pill-btn active" onclick="filterFeat('all', this)">All (6 Modules)</button>
-        <button class="pill-btn" onclick="filterFeat('fintech', this)">Fintech & Statutory (india)</button>
+        <button class="pill-btn active" onclick="filterFeat('all', this)">All (5 Modules + Companion)</button>
         <button class="pill-btn" onclick="filterFeat('persistence', this)">Persistence & Outbox (outbox, audit)</button>
         <button class="pill-btn" onclick="filterFeat('messaging', this)">Messaging & Documents (notifications, pdf)</button>
         <button class="pill-btn" onclick="filterFeat('export', this)">Data Streaming (export)</button>
+        <button class="pill-btn" onclick="filterFeat('fintech', this)">Statutory Companion (go-fintech-india)</button>
       </div>
     </div>
 
     <!-- Features Grid -->
     <div class="features-grid" id="featuresGrid">
 
-      <!-- 1. india -->
-      <div class="feat-card" data-cat="fintech" data-keywords="india gstin pan aadhaar verhoeff ifsc money paise currency inr words aging">
-        <div>
-          <div class="feat-header">
-            <div class="feat-title-group">
-              <div class="feat-icon">🇮🇳</div>
-              <div>
-                <div class="feat-name">india</div>
-              </div>
-            </div>
-            <span class="feat-badge">95.5% Coverage</span>
-          </div>
-          <div class="feat-import">
-            <span>import "github.com/umesh0492/go-app-kit/india"</span>
-          </div>
-          <p class="feat-desc">
-            Zero-dependency statutory Indian validation algorithms, fiscal calendar arithmetic, and exact integer paise currency calculations.
-          </p>
-          <ul class="feat-highlights">
-            <li><strong>GSTIN:</strong> 15-char official Mod-36 check digit validation and 38 state/UT registries.</li>
-            <li><strong>PAN & Aadhaar:</strong> Entity classification (C, P, H, F, A, T, G) and UIDAI <strong>Verhoeff $D_5$ Dihedral</strong> checksum with privacy masking.</li>
-            <li><strong>Fintech Money Type:</strong> Exact integer paise arithmetic (`Add`, `Sub`, `Mul`, `MulBasisPoints`, `Percentage`, `Split`), eliminating float errors.</li>
-            <li><strong>Currency & Words:</strong> Indian numbering (`12,34,567.89`) and recursive words converter supporting arbitrary Crores.</li>
-          </ul>
-        </div>
-        <div class="feat-action">
-          <span style="font-size: 0.8rem; color: #64748b;">Statutory Primitives</span>
-          <button class="feat-btn" onclick="selectCodeTab(0)">View Code ➔</button>
-        </div>
-      </div>
-
-      <!-- 2. outbox -->
+      <!-- 1. outbox -->
       <div class="feat-card" data-cat="persistence" data-keywords="outbox postgresql skip locked transaction dual-write workerpool lease fencing relay">
         <div>
           <div class="feat-header">
@@ -1384,6 +1352,37 @@
         <div class="feat-action">
           <span style="font-size: 0.8rem; color: #64748b;">PostgreSQL Dual-Write</span>
           <button class="feat-btn" onclick="selectCodeTab(1)">View Code ➔</button>
+        </div>
+      </div>
+
+      <!-- 2. pdf -->
+      <div class="feat-card" data-cat="messaging" data-keywords="pdf html invoice gst template wkhtmltopdf in-memory renderer buffer">
+        <div>
+          <div class="feat-header">
+            <div class="feat-title-group">
+              <div class="feat-icon">📄</div>
+              <div>
+                <div class="feat-name">pdf</div>
+              </div>
+            </div>
+            <span class="feat-badge">80.7% Coverage</span>
+          </div>
+          <div class="feat-import">
+            <span>import "github.com/umesh0492/go-app-kit/pdf"</span>
+          </div>
+          <p class="feat-desc">
+            Zero-disk in-memory HTML-to-PDF compilation engine with bundled statutory GST tax invoice and payment receipt templates.
+          </p>
+          <ul class="feat-highlights">
+            <li><strong>Zero Disk I/O:</strong> Produces an in-memory <code>*bytes.Buffer</code>, eliminating temporary file leaks in containerized workloads.</li>
+            <li><strong>Embedded GST Invoice:</strong> Compliant with Indian GST rules: Supplier/Buyer GSTINs, HSN/SAC codes, CGST/SGST/IGST breakdown.</li>
+            <li><strong>Bounded Subprocess Concurrency:</strong> Instance semaphores prevent subprocess exhaustion under high traffic.</li>
+            <li><strong>Pluggable Renderer:</strong> Decoupled <code>Renderer</code> interface allows mocking in unit tests or alternate render backends.</li>
+          </ul>
+        </div>
+        <div class="feat-action">
+          <span style="font-size: 0.8rem; color: #64748b;">Document Engine</span>
+          <button class="feat-btn" onclick="selectCodeTab(3)">View Code ➔</button>
         </div>
       </div>
 
@@ -1418,38 +1417,7 @@
         </div>
       </div>
 
-      <!-- 4. pdf -->
-      <div class="feat-card" data-cat="messaging" data-keywords="pdf html invoice gst template wkhtmltopdf in-memory renderer buffer">
-        <div>
-          <div class="feat-header">
-            <div class="feat-title-group">
-              <div class="feat-icon">📄</div>
-              <div>
-                <div class="feat-name">pdf</div>
-              </div>
-            </div>
-            <span class="feat-badge">80.7% Coverage</span>
-          </div>
-          <div class="feat-import">
-            <span>import "github.com/umesh0492/go-app-kit/pdf"</span>
-          </div>
-          <p class="feat-desc">
-            Zero-disk in-memory HTML-to-PDF compilation engine with bundled statutory GST tax invoice and payment receipt templates.
-          </p>
-          <ul class="feat-highlights">
-            <li><strong>Zero Disk I/O:</strong> Produces an in-memory <code>*bytes.Buffer</code>, eliminating temporary file leaks in containerized workloads.</li>
-            <li><strong>Embedded GST Invoice:</strong> Compliant with Indian GST rules: Supplier/Buyer GSTINs, HSN/SAC codes, CGST/SGST/IGST breakdown.</li>
-            <li><strong>Bounded Subprocess Concurrency:</strong> Instance semaphores prevent subprocess exhaustion under high traffic.</li>
-            <li><strong>Pluggable Renderer:</strong> Decoupled <code>Renderer</code> interface allows mocking in unit tests or alternate render backends.</li>
-          </ul>
-        </div>
-        <div class="feat-action">
-          <span style="font-size: 0.8rem; color: #64748b;">Document Engine</span>
-          <button class="feat-btn" onclick="selectCodeTab(3)">View Code ➔</button>
-        </div>
-      </div>
-
-      <!-- 5. audit -->
+      <!-- 4. audit -->
       <div class="feat-card" data-cat="persistence" data-keywords="audit compliance postgresql partition diff append-only trigger context">
         <div>
           <div class="feat-header">
@@ -1480,7 +1448,7 @@
         </div>
       </div>
 
-      <!-- 6. export -->
+      <!-- 5. export -->
       <div class="feat-card" data-cat="export" data-keywords="export csv streaming bom excel formula injection low memory">
         <div>
           <div class="feat-header">
@@ -1508,6 +1476,37 @@
         <div class="feat-action">
           <span style="font-size: 0.8rem; color: #64748b;">Streaming Export</span>
           <button class="feat-btn" onclick="selectCodeTab(5)">View Code ➔</button>
+        </div>
+      </div>
+
+      <!-- Spotlight Companion: go-fintech-india -->
+      <div class="feat-card companion-card" data-cat="fintech" data-keywords="fintech india gstin pan aadhaar verhoeff ifsc upi vpa money paise companion" style="border: 2px solid rgba(245, 158, 11, 0.4); background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(245, 158, 11, 0.08));">
+        <div>
+          <div class="feat-header">
+            <div class="feat-title-group">
+              <div class="feat-icon" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3);">🇮🇳</div>
+              <div>
+                <div class="feat-name" style="color: #fbbf24;">go-fintech-india <span style="font-size: 0.75rem; color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px 6px; border-radius: 4px; margin-left: 6px;">COMPANION</span></div>
+              </div>
+            </div>
+            <span class="feat-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">Pure Domain Primitives</span>
+          </div>
+          <div class="feat-import">
+            <span style="color: #fbbf24;">import "github.com/umesh0492/go-fintech-india"</span>
+          </div>
+          <p class="feat-desc">
+            Zero-dependency statutory Indian domain primitives: Verhoeff D5, GSTIN Mod-36, UPI VPAs, IFSC banking checks, and exact integer paise currency calculations.
+          </p>
+          <ul class="feat-highlights">
+            <li><strong>Verhoeff D5 Dihedral:</strong> Official UIDAI Aadhaar algorithm with checksum verification and privacy masking.</li>
+            <li><strong>GSTIN Mod-36:</strong> Statutory 15-character GST validation with check digit calculation across 38 states/UTs.</li>
+            <li><strong>UPI & Banking Primitives:</strong> UPI VPA handles, IFSC branch routing, MICR, and PAN legal classification.</li>
+            <li><strong>Zero-Dependencies:</strong> Pure domain primitives with zero third-party dependencies and sub-microsecond latency.</li>
+          </ul>
+        </div>
+        <div class="feat-action">
+          <span style="font-size: 0.8rem; color: #f59e0b;">Statutory Foundation</span>
+          <a href="https://github.com/Abeta-dev/go-fintech-india" target="_blank" rel="noopener noreferrer" class="feat-btn" style="text-decoration: none; display: inline-flex; align-items: center; justify-content: center; background: rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.5); color: #fbbf24;">GitHub Repo ↗</a>
         </div>
       </div>
 
@@ -1636,7 +1635,7 @@
 
     <div class="tabs-box">
       <div class="tabs-header">
-        <button class="tab-btn active" onclick="switchCodeTab(0)">1. india (Fintech)</button>
+        <button class="tab-btn active" onclick="switchCodeTab(0)">1. Ecosystem Billing Pipeline</button>
         <button class="tab-btn" onclick="switchCodeTab(1)">2. outbox (Dual-Write)</button>
         <button class="tab-btn" onclick="switchCodeTab(2)">3. notifications (Broker)</button>
         <button class="tab-btn" onclick="switchCodeTab(3)">4. pdf (GST Invoice)</button>
@@ -1645,46 +1644,70 @@
         <button class="tab-btn" onclick="switchCodeTab(6)">7. reference-app (Full Service)</button>
       </div>
 
-      <!-- Tab 0: india -->
+      <!-- Tab 0: Ecosystem Billing Pipeline -->
       <div class="tab-pane active" id="codeTab0">
         <div class="code-container">
-          <button class="snippet-copy" onclick="copySnippet('snippetIndia', this)">Copy Code</button>
-          <pre><code id="snippetIndia">package main
+          <button class="snippet-copy" onclick="copySnippet('snippetBilling', this)">Copy Code</button>
+          <pre><code id="snippetBilling">package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/umesh0492/go-app-kit/india"
+	"time"
+
+	"github.com/jackc/pgx/v5/pgxpool"
+	fintech "github.com/umesh0492/go-fintech-india"
+	"github.com/umesh0492/go-app-kit/audit"
+	"github.com/umesh0492/go-app-kit/notifications"
+	"github.com/umesh0492/go-app-kit/outbox"
+	"github.com/umesh0492/go-app-kit/pdf"
 )
 
 func main() {
-	// 1. Exact Paise Integer Arithmetic (Zero floating-point inaccuracies)
-	taxable := india.NewMoneyFromFloat(15000.50) // 1500050 paise
-	cgst := taxable.Percentage(9.0)              // 9% CGST
-	sgst := taxable.Percentage(9.0)              // 9% SGST
-	total := taxable.Add(cgst).Add(sgst)
+	ctx := context.Background()
 
-	fmt.Printf("Taxable: ₹%s\n", taxable.Format()) // "15,000.50"
-	fmt.Printf("Total:   ₹%s\n", total.Format())   // "17,700.59"
-
-	// 2. Amount to Words (INR)
-	words := india.AmountToWordsINR(total.Paise())
-	fmt.Printf("In Words: %s\n", words)
-
-	// 3. GSTIN Statutory Mod-36 Checksum Validation
-	gstin := "27AAPFU0939F1ZV"
-	if err := india.ValidateGSTIN(gstin); err != nil {
-		fmt.Printf("Invalid GSTIN: %v\n", err)
-	} else {
-		parsed, _ := india.ParseGSTIN(gstin)
-		fmt.Printf("State: %s (%s), Entity: %s\n",
-			parsed.StateCode, parsed.StateName, parsed.PAN.EntityType())
+	// 1. Statutory validation via companion go-fintech-india
+	buyerGSTIN := "29AAACI1681G1ZM"
+	if err := fintech.ValidateGSTIN(buyerGSTIN); err != nil {
+		panic("invalid statutory GSTIN: " + err.Error())
 	}
 
-	// 4. Aadhaar Verhoeff D5 Dihedral Checksum & Masking
-	aadhaar := "234567890128"
-	if india.IsValidAadhaar(aadhaar) {
-		fmt.Printf("Masked Aadhaar: %s\n", india.MaskAadhaar(aadhaar)) // "XXXX-XXXX-0128"
-	}
+	// 2. High-precision monetary computation in paise
+	taxable := fintech.NewMoneyFromRupees(15000) // ₹15,000.00
+	cgst := taxable.Percentage(9.0)              // 9% CGST (₹1,350.00)
+	sgst := taxable.Percentage(9.0)              // 9% SGST (₹1,350.00)
+	total := taxable.Add(cgst).Add(sgst)         // ₹17,700.00
+
+	// 3. Compile in-memory GST Tax Invoice PDF
+	pdfBuf, _ := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, pdf.InvoiceData{
+		InvoiceNumber: "INV-2026-001",
+		InvoiceDate:   time.Now().Format("2006-01-02"),
+		SupplierGSTIN: "27AAPFU0939F1ZV",
+		BuyerGSTIN:    buyerGSTIN,
+	})
+
+	// 4. Transactional Outbox write in DB transaction (dual-write safety)
+	pool, _ := pgxpool.New(ctx, "postgres://localhost:5432/db")
+	store := outbox.NewPGStore(pool)
+	tx, _ := pool.Begin(ctx)
+	evt, _ := outbox.NewEvent("Invoice", "INV-2026-001", "Created", total)
+	_ = store.Insert(ctx, tx, *evt)
+	_ = tx.Commit(ctx)
+
+	// 5. Asynchronous audit & multi-channel notification dispatch
+	recorder, _ := audit.NewPGRecorder(audit.Config{DB: pool})
+	recorder.RecordAsync(audit.NewEvent(ctx, "INVOICE_CREATED", "Invoice", "INV-2026-001", nil, total))
+
+	broker := notifications.NewBroker(notifications.DefaultConfig())
+	_ = broker.SendAsync(ctx, notifications.Message{
+		Title:      "Tax Invoice Ready: INV-2026-001",
+		Body:       fmt.Sprintf("Invoice total %s generated successfully.", total.Format()),
+		Recipients: []string{"billing@enterprise.com"},
+		Channels:   []notifications.Channel{notifications.ChannelEmail},
+		Attachments: []notifications.Attachment{
+			{Filename: "INV-2026-001.pdf", ContentType: "application/pdf", Data: pdfBuf.Bytes()},
+		},
+	})
 }</code></pre>
         </div>
       </div>
@@ -1881,7 +1904,7 @@ func main() {
 import (
 	"net/http"
 	"github.com/umesh0492/go-app-kit/export"
-	"github.com/umesh0492/go-app-kit/india"
+	fintech "github.com/umesh0492/go-fintech-india"
 )
 
 type InvoiceExportRow struct {
@@ -1898,7 +1921,7 @@ func exportHandler(w http.ResponseWriter, r *http.Request) {
 		{Header: "Invoice ID", Extractor: func(r InvoiceExportRow) string { return r.ID }},
 		{Header: "Buyer GSTIN", Extractor: func(r InvoiceExportRow) string { return r.BuyerGSTIN }},
 		{Header: "Amount (INR)", Extractor: func(r InvoiceExportRow) string {
-			return india.FormatINRPaise(r.AmountPaise)
+			return fintech.FormatINRPaise(r.AmountPaise)
 		}},
 	}
 
@@ -1923,24 +1946,24 @@ func exportHandler(w http.ResponseWriter, r *http.Request) {
 import (
 	"context"
 	"github.com/umesh0492/go-app-kit/audit"
-	"github.com/umesh0492/go-app-kit/india"
 	"github.com/umesh0492/go-app-kit/notifications"
 	"github.com/umesh0492/go-app-kit/outbox"
 	"github.com/umesh0492/go-app-kit/pdf"
+	fintech "github.com/umesh0492/go-fintech-india"
 )
 
 // ProcessInvoice combines validation, PDF generation, outbox, audit, and notifications.
 func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest) ([]byte, error) {
-	// Step 1: Statutory Validation (Fail-Fast)
-	if err := india.ValidateGSTIN(req.SupplierGSTIN); err != nil {
+	// Step 1: Statutory Validation (Fail-Fast via go-fintech-india)
+	if err := fintech.ValidateGSTIN(req.SupplierGSTIN); err != nil {
 		return nil, err
 	}
-	if err := india.ValidateGSTIN(req.BuyerGSTIN); err != nil {
+	if err := fintech.ValidateGSTIN(req.BuyerGSTIN); err != nil {
 		return nil, err
 	}
 
 	// Step 2: Exact Money & Total Calculation
-	taxable := india.NewMoneyFromFloat(req.Amount)
+	taxable := fintech.NewMoneyFromFloat(req.Amount)
 	cgst := taxable.Percentage(9.0)
 	sgst := taxable.Percentage(9.0)
 	total := taxable.Add(cgst).Add(sgst)
@@ -2007,52 +2030,52 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
         </thead>
         <tbody>
           <tr>
-            <td><strong><code>india</code></strong></td>
-            <td>Statutory Indian validations (GSTIN mod-36, PAN, IFSC, Aadhaar Verhoeff D5, INR Money, Aging)</td>
-            <td>Zero external</td>
-            <td><span class="badge-pill badge-green">95.5%</span></td>
-          </tr>
-          <tr>
             <td><strong><code>export</code></strong></td>
             <td>Low-memory streaming CSV exporter with Excel UTF-8 BOM & formula injection protection</td>
             <td>Zero external</td>
-            <td><span class="badge-pill badge-green">93.8%</span></td>
+            <td><span class="badge-pill badge-green">97.5%</span></td>
           </tr>
           <tr>
             <td><strong><code>notifications</code></strong></td>
             <td>Multi-channel notification broker (SMTP Email, Slack, Webhook HMAC-SHA256 & versioning)</td>
             <td><code>go-libs/workerpool</code></td>
-            <td><span class="badge-pill badge-green">92.3%</span></td>
+            <td><span class="badge-pill badge-green">95.6%</span></td>
           </tr>
           <tr>
             <td><strong><code>outbox</code></strong></td>
             <td>PostgreSQL transactional outbox engine with row-level locked poller & lease fencing</td>
             <td><code>jackc/pgx/v5</code></td>
-            <td><span class="badge-pill badge-green">90.0%</span></td>
+            <td><span class="badge-pill badge-green">93.0%</span></td>
           </tr>
           <tr>
             <td><strong><code>audit</code></strong></td>
             <td>Partitioned PostgreSQL audit logging with automated JSON diffing & append-only triggers</td>
             <td><code>jackc/pgx/v5</code></td>
-            <td><span class="badge-pill badge-green">89.5%</span></td>
+            <td><span class="badge-pill badge-green">93.0%</span></td>
           </tr>
           <tr>
             <td><strong><code>pdf</code></strong></td>
             <td>In-memory HTML-to-PDF compilation & embedded GST invoice templates</td>
             <td>Pluggable / wkhtmltopdf</td>
-            <td><span class="badge-pill badge-green">80.7%</span></td>
+            <td><span class="badge-pill badge-green">90.8%</span></td>
           </tr>
           <tr>
             <td><strong><code>examples/invoice_service</code></strong></td>
             <td>Reference microservice with end-to-end integration test & exact paise math</td>
             <td>Internal integration</td>
-            <td><span class="badge-pill badge-blue">82.9%</span></td>
+            <td><span class="badge-pill badge-green">95.1%</span></td>
+          </tr>
+          <tr>
+            <td><strong><code>go-fintech-india</code></strong> <span class="badge-pill badge-cyan" style="font-size: 0.7rem; padding: 2px 6px;">Companion</span></td>
+            <td>Independent statutory foundation (GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, Money)</td>
+            <td>Zero external</td>
+            <td><span class="badge-pill badge-green">95.5%</span></td>
           </tr>
           <tr style="background: rgba(15, 23, 42, 0.8);">
             <td><strong>Overall Repository</strong></td>
-            <td><strong>Verified Statement Coverage across whole repository (Zero data races)</strong></td>
+            <td><strong>Verified Statement Coverage across core packages (Zero data races)</strong></td>
             <td><strong>Go 1.26.0</strong></td>
-            <td><span class="badge-pill badge-green" style="font-size: 0.95rem;">90.5%</span></td>
+            <td><span class="badge-pill badge-green" style="font-size: 0.95rem;">94.1%</span></td>
           </tr>
         </tbody>
       </table>
@@ -2067,7 +2090,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
           <div class="brand">
             <div class="brand-logo">G</div>
             <span>go-app-kit</span>
-            <span class="brand-badge">v0.3.2</span>
+            <span class="brand-badge">v0.4.0</span>
           </div>
           <p>
             Production-grade enterprise application and business domain accelerator kit for Go. Hardened statutory validations, transactional outbox, multi-channel alerts, and zero-disk document compilation.
@@ -2075,14 +2098,14 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
         </div>
 
         <div class="footer-col">
-          <h4>Packages</h4>
+          <h4>Core Packages</h4>
           <ul>
-            <li><a href="#quickstart" onclick="selectCodeTab(0)">india (Fintech)</a></li>
             <li><a href="#quickstart" onclick="selectCodeTab(1)">outbox (Dual-Write)</a></li>
             <li><a href="#quickstart" onclick="selectCodeTab(2)">notifications (Broker)</a></li>
             <li><a href="#quickstart" onclick="selectCodeTab(3)">pdf (GST Invoices)</a></li>
             <li><a href="#quickstart" onclick="selectCodeTab(4)">audit (Compliance)</a></li>
             <li><a href="#quickstart" onclick="selectCodeTab(5)">export (Streaming)</a></li>
+            <li><a href="https://github.com/Abeta-dev/go-fintech-india" target="_blank" rel="noopener noreferrer">go-fintech-india (Companion) ↗</a></li>
           </ul>
         </div>
 
@@ -2112,7 +2135,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
           © 2026 Abeta-dev & umesh0492. Licensed under the MIT License.
         </div>
         <div>
-          Built with Go 1.26.0 · Verified 90.5% Coverage · 0 Data Races
+          Built with Go 1.26.0 · Verified 94.1% Coverage · 0 Data Races
         </div>
       </div>
     </div>

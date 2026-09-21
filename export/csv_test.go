@@ -283,3 +283,51 @@ func TestCSVStreamer_ErrorHandling(t *testing.T) {
 		t.Fatalf("expected error on bad writer WriteRow")
 	}
 }
+
+type failAfterNWriter struct {
+	writesAllowed int
+}
+
+func (f *failAfterNWriter) Write(p []byte) (int, error) {
+	if f.writesAllowed <= 0 {
+		return 0, errors.New("write limit exceeded")
+	}
+	f.writesAllowed--
+	return len(p), nil
+}
+
+func TestCSVStreamer_FlushAndWriteRows_Errors(t *testing.T) {
+	columns := []export.Column[InvoiceRecord]{
+		{Header: "ID", Extractor: func(r InvoiceRecord) string { return r.ID }},
+	}
+
+	// 1. WriteRows error propagation
+	badWriter := &errWriter{failOnWrite: true}
+	streamer := export.NewCSVStreamer(badWriter, columns, export.WithBOM(false))
+	err := streamer.WriteRows([]InvoiceRecord{{ID: "1"}})
+	if err == nil {
+		t.Fatalf("expected error from WriteRows, got nil")
+	}
+
+	// 2. WriteHeader idempotency
+	var buf bytes.Buffer
+	validStreamer := export.NewCSVStreamer(&buf, columns, export.WithBOM(false))
+	if err := validStreamer.WriteHeader(); err != nil {
+		t.Fatalf("first WriteHeader failed: %v", err)
+	}
+	if err := validStreamer.WriteHeader(); err != nil {
+		t.Fatalf("second WriteHeader failed: %v", err)
+	}
+
+	// 3. Periodic flush error during WriteRow
+	w := &failAfterNWriter{writesAllowed: 1} // header write succeeds
+	streamer3 := export.NewCSVStreamer(w, columns, export.WithBOM(false), export.WithFlushInterval(1))
+	if err := streamer3.WriteHeader(); err != nil {
+		t.Fatalf("header write failed: %v", err)
+	}
+	// Row write attempts flush with writesAllowed = 0
+	err = streamer3.WriteRow(InvoiceRecord{ID: "99"})
+	if err == nil {
+		t.Fatalf("expected error from periodic flush, got nil")
+	}
+}
