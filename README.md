@@ -262,17 +262,17 @@ go test -v ./...
 
 Coverage across packages in `go-app-kit` is measured using Go's statement-level coverage tool (`go test -coverprofile=coverage.out ./...`):
 
-> **Overall Repository Statement Coverage: 94.1%** (Zero data races across `-race`)
+> **Overall Repository Statement Coverage: 93.3%** (Zero data races across `-race`)
 
 | Package | Purpose | Statement Coverage |
 |---|---|---|
-| `export` | Low-memory streaming CSV exporter with Excel UTF-8 BOM & formula injection protection | **97.5%** |
-| `notifications` | Multi-channel notification broker (SMTP Email, Slack, Webhook HMAC-SHA256 & versioning) | **95.6%** |
+| `export` | Low-memory streaming CSV exporter with Excel UTF-8 BOM & formula injection protection | **95.6%** |
+| `notifications` | Multi-channel notification broker (SMTP Email, Slack, Webhook HMAC-SHA256 & versioning) | **93.5%** |
 | `outbox` | PostgreSQL transactional outbox engine with row-level locked poller & lease fencing | **93.0%** |
 | `audit` | Partitioned PostgreSQL audit logging with automated JSON diffing & append-only triggers | **93.0%** |
 | `pdf` | In-memory HTML-to-PDF compilation & embedded GST invoice templates | **90.8%** |
 | `examples/invoice_service` | Reference microservice with end-to-end integration test & exact paise math | **95.1%** |
-| **Total Statement Coverage** | **Cumulative across all packages** | **94.1%** |
+| **Total Statement Coverage** | **Cumulative across all packages** | **93.3%** |
 
 ---
 

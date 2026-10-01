@@ -8,11 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.2] - 2026-10-01
 
 ### Added
-- **`export`**: Added `StreamHTTP[T any](w http.ResponseWriter, filename string, columns []Column[T], items []T) error` in `http.go` for streaming CSV records directly to standard `http.ResponseWriter` or `*gin.Context` (`c.Writer`), with automatic UTF-8 BOM, Windows CRLF line endings, and cache-prevention headers.
-- **`notifications`**:
-  - Added `ChannelWhatsApp` and `ChannelSMS` enum constants in `types.go`.
-  - Added `WhatsAppSender` (`whatsapp.go`) integrating with Meta WhatsApp Cloud API v20+ with Bearer authorization, structured payload rendering, and simulated testing mode.
-  - Added `SMSSender` (`sms.go`) implementing Indian DLT-compliant transactional SMS gateway dispatch with Principal Entity ID (`pe_id`) and approved header support.
+- export: Added `StreamHTTP` in `http.go` for streaming CSV records directly to `http.ResponseWriter` or Gin `c.Writer` with automatic UTF-8 BOM, Windows CRLF line endings, and cache-prevention headers.
+- notifications: Added `NewWhatsAppSender` and `WhatsAppConfig` in `whatsapp.go` integrating with Meta WhatsApp Cloud API v20+ with Bearer authorization and simulated testing mode.
+- notifications: Added `NewSMSSender` and `SMSConfig` in `sms.go` implementing Indian DLT-compliant transactional SMS gateway dispatch with Principal Entity ID (`pe_id`) and approved sender headers.
+- notifications: Added `ChannelWhatsApp` and `ChannelSMS` enum constants in `types.go`.
 
 ## [0.4.1] - 2026-09-24
 
