@@ -12,7 +12,7 @@ import (
 // Compatible with standard http.ResponseWriter as well as Gin (c.Writer), Echo, Chi, and Fiber adapters.
 func StreamHTTP[T any](w http.ResponseWriter, filename string, columns []Column[T], items []T) error {
 	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
-	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", filename))
 	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	w.Header().Set("Pragma", "no-cache")
 	w.Header().Set("Expires", "0")

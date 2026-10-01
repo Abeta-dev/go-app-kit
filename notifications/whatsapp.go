@@ -109,10 +109,10 @@ func (s *whatsAppSender) Send(ctx context.Context, msg Message) error {
 
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			respBody, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return fmt.Errorf("whatsapp API returned status %d: %s", resp.StatusCode, string(respBody))
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	return nil

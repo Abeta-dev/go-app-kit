@@ -88,7 +88,7 @@ func (s *smsSender) Send(ctx context.Context, msg Message) error {
 		if err != nil {
 			return fmt.Errorf("sms gateway request failed: %w", err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			return fmt.Errorf("sms gateway returned HTTP %d", resp.StatusCode)
