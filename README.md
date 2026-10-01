@@ -1,6 +1,6 @@
 # go-app-kit
 
-> Current main-line published release: `v0.4.1`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
+> Current main-line published release: `v0.4.2`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
 [![CI](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml)
 [![Code Quality: golangci-lint](https://img.shields.io/badge/code%20quality-golangci--lint-brightgreen?logo=go)](https://golangci-lint.run/)
@@ -10,7 +10,7 @@
 
 **Production-grade enterprise application and domain accelerator kit for Go.**
 
-While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero-dependency microservice systems engineering (resilience, concurrency pools, rate limiting, SRE golden signals), **`go-app-kit`** delivers 5 core enterprise application infrastructure packages: **transactional outbox with PostgreSQL DDL, PDF document generation with GST invoice templates, multi-channel notifications, partitioned compliance audit logging, and streaming data exports** (composing seamlessly with statutory companion [`go-fintech-india`](https://github.com/Abeta-dev/go-fintech-india)).
+While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero-dependency microservice systems engineering (resilience, concurrency pools, rate limiting, SRE golden signals), **`go-app-kit`** delivers 5 core enterprise application infrastructure packages: **transactional outbox with PostgreSQL DDL, PDF document generation with GST invoice templates, multi-channel notifications (SMTP, WhatsApp, SMS, Slack, Webhooks), partitioned compliance audit logging, and streaming data exports** (composing seamlessly with statutory companion [`go-fintech-india`](https://github.com/Abeta-dev/go-fintech-india)).
 
 ---
 
@@ -52,7 +52,7 @@ While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero
 ### Standalone Import
 When consuming `go-app-kit` in your microservice:
 ```bash
-go get github.com/umesh0492/go-app-kit@v0.4.1
+go get github.com/umesh0492/go-app-kit@v0.4.2
 ```
 
 ### Multi-Module Local Development (`go.work`)
@@ -129,6 +129,8 @@ pdfBuf, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, invoiceData,
 ### 3. `notifications` - Multi-Channel Notification Dispatcher
 Central broker powered by bounded workerpools (adhering to the [`go-libs/workerpool`](https://github.com/Abeta-dev/go-libs/tree/main/workerpool) concurrency architecture) supporting sync and async delivery:
 - **SMTP Email** (`NewEmailSender`): RFC 2822 / MIME multipart messaging (text/plain, text/html, attachments, and authentication).
+- **WhatsApp** (`NewWhatsAppSender`): Meta WhatsApp Cloud API v20+ with Bearer authorization, structured payload dispatch, and simulated testing mode.
+- **SMS** (`NewSMSSender`): Indian DLT-compliant transactional SMS gateway with Principal Entity ID (`pe_id`) and approved sender headers.
 - **Slack** (`NewSlackSender`): Structured Slack Webhook adapter with priority color bars (Red for Critical, Orange for High, Blue for Normal, Green for Low) and metadata fields.
 - **Webhook** (`NewWebhookSender`, `VerifyWebhook`, `WebhookVerifier`): HTTP POST webhook with `X-Signature-SHA256` HMAC tamper-proofing, replay prevention via timestamp binding, and constant-time signature verification.
 
@@ -175,6 +177,7 @@ High-throughput, low-memory CSV streaming:
 - Stream directly to `io.Writer` or `http.ResponseWriter` without buffering complete datasets in memory.
 - Prepend UTF-8 BOM (`\xEF\xBB\xBF`) for seamless Microsoft Excel rendering.
 - Configurable delimiters (`,`, `;`, `\t`), CRLF endings, and row batch flushing.
+- **`StreamHTTP[T any]`**: Helper function to stream CSV directly to HTTP response writers (including Gin `c.Writer`), writing headers (`Content-Type`, `Content-Disposition`, `Cache-Control`) automatically with BOM and CRLF.
 
 ```go
 import (
@@ -188,6 +191,10 @@ columns := []export.Column[InvoiceRow]{
     {Header: "GSTIN", Extractor: func(i InvoiceRow) string { return i.BuyerGSTIN }},
 }
 
+// 1. HTTP streaming directly to client / browser
+err := export.StreamHTTP(w, "invoices.csv", columns, invoiceList)
+
+// 2. Low-level chunked CSV streamer
 streamer := export.NewCSVStreamer(responseWriter, columns, export.WithBOM(true))
 for rows.Next() {
     streamer.WriteRow(fetchNextRow())
