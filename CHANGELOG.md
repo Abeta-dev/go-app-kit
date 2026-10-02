@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-10-01
+
+### Added
+- export: Added `StreamHTTP` in `http.go` for streaming CSV records directly to `http.ResponseWriter` or Gin `c.Writer` with automatic UTF-8 BOM, Windows CRLF line endings, and cache-prevention headers.
+- notifications: Added `NewWhatsAppSender` and `WhatsAppConfig` in `whatsapp.go` integrating with Meta WhatsApp Cloud API v20+ with Bearer authorization and simulated testing mode.
+- notifications: Added `NewSMSSender` and `SMSConfig` in `sms.go` implementing Indian DLT-compliant transactional SMS gateway dispatch with Principal Entity ID (`pe_id`) and approved sender headers.
+- notifications: Added `ChannelWhatsApp` and `ChannelSMS` enum constants in `types.go`.
+
 ## [0.4.1] - 2026-09-24
 
 ### Changed

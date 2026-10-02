@@ -10,10 +10,12 @@ type Channel string
 
 // Supported delivery channels.
 const (
-	ChannelEmail   Channel = "EMAIL"
-	ChannelSlack   Channel = "SLACK"
-	ChannelWebhook Channel = "WEBHOOK"
-	ChannelInApp   Channel = "IN_APP"
+	ChannelEmail    Channel = "EMAIL"
+	ChannelSlack    Channel = "SLACK"
+	ChannelWebhook  Channel = "WEBHOOK"
+	ChannelInApp    Channel = "IN_APP"
+	ChannelWhatsApp Channel = "WHATSAPP"
+	ChannelSMS      Channel = "SMS"
 )
 
 // Priority defines the urgency of a notification.
