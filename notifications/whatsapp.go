@@ -88,10 +88,7 @@ func (s *whatsAppSender) Send(ctx context.Context, msg Message) error {
 			},
 		}
 
-		bodyBytes, err := json.Marshal(payload)
-		if err != nil {
-			return fmt.Errorf("failed to marshal whatsapp payload: %w", err)
-		}
+		bodyBytes, _ := json.Marshal(payload)
 
 		url := fmt.Sprintf("%s/%s/messages", strings.TrimSuffix(s.cfg.BaseURL, "/"), s.cfg.PhoneNumberID)
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))

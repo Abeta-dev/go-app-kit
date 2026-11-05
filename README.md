@@ -1,6 +1,6 @@
 # go-app-kit
 
-> Current main-line published release: `v0.4.3`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
+> Current main-line published release: `v0.5.0`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
 [![CI](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml)
 [![Code Quality: golangci-lint](https://img.shields.io/badge/code%20quality-golangci--lint-brightgreen?logo=go)](https://golangci-lint.run/)
@@ -24,7 +24,7 @@ While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero
                           │ imports                    │ imports
                           ▼                            ▼
 ┌─────────────────────────────────────────┐  ┌───────────────────────────────────┐
-│     github.com/umesh0492/go-app-kit     │  │ github.com/umesh0492/             │
+│      github.com/Abeta-dev/go-app-kit    │  │ github.com/Abeta-dev/             │
 │                                         │  │   go-fintech-india (Companion)    │
 │   ├── outbox/        PostgreSQL Outbox  │  │                                   │
 │   ├── pdf/           HTML-to-PDF / GST  │  │   ├── GSTIN (mod-36), PAN, IFSC   │
@@ -35,7 +35,7 @@ While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero
                      │ builds upon
                      ▼
 ┌────────────────────────────────────────────────────────────────────────────────┐
-│                        github.com/umesh0492/go-libs                            │
+│                         github.com/Abeta-dev/go-libs                           │
 │                                                                                │
 │   ├── workerpool/      Bounded panic-safe concurrent workers                   │
 │   ├── circuitbreaker/  Microsecond circuit breaking (Three-state machine)      │
@@ -52,7 +52,7 @@ While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero
 ### Standalone Import
 When consuming `go-app-kit` in your microservice:
 ```bash
-go get github.com/umesh0492/go-app-kit@v0.4.3
+go get github.com/Abeta-dev/go-app-kit@v0.5.0
 ```
 
 ### Multi-Module Local Development (`go.work`)
@@ -89,7 +89,7 @@ Guarantees at-least-once message delivery without dual-write race conditions:
 - **Dead-Lettering & Backoff**: Full-jitter exponential backoff and configurable max retries transitioning unresolvable poison pills or exhausted retries to `DEAD_LETTER`.
 
 ```go
-import "github.com/umesh0492/go-app-kit/outbox"
+import "github.com/Abeta-dev/go-app-kit/outbox"
 
 // Transactionally write domain event inside database transaction
 evt, _ := outbox.NewEvent("Invoice", "INV-100", "InvoiceIssued", invoicePayload)
@@ -114,7 +114,7 @@ In-memory compilation via `wkhtmltopdf` (requires host `wkhtmltopdf` binary, NOT
   - `pdf.ReceiptTemplate`: Clean, modern payment receipt for SaaS and transaction settlements.
 
 ```go
-import "github.com/umesh0492/go-app-kit/pdf"
+import "github.com/Abeta-dev/go-app-kit/pdf"
 
 // Compile GST Tax Invoice into in-memory PDF buffer
 pdfBuf, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, invoiceData,
@@ -128,14 +128,14 @@ pdfBuf, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, invoiceData,
 
 ### 3. `notifications` - Multi-Channel Notification Dispatcher
 Central broker powered by bounded workerpools (adhering to the [`go-libs/workerpool`](https://github.com/Abeta-dev/go-libs/tree/main/workerpool) concurrency architecture) supporting sync and async delivery:
-- **SMTP Email** (`NewEmailSender`): RFC 2822 / MIME multipart messaging (text/plain, text/html, attachments, and authentication).
+- **SMTP Email** (`NewEmailSender`) & **Brevo Transactional Email** (`NewBrevoSender`): RFC 2822 / MIME multipart messaging (text/plain, text/html, attachments, and authentication) and Brevo v3 REST API.
 - **WhatsApp** (`NewWhatsAppSender`): Meta WhatsApp Cloud API v20+ with Bearer authorization, structured payload dispatch, and simulated testing mode.
-- **SMS** (`NewSMSSender`): Indian DLT-compliant transactional SMS gateway with Principal Entity ID (`pe_id`) and approved sender headers.
+- **SMS** (`NewSMSSender`): Indian DLT-compliant transactional SMS gateway with Principal Entity ID (`pe_id`), DLT Template ID (`template_id` via `SMSConfig.TemplateID` or `Message.Metadata["template_id"]`), and approved sender headers.
 - **Slack** (`NewSlackSender`): Structured Slack Webhook adapter with priority color bars (Red for Critical, Orange for High, Blue for Normal, Green for Low) and metadata fields.
 - **Webhook** (`NewWebhookSender`, `VerifyWebhook`, `WebhookVerifier`): HTTP POST webhook with `X-Signature-SHA256` HMAC tamper-proofing, replay prevention via timestamp binding, and constant-time signature verification.
 
 ```go
-import "github.com/umesh0492/go-app-kit/notifications"
+import "github.com/Abeta-dev/go-app-kit/notifications"
 
 broker := notifications.NewBroker(notifications.DefaultConfig())
 broker.RegisterSender(notifications.NewEmailSender(emailConfig))
@@ -157,13 +157,14 @@ err := broker.SendAsync(ctx, notifications.Message{
 ---
 
 ### 4. `audit` - Audit Trail & State Diffing
-Structured audit logging with relational persistence and change tracking:
+Structured audit logging with relational persistence, cryptographic hash-chaining, and change tracking:
 - **DDL** (`001_audit_logs.sql`): Partitioned by range on `created_at` with trigger-enforced append-only constraints (`trg_prevent_audit_log_modification`).
+- **Tamper-Evident Hash Chaining** (`ComputeHash`, `Event.PrevHash`, `Event.Hash`): Computes a deterministic SHA-256 hash chain across sequential audit events recorded by `NewPGRecorder`, storing `prev_hash` and `hash` in `metadata` for tamper detection.
 - **State Diffing** (`ComputeDiff`): Computes field-level property changes (`Old` vs `New`) between before and after JSON states.
 - **Context Extraction**: Pulls `Actor`, IP address, and comments from context without contaminating domain signatures.
 
 ```go
-import "github.com/umesh0492/go-app-kit/audit"
+import "github.com/Abeta-dev/go-app-kit/audit"
 
 // Computes field-level differences and records asynchronously
 event := audit.NewEvent(ctx, "INVOICE_UPDATE", "Invoice", "INV-100", beforeState, afterState)
@@ -177,12 +178,12 @@ High-throughput, low-memory CSV streaming:
 - Stream directly to `io.Writer` or `http.ResponseWriter` without buffering complete datasets in memory.
 - Prepend UTF-8 BOM (`\xEF\xBB\xBF`) for seamless Microsoft Excel rendering.
 - Configurable delimiters (`,`, `;`, `\t`), CRLF endings, and row batch flushing.
-- **`StreamHTTP[T any]`**: Helper function to stream CSV directly to HTTP response writers (including Gin `c.Writer`), writing headers (`Content-Type`, `Content-Disposition`, `Cache-Control`) automatically with BOM and CRLF.
+- **`StreamHTTP[T any]`**: Helper function to stream CSV directly to HTTP response writers (including Gin `c.Writer`), writing headers (`Content-Type`, sanitized `Content-Disposition`, `X-Content-Type-Options: nosniff`, `Cache-Control`) automatically with BOM and CRLF.
 
 ```go
 import (
     fintech "github.com/umesh0492/go-fintech-india"
-    "github.com/umesh0492/go-app-kit/export"
+    "github.com/Abeta-dev/go-app-kit/export"
 )
 
 columns := []export.Column[InvoiceRow]{
@@ -262,17 +263,17 @@ go test -v ./...
 
 Coverage across packages in `go-app-kit` is measured using Go's statement-level coverage tool (`go test -coverprofile=coverage.out ./...`):
 
-> **Overall Repository Statement Coverage: 93.3%** (Zero data races across `-race`)
+> **Overall Repository Statement Coverage: 100.0%** (Zero data races across `-race`)
 
 | Package | Purpose | Statement Coverage |
 |---|---|---|
-| `export` | Low-memory streaming CSV exporter with Excel UTF-8 BOM & formula injection protection | **95.6%** |
-| `notifications` | Multi-channel notification broker (SMTP Email, Slack, Webhook HMAC-SHA256 & versioning) | **93.5%** |
-| `outbox` | PostgreSQL transactional outbox engine with row-level locked poller & lease fencing | **93.0%** |
-| `audit` | Partitioned PostgreSQL audit logging with automated JSON diffing & append-only triggers | **93.0%** |
-| `pdf` | In-memory HTML-to-PDF compilation & embedded GST invoice templates | **90.8%** |
-| `examples/invoice_service` | Reference microservice with end-to-end integration test & exact paise math | **95.1%** |
-| **Total Statement Coverage** | **Cumulative across all packages** | **93.3%** |
+| `export` | Low-memory streaming CSV exporter with Excel UTF-8 BOM & formula injection protection | **100.0%** |
+| `notifications` | Multi-channel notification broker (SMTP Email, Brevo, WhatsApp, SMS, Slack, Webhook HMAC-SHA256) | **100.0%** |
+| `outbox` | PostgreSQL transactional outbox engine with row-level locked poller & lease fencing | **100.0%** |
+| `audit` | Partitioned PostgreSQL audit logging with automated JSON diffing, hash-chaining & append-only triggers | **100.0%** |
+| `pdf` | In-memory HTML-to-PDF compilation & embedded GST invoice templates | **100.0%** |
+| `examples/invoice_service` | Reference microservice with end-to-end integration test & exact paise math | **100.0%** |
+| **Total Statement Coverage** | **Cumulative across all packages** | **100.0%** |
 
 ---
 

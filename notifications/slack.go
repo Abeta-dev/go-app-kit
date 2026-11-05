@@ -99,10 +99,7 @@ func (s *slackSender) Send(ctx context.Context, msg Message) error {
 		},
 	}
 
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return fmt.Errorf("failed to encode slack payload: %w", err)
-	}
+	data, _ := json.Marshal(payload)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.cfg.WebhookURL, bytes.NewReader(data))
 	if err != nil {

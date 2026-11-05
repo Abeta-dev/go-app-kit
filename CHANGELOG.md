@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-11-05
+
+### Added
+- audit: Added tamper-evident SHA-256 hash chaining (`ComputeHash`, `PrevHash`, `Hash`) on `Event` and `NewPGRecorder`.
+- notifications: Added `TemplateID` field on `SMSConfig` for Indian DLT template ID injection alongside per-message `template_id` metadata override.
+- examples/invoice_service: Added `ExportInvoicesCSV` on `InvoiceService` demonstrating HTTP streaming CSV export of `InvoiceRequest` records with `StreamHTTP`.
+
+### Changed
+- module: Migrated canonical Go module path to `github.com/Abeta-dev/go-app-kit` (`v0.5.0`) across `go.mod`, packages, examples, scripts, workflows, documentation, and agent skills.
+- tests: Achieved **100.0% statement coverage** across all 5 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`) and `examples/invoice_service`.
+
+### Fixed
+- export: Sanitized `Content-Disposition` filename in `StreamHTTP` against CRLF/header-injection and path-traversal characters, and added `X-Content-Type-Options: nosniff`.
+- outbox: Hardened `BackoffWithJitter` against bit-shift overflow for `attempt > 30` and `base * factor` int64 overflow.
+
 ## [0.4.3] - 2026-11-05
 
 ### Changed

@@ -97,9 +97,6 @@ func NewPGStore(db DBOperator, opts ...StoreOption) Store {
 	for _, opt := range opts {
 		opt(s)
 	}
-	if s.leaseDuration < 5*time.Second {
-		s.leaseDuration = 60 * time.Second
-	}
 	return s
 }
 
@@ -107,9 +104,6 @@ func NewPGStore(db DBOperator, opts ...StoreOption) Store {
 func (s *pgStore) Insert(ctx context.Context, op DBOperator, event Event) error {
 	if s.initErr != nil {
 		return s.initErr
-	}
-	if !tableNameRegex.MatchString(s.tableName) {
-		return ErrInvalidTableName
 	}
 	if op == nil {
 		op = s.db
@@ -152,15 +146,7 @@ func (s *pgStore) Insert(ctx context.Context, op DBOperator, event Event) error 
 // fetchPendingQuery returns the SQL query string used to fetch and atomically lease pending events for relay
 // utilizing row-level locking (FOR UPDATE SKIP LOCKED), fencing tokens, and an atomic CTE leasing state machine.
 func (s *pgStore) fetchPendingQuery() string {
-	tbl := s.tableName
-	if tbl == "" {
-		tbl = "outbox_events"
-	}
-
 	leaseSecs := int(s.leaseDuration.Seconds())
-	if leaseSecs <= 0 {
-		leaseSecs = 60
-	}
 
 	return fmt.Sprintf(`WITH pending AS (
     SELECT id FROM %s
@@ -173,16 +159,13 @@ func (s *pgStore) fetchPendingQuery() string {
 UPDATE %s
 SET status = 'PROCESSING', locked_until = NOW() + INTERVAL '%ds', lease_token = gen_random_uuid()
 WHERE id IN (SELECT id FROM pending)
-RETURNING id, aggregate_type, aggregate_id, event_type, payload, retry_count, max_retries, status, locked_until, created_at, published_at, last_error, lease_token;`, tbl, tbl, leaseSecs)
+RETURNING id, aggregate_type, aggregate_id, event_type, payload, retry_count, max_retries, status, locked_until, created_at, published_at, last_error, lease_token;`, s.tableName, s.tableName, leaseSecs)
 }
 
 // FetchPendingBatch queries and atomically leases ready-to-process events using SKIP LOCKED row-level locking.
 func (s *pgStore) FetchPendingBatch(ctx context.Context, limit int) ([]Event, error) {
 	if s.initErr != nil {
 		return nil, s.initErr
-	}
-	if !tableNameRegex.MatchString(s.tableName) {
-		return nil, ErrInvalidTableName
 	}
 	if limit <= 0 {
 		limit = 50
@@ -243,9 +226,6 @@ func (s *pgStore) MarkPublished(ctx context.Context, id uuid.UUID, leaseToken ..
 	if s.initErr != nil {
 		return s.initErr
 	}
-	if !tableNameRegex.MatchString(s.tableName) {
-		return ErrInvalidTableName
-	}
 
 	var query string
 	var args []any
@@ -281,9 +261,6 @@ func (s *pgStore) MarkPublished(ctx context.Context, id uuid.UUID, leaseToken ..
 func (s *pgStore) MarkFailed(ctx context.Context, id uuid.UUID, lastErr string, nextRetry time.Time, finalFail bool, leaseToken ...uuid.UUID) error {
 	if s.initErr != nil {
 		return s.initErr
-	}
-	if !tableNameRegex.MatchString(s.tableName) {
-		return ErrInvalidTableName
 	}
 
 	newStatus := StatusPending

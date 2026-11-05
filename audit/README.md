@@ -86,7 +86,7 @@ import (
     "context"
 
     "github.com/jackc/pgx/v5/pgxpool"
-    "github.com/umesh0492/go-app-kit/audit"
+    "github.com/Abeta-dev/go-app-kit/audit"
 )
 
 func main() {

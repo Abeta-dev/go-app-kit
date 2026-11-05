@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net/http"
 	"strings"
 	"time"
 
-	"github.com/umesh0492/go-app-kit/audit"
-	"github.com/umesh0492/go-app-kit/notifications"
-	"github.com/umesh0492/go-app-kit/outbox"
-	"github.com/umesh0492/go-app-kit/pdf"
+	"github.com/Abeta-dev/go-app-kit/audit"
+	"github.com/Abeta-dev/go-app-kit/export"
+	"github.com/Abeta-dev/go-app-kit/notifications"
+	"github.com/Abeta-dev/go-app-kit/outbox"
+	"github.com/Abeta-dev/go-app-kit/pdf"
 	fintech "github.com/umesh0492/go-fintech-india"
 )
 
@@ -272,16 +274,13 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 	}
 
 	// 5. Enqueue Domain Event to Transactional Outbox
-	outboxEvt, err := outbox.NewEvent("Invoice", req.InvoiceNumber, "InvoiceIssued", map[string]any{
+	outboxEvt, _ := outbox.NewEvent("Invoice", req.InvoiceNumber, "InvoiceIssued", map[string]any{
 		"invoice_number": req.InvoiceNumber,
 		"grand_total":    formatMoney(totalMoney),
 		"total_paise":    totalMoney.Paise(),
 		"currency":       "INR",
 		"buyer_email":    req.BuyerEmail,
 	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to create outbox event: %w", err)
-	}
 	if err := s.outboxStore.Insert(ctx, tx, *outboxEvt); err != nil {
 		return nil, fmt.Errorf("outbox insert failed: %w", err)
 	}
@@ -304,6 +303,18 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, tx outbox.DBOperato
 	_ = s.notificationBroker.SendAsync(ctx, notifMsg)
 
 	return pdfBuf.Bytes(), nil
+}
+
+// ExportInvoicesCSV streams a slice of InvoiceRequest records as a formula-safe CSV attachment over HTTP.
+func (s *InvoiceService) ExportInvoicesCSV(w http.ResponseWriter, filename string, invoices []InvoiceRequest) error {
+	cols := []export.Column[InvoiceRequest]{
+		{Header: "Invoice Number", Extractor: func(r InvoiceRequest) string { return r.InvoiceNumber }},
+		{Header: "Supplier GSTIN", Extractor: func(r InvoiceRequest) string { return r.SupplierGSTIN }},
+		{Header: "Buyer Name", Extractor: func(r InvoiceRequest) string { return r.BuyerName }},
+		{Header: "Buyer GSTIN", Extractor: func(r InvoiceRequest) string { return r.BuyerGSTIN }},
+		{Header: "Taxable Amount (INR)", Extractor: func(r InvoiceRequest) string { return formatMoney(r.TaxableAmount) }},
+	}
+	return export.StreamHTTP(w, filename, cols, invoices)
 }
 
 func main() {

@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Existing immutable tag to verify and release (for example v0.3.1)'
+        description: 'Existing immutable tag to verify and release (for example v0.5.0)'
         required: true
         type: string
 

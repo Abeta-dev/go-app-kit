@@ -115,16 +115,25 @@ func TestDefaultGenerator_Options(t *testing.T) {
 	opts.MarginLeft = 20
 	opts.MarginRight = 20
 
+	// 1. Force missing binary error branch
+	origPath := wkhtml.GetPath()
+	defer wkhtml.SetPath(origPath)
+	wkhtml.SetPath("")
+	t.Setenv("WKHTMLTOPDF_PATH", "")
+	t.Setenv("PATH", "")
+	genErr, err := defaultGenerator(opts)
+	if err == nil || !strings.Contains(err.Error(), ErrNoRendererAvailable.Error()) {
+		t.Errorf("expected ErrNoRendererAvailable wrapped, got: %v", err)
+	}
+	if genErr != nil {
+		t.Errorf("expected nil generator on error")
+	}
+
+	// 2. Point wkhtml path to /usr/bin/true so NewPDFGenerator succeeds and sets all options
+	wkhtml.SetPath("/usr/bin/true")
 	gen, err := defaultGenerator(opts)
 	if err != nil {
-		// On environments without wkhtmltopdf binary, verify proper error wrapping
-		if !strings.Contains(err.Error(), ErrNoRendererAvailable.Error()) {
-			t.Errorf("expected ErrNoRendererAvailable wrapped, got: %v", err)
-		}
-		if gen != nil {
-			t.Errorf("expected nil generator on error")
-		}
-		return
+		t.Fatalf("expected defaultGenerator to succeed with /usr/bin/true, got: %v", err)
 	}
 	if gen == nil {
 		t.Errorf("expected non-nil generator")
@@ -205,9 +214,9 @@ func TestWkhtmlRenderer_Render_LegacyGeneratorAndConcurrency(t *testing.T) {
 	})
 	defer restore()
 
-	// 1. Renders via legacy Create() (non-CreateContext)
+	// 1. Renders via legacy Create() (non-CreateContext) and nil Context in Options
 	r := NewWkhtmlRenderer(2)
-	data, err := r.Render("<html><body>legacy</body></html>", DefaultOptions())
+	data, err := r.Render("<html><body>legacy</body></html>", Options{})
 	if err != nil {
 		t.Fatalf("Render failed: %v", err)
 	}

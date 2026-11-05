@@ -1,11 +1,11 @@
 ---
 name: go-app-kit
-description: "Compose and maintain enterprise Go application workflows using github.com/umesh0492/go-app-kit (outbox, pdf, notifications, audit, export). Use when building transactional outboxes, GST PDF invoices, multi-channel notifications, compliance audit logs, streaming CSV exports, or running go-app-kit truth gates."
+description: "Compose and maintain enterprise Go application workflows using github.com/Abeta-dev/go-app-kit (outbox, pdf, notifications, audit, export). Use when building transactional outboxes, GST PDF invoices, multi-channel notifications, compliance audit logs, streaming CSV exports, or running go-app-kit truth gates."
 ---
 
 # `go-app-kit` — Enterprise Application Accelerator Skill
 
-Use this umbrella skill when integrating `github.com/umesh0492/go-app-kit` into a Go microservice or maintaining the `go-app-kit` repository. For deep package-level APIs and DDL schemas, load the dedicated subskill.
+Use this umbrella skill when integrating `github.com/Abeta-dev/go-app-kit` into a Go microservice or maintaining the `go-app-kit` repository. For deep package-level APIs and DDL schemas, load the dedicated subskill.
 
 ## 1. Subskill Routing Table
 
@@ -13,10 +13,10 @@ Use this umbrella skill when integrating `github.com/umesh0492/go-app-kit` into 
 | :--- | :--- | :--- |
 | PostgreSQL transactional outbox, `SKIP LOCKED` polling, lease fencing, retry/dead-letter | `go-app-kit-outbox` | `skills/go-app-kit-outbox/SKILL.md` |
 | HTML-to-PDF compilation, `wkhtmltopdf` concurrency semaphore, GST invoice & receipt templates | `go-app-kit-pdf` | `skills/go-app-kit-pdf/SKILL.md` |
-| Multi-channel broker (`SendAsync`), SMTP, WhatsApp, DLT SMS, Slack, HMAC-SHA256 webhooks | `go-app-kit-notifications` | `skills/go-app-kit-notifications/SKILL.md` |
+| Multi-channel broker (`SendAsync`), SMTP, Brevo, WhatsApp, DLT SMS, Slack, HMAC-SHA256 webhooks | `go-app-kit-notifications` | `skills/go-app-kit-notifications/SKILL.md` |
 | Range-partitioned PostgreSQL audit logs, append-only triggers, JSON `ComputeDiff` | `go-app-kit-audit` | `skills/go-app-kit-audit/SKILL.md` |
 | Low-memory streaming CSV export (`CSVStreamer[T]`, `StreamHTTP[T]`), Excel UTF-8 BOM, CSV escaping | `go-app-kit-export` | `skills/go-app-kit-export/SKILL.md` |
-| Indian GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, UPI, exact paise `Money` math | `go-fintech-india` | Companion module `github.com/umesh0492/go-fintech-india` |
+| Indian GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, UPI, exact paise `Money` math | `go-fintech-india` | Companion module `github.com/Abeta-dev/go-fintech-india` |
 
 ---
 
@@ -24,17 +24,17 @@ Use this umbrella skill when integrating `github.com/umesh0492/go-app-kit` into 
 
 When combining `go-app-kit` packages in a business transaction (e.g., issuing an invoice):
 
-1. **Validate Statutory Inputs & Compute Exact Paise Math** via `github.com/umesh0492/go-fintech-india`:
+1. **Validate Statutory Inputs & Compute Exact Paise Math** via `github.com/Abeta-dev/go-fintech-india`:
    - `fintech.ValidateGSTIN(buyerGSTIN)`, `fintech.ValidatePAN(pan)`
    - Compute CGST/SGST/IGST in integer paise (`fintech.Money`).
 2. **Persist Domain State + Outbox Event in One Postgres Transaction** (`go-app-kit/outbox`):
    - `evt, err := outbox.NewEvent("Invoice", inv.ID, "InvoiceIssued", payload)`
    - `err = outboxStore.Insert(ctx, tx, *evt)`
 3. **Record Compliance Audit Trail** (`go-app-kit/audit`):
-   - `auditEvt := audit.NewEvent(ctx, "INVOICE_CREATE", "Invoice", inv.ID, nil, inv)`
-   - `recorder.RecordAsync(auditEvt)`
+   - `auditEvt := audit.NewEvent(ctx, "INVOICE_CREATE", "Invoice", inv.ID, nil, map[string]any{"invoice_id": inv.ID})`
+   - `_ = recorder.RecordAsync(auditEvt)`
 4. **Render GST Tax Invoice PDF** (`go-app-kit/pdf`):
-   - `pdfBytes, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, invoiceData, pdf.WithPageSize("A4"))`
+   - `pdfBuf, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, invoiceData, pdf.WithPageSize("A4"))`
 5. **Dispatch Multi-Channel Notification** (`go-app-kit/notifications`):
    - `err = broker.SendAsync(ctx, notifications.Message{...})`
 6. **Stream Bulk CSV Reports** (`go-app-kit/export`):

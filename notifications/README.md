@@ -50,7 +50,7 @@ import (
     "context"
     "time"
 
-    "github.com/umesh0492/go-app-kit/notifications"
+    "github.com/Abeta-dev/go-app-kit/notifications"
 )
 
 func main() {

@@ -1,4 +1,4 @@
-module github.com/umesh0492/go-app-kit
+module github.com/Abeta-dev/go-app-kit
 
 go 1.26.0
 

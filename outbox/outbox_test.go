@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Abeta-dev/go-app-kit/outbox"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/umesh0492/go-app-kit/outbox"
 )
 
 type mockStore struct {

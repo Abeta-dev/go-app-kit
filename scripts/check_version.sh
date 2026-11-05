@@ -10,7 +10,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${ROOT_DIR}"
 
 readonly SEMVER_PATTERN='[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?'
-readonly MODULE='github.com/umesh0492/go-app-kit'
+readonly MODULE='github.com/Abeta-dev/go-app-kit'
 
 fail() {
   echo "ERROR: $*" >&2
@@ -35,7 +35,7 @@ resolve_tag() {
     printf '%s\n' "${GIT_TAG}"
   elif [[ "${GITHUB_REF_TYPE:-}" == 'tag' && -n "${GITHUB_REF_NAME:-}" ]]; then
     printf '%s\n' "${GITHUB_REF_NAME}"
-  else
+  elif [[ -z "$(git status --porcelain 2>/dev/null)" ]]; then
     git describe --tags --exact-match 2>/dev/null || true
   fi
 }

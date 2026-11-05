@@ -47,7 +47,7 @@ package main
 
 import (
     "os"
-    "github.com/umesh0492/go-app-kit/pdf"
+    "github.com/Abeta-dev/go-app-kit/pdf"
 )
 
 func main() {

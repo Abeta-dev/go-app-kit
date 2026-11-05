@@ -2,14 +2,16 @@ package audit_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
+	"github.com/Abeta-dev/go-app-kit/audit"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/umesh0492/go-app-kit/audit"
 )
 
 type mockDBOperator struct {
@@ -537,7 +539,7 @@ func TestRecordAsync_TaskErrorAndPolicyBlock(t *testing.T) {
 	var once sync.Once
 	blockingDB := &mockDBOperator{
 		execHook: func(ctx context.Context, sql string, args []any) {
-			if strings.Contains(sql, "BLOCKING_EVT") {
+			if len(args) > 6 && args[6] == "BLOCKING_EVT" {
 				<-blockCh
 			}
 		},
@@ -569,5 +571,96 @@ func TestRecordAsync_TaskErrorAndPolicyBlock(t *testing.T) {
 	err = blockRecorder.RecordAsync(audit.Event{Action: "UNBLOCKED_EVT", EntityType: "Test", EntityID: "3"})
 	if err != nil {
 		t.Fatalf("expected PolicyBlock to succeed once unblocked, got: %v", err)
+	}
+}
+
+func TestPGRecorder_ConcurrentHashChainLinearity_And_StoppedPool(t *testing.T) {
+	mockDB := &mockDBOperator{}
+	recorder, err := audit.NewPGRecorder(audit.Config{
+		DB:        mockDB,
+		Workers:   4,
+		QueueSize: 64,
+	})
+	if err != nil {
+		t.Fatalf("NewPGRecorder failed: %v", err)
+	}
+
+	const totalEvents = 30
+	var wg sync.WaitGroup
+	for i := 0; i < totalEvents; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			evt := audit.NewEvent(
+				context.Background(),
+				fmt.Sprintf("ACTION_%d", idx),
+				"Invoice",
+				fmt.Sprintf("INV-%d", idx),
+				nil,
+				nil,
+			)
+			if idx%2 == 0 {
+				if err := recorder.Record(context.Background(), evt); err != nil {
+					t.Errorf("Record failed: %v", err)
+				}
+			} else {
+				if err := recorder.RecordAsync(evt); err != nil {
+					t.Errorf("RecordAsync failed: %v", err)
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait()
+	recorder.Close()
+
+	// Verify RecordAsync after Close returns pool stopped error
+	err = recorder.RecordAsync(audit.Event{Action: "AFTER_CLOSE", EntityType: "Invoice", EntityID: "INV-X"})
+	if err == nil {
+		t.Fatalf("expected error from RecordAsync after Close(), got nil")
+	}
+
+	mockDB.mu.Lock()
+	defer mockDB.mu.Unlock()
+
+	if len(mockDB.executedArgs) != totalEvents {
+		t.Fatalf("expected %d recorded events, got %d", totalEvents, len(mockDB.executedArgs))
+	}
+
+	// Verify the set of (prev_hash -> hash) links forms a single unbranched linear chain from ""
+	nextByPrev := make(map[string]string, totalEvents)
+	seenHashes := make(map[string]bool, totalEvents)
+	for i, args := range mockDB.executedArgs {
+		metaBytes, ok := args[13].([]byte)
+		if !ok {
+			t.Fatalf("row %d: expected metadata []byte at args[13], got %T", i, args[13])
+		}
+		var meta map[string]string
+		if err := json.Unmarshal(metaBytes, &meta); err != nil {
+			t.Fatalf("row %d: failed to unmarshal metadata: %v", i, err)
+		}
+		prevHash := meta["prev_hash"]
+		hash := meta["hash"]
+		if hash == "" {
+			t.Fatalf("row %d: expected non-empty hash", i)
+		}
+		if existing, dup := nextByPrev[prevHash]; dup {
+			t.Fatalf("row %d: hash chain forked! prev_hash=%q used by both %q and %q", i, prevHash, existing, hash)
+		}
+		if seenHashes[hash] {
+			t.Fatalf("row %d: duplicate hash %q", i, hash)
+		}
+		nextByPrev[prevHash] = hash
+		seenHashes[hash] = true
+	}
+
+	// Walk the chain from genesis ("") for totalEvents steps
+	curr := ""
+	for step := 0; step < totalEvents; step++ {
+		next, ok := nextByPrev[curr]
+		if !ok {
+			t.Fatalf("broken hash chain at step %d: no event has prev_hash=%q", step, curr)
+		}
+		curr = next
 	}
 }

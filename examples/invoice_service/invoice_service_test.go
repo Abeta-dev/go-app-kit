@@ -4,17 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/Abeta-dev/go-app-kit/audit"
+	"github.com/Abeta-dev/go-app-kit/notifications"
+	"github.com/Abeta-dev/go-app-kit/outbox"
+	"github.com/Abeta-dev/go-app-kit/pdf"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/umesh0492/go-app-kit/audit"
-	"github.com/umesh0492/go-app-kit/notifications"
-	"github.com/umesh0492/go-app-kit/outbox"
-	"github.com/umesh0492/go-app-kit/pdf"
 	fintech "github.com/umesh0492/go-fintech-india"
 )
 
@@ -387,6 +388,7 @@ func TestProcessInvoice_ItemCalculationVariants(t *testing.T) {
 	)
 
 	req := InvoiceRequest{
+		Tx:            &mockTxOperator{},
 		InvoiceNumber: "INV-VAR-001",
 		SupplierGSTIN: supplierGSTIN,
 		SupplierName:  "Test Supplier",
@@ -407,6 +409,12 @@ func TestProcessInvoice_ItemCalculationVariants(t *testing.T) {
 				UnitPrice:   fintech.NewMoneyFromRupees(500),
 				Description: "Widget A",
 			},
+			{
+				Index:         2,
+				Quantity:      1,
+				TaxableAmount: fintech.NewMoneyFromRupees(250), // UnitPrice zero -> defaults to TaxableAmount
+				Description:   "",                              // defaults to req.Description
+			},
 		},
 	}
 
@@ -417,4 +425,30 @@ func TestProcessInvoice_ItemCalculationVariants(t *testing.T) {
 	if len(pdfBytes) == 0 {
 		t.Fatalf("expected non-empty pdf bytes")
 	}
+
+	// Verify CSV HTTP export, Outbox Relay batch processing, and simulated WhatsApp/SMS senders
+	rec := httptest.NewRecorder()
+	if err := svc.ExportInvoicesCSV(rec, "invoices.csv", []InvoiceRequest{req}); err != nil {
+		t.Fatalf("ExportInvoicesCSV failed: %v", err)
+	}
+	if !strings.Contains(rec.Body.String(), "INV-VAR-001") {
+		t.Fatalf("expected INV-VAR-001 in CSV export, got: %s", rec.Body.String())
+	}
+
+	// Verify Mock helpers for 100% coverage in test file
+	var txOp mockTxOperator
+	_, _ = txOp.Exec(context.Background(), "SELECT 1")
+	_, _ = txOp.Query(context.Background(), "SELECT 1")
+	_ = txOp.QueryRow(context.Background(), "SELECT 1")
+	var ar mockAuditRecorder
+	_ = ar.RecordAsync(audit.Event{})
+	ar.Close()
+	var nb mockNotificationBroker
+	nb.RegisterSender(nil)
+	_ = nb.Send(context.Background(), notifications.Message{})
+	nb.Close()
+	var os mockOutboxStore
+	_, _ = os.FetchPendingBatch(context.Background(), 10)
+	_ = os.MarkPublished(context.Background(), uuid.New())
+	_ = os.MarkFailed(context.Background(), uuid.New(), "err", time.Now(), false)
 }

@@ -166,7 +166,7 @@ import (
     "time"
 
     "github.com/jackc/pgx/v5/pgxpool"
-    "github.com/umesh0492/go-app-kit/outbox"
+    "github.com/Abeta-dev/go-app-kit/outbox"
 )
 
 func main() {
@@ -174,8 +174,8 @@ func main() {
     pool, _ := pgxpool.New(ctx, "postgres://user:pass@localhost:5432/app_db")
     defer pool.Close()
 
-    // Create Postgres outbox storage with dialect support
-    outboxStore := outbox.NewPGStore(pool, outbox.WithDialect(outbox.DialectPostgres))
+    // Create Postgres outbox storage with lease duration
+    outboxStore := outbox.NewPGStore(pool, outbox.WithLeaseDuration(30*time.Second))
 
     // 1. Transactionally write domain entity and outbox event
     tx, err := pool.Begin(ctx)

@@ -21,7 +21,7 @@ import (
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 
-	"github.com/umesh0492/go-app-kit/outbox"
+	"github.com/Abeta-dev/go-app-kit/outbox"
 )
 
 //go:embed ddl/001_outbox_events.sql

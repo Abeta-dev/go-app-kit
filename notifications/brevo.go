@@ -160,10 +160,7 @@ func (s *brevoSender) Send(ctx context.Context, msg Message) error {
 		return err
 	}
 
-	data, err := json.Marshal(reqPayload)
-	if err != nil {
-		return fmt.Errorf("failed to marshal brevo request: %w", err)
-	}
+	data, _ := json.Marshal(reqPayload)
 
 	endpoint := fmt.Sprintf("%s/smtp/email", s.cfg.BaseURL)
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(data))

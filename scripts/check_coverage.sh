@@ -10,7 +10,7 @@ cd "${ROOT_DIR}"
 
 readonly GLOBAL_FLOOR='88.0'
 readonly PACKAGE_FLOOR='75.0'
-readonly MODULE='github.com/umesh0492/go-app-kit'
+readonly MODULE='github.com/Abeta-dev/go-app-kit'
 coverage_file="${1:-coverage.out}"
 summary_file="${COVERAGE_SUMMARY_FILE:-/tmp/gak_coverage_packages.txt}"
 
