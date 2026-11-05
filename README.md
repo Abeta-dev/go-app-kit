@@ -1,6 +1,6 @@
 # go-app-kit
 
-> Current main-line published release: `v0.4.2`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
+> Current main-line published release: `v0.4.3`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
 [![CI](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml)
 [![Code Quality: golangci-lint](https://img.shields.io/badge/code%20quality-golangci--lint-brightgreen?logo=go)](https://golangci-lint.run/)
@@ -52,7 +52,7 @@ While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero
 ### Standalone Import
 When consuming `go-app-kit` in your microservice:
 ```bash
-go get github.com/umesh0492/go-app-kit@v0.4.2
+go get github.com/umesh0492/go-app-kit@v0.4.3
 ```
 
 ### Multi-Module Local Development (`go.work`)
@@ -273,6 +273,21 @@ Coverage across packages in `go-app-kit` is measured using Go's statement-level 
 | `pdf` | In-memory HTML-to-PDF compilation & embedded GST invoice templates | **90.8%** |
 | `examples/invoice_service` | Reference microservice with end-to-end integration test & exact paise math | **95.1%** |
 | **Total Statement Coverage** | **Cumulative across all packages** | **93.3%** |
+
+---
+
+## 🤖 AI Agent Skills & Multi-Model Context Routing
+
+`go-app-kit` ships with vendor-neutral **Agent Skills (`SKILL.md`)** and a root **[`AGENTS.md`](AGENTS.md)** router compatible with Claude Code, Google Antigravity, Gemini CLI, OpenAI Codex, Cursor, and Windsurf:
+
+| Skill | Path | Coverage |
+| :--- | :--- | :--- |
+| **`go-app-kit` (Umbrella)** | [`skills/go-app-kit/SKILL.md`](skills/go-app-kit/SKILL.md) | Package selection, cross-package transactional wiring, and truth gates |
+| **`go-app-kit-outbox`** | [`skills/go-app-kit-outbox/SKILL.md`](skills/go-app-kit-outbox/SKILL.md) | PostgreSQL `SELECT FOR UPDATE SKIP LOCKED`, lease fencing, relay worker, dead-letter handling |
+| **`go-app-kit-pdf`** | [`skills/go-app-kit-pdf/SKILL.md`](skills/go-app-kit-pdf/SKILL.md) | Pluggable `Renderer` (`NewWkhtmlRenderer`), SSRF defense, GST invoice templates |
+| **`go-app-kit-notifications`** | [`skills/go-app-kit-notifications/SKILL.md`](skills/go-app-kit-notifications/SKILL.md) | `Broker` routing across `Email`, `Slack`, `Webhook`, `WhatsApp` (`NewWhatsAppSender`), and Indian DLT `SMS` (`NewSMSSender`) |
+| **`go-app-kit-audit`** | [`skills/go-app-kit-audit/SKILL.md`](skills/go-app-kit-audit/SKILL.md) | Partitioned PostgreSQL append-only audit trail (`Recorder`, `Event`) and JSON diffing |
+| **`go-app-kit-export`** | [`skills/go-app-kit-export/SKILL.md`](skills/go-app-kit-export/SKILL.md) | Constant-memory CSV streaming (`StreamHTTP`, `CSVStreamer`), UTF-8 BOM, and formula-injection escaping |
 
 ---
 
