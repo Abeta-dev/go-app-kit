@@ -2,7 +2,7 @@
 
 > Current main-line published release: `v0.5.0`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
-[![CI](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/Abeta-dev/go-app-kit/actions/workflows/ci.yml)
+[![CI](https://github.com/abeta-dev/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/abeta-dev/go-app-kit/actions/workflows/ci.yml)
 [![Code Quality: golangci-lint](https://img.shields.io/badge/code%20quality-golangci--lint-brightgreen?logo=go)](https://golangci-lint.run/)
 [![Go Version](https://img.shields.io/badge/Go-1.26.0-00ADD8?logo=go)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -10,7 +10,7 @@
 
 **Production-grade enterprise application and domain accelerator kit for Go.**
 
-While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero-dependency microservice systems engineering (resilience, concurrency pools, rate limiting, SRE golden signals), **`go-app-kit`** delivers 5 core enterprise application infrastructure packages: **transactional outbox with PostgreSQL DDL, PDF document generation with GST invoice templates, multi-channel notifications (SMTP, WhatsApp, SMS, Slack, Webhooks), partitioned compliance audit logging, and streaming data exports** (composing seamlessly with statutory companion [`go-fintech-india`](https://github.com/Abeta-dev/go-fintech-india)).
+While [`go-libs`](https://github.com/abeta-dev/go-libs) provides low-level, zero-dependency microservice systems engineering (resilience, concurrency pools, rate limiting, SRE golden signals), **`go-app-kit`** delivers 5 core enterprise application infrastructure packages: **transactional outbox with PostgreSQL DDL, PDF document generation with GST invoice templates, multi-channel notifications (SMTP, WhatsApp, SMS, Slack, Webhooks), partitioned compliance audit logging, and streaming data exports** (composing seamlessly with statutory companion [`go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)).
 
 ---
 
@@ -24,7 +24,7 @@ While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero
                           │ imports                    │ imports
                           ▼                            ▼
 ┌─────────────────────────────────────────┐  ┌───────────────────────────────────┐
-│      github.com/Abeta-dev/go-app-kit    │  │ github.com/Abeta-dev/             │
+│      github.com/abeta-dev/go-app-kit    │  │ github.com/abeta-dev/             │
 │                                         │  │   go-fintech-india (Companion)    │
 │   ├── outbox/        PostgreSQL Outbox  │  │                                   │
 │   ├── pdf/           HTML-to-PDF / GST  │  │   ├── GSTIN (mod-36), PAN, IFSC   │
@@ -35,7 +35,7 @@ While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero
                      │ builds upon
                      ▼
 ┌────────────────────────────────────────────────────────────────────────────────┐
-│                         github.com/Abeta-dev/go-libs                           │
+│                         github.com/abeta-dev/go-libs                           │
 │                                                                                │
 │   ├── workerpool/      Bounded panic-safe concurrent workers                   │
 │   ├── circuitbreaker/  Microsecond circuit breaking (Three-state machine)      │
@@ -52,7 +52,7 @@ While [`go-libs`](https://github.com/Abeta-dev/go-libs) provides low-level, zero
 ### Standalone Import
 When consuming `go-app-kit` in your microservice:
 ```bash
-go get github.com/Abeta-dev/go-app-kit@v0.5.0
+go get github.com/abeta-dev/go-app-kit@v0.5.0
 ```
 
 ### Multi-Module Local Development (`go.work`)
@@ -69,7 +69,7 @@ With `go.work` in place, any changes in `go-libs` are immediately reflected in `
 `go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/umesh0492/go-libs@v0.3.0` and `github.com/umesh0492/go-fintech-india@v0.2.3` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md).
 
 ### Concurrency Architecture & Dependency on `go-libs/workerpool`
-`go-app-kit`'s asynchronous background execution in `notifications` (async multi-channel fan-out) and `audit` (asynchronous audit log ingestion) imports [`go-libs/workerpool`](https://github.com/Abeta-dev/go-libs/tree/main/workerpool) directly. It leverages bounded concurrency, graceful draining, panic resilience, and Prometheus saturation metrics without maintaining any duplicated forks.
+`go-app-kit`'s asynchronous background execution in `notifications` (async multi-channel fan-out) and `audit` (asynchronous audit log ingestion) imports [`go-libs/workerpool`](https://github.com/abeta-dev/go-libs/tree/main/workerpool) directly. It leverages bounded concurrency, graceful draining, panic resilience, and Prometheus saturation metrics without maintaining any duplicated forks.
 
 ---
 
@@ -89,7 +89,7 @@ Guarantees at-least-once message delivery without dual-write race conditions:
 - **Dead-Lettering & Backoff**: Full-jitter exponential backoff and configurable max retries transitioning unresolvable poison pills or exhausted retries to `DEAD_LETTER`.
 
 ```go
-import "github.com/Abeta-dev/go-app-kit/outbox"
+import "github.com/abeta-dev/go-app-kit/outbox"
 
 // Transactionally write domain event inside database transaction
 evt, _ := outbox.NewEvent("Invoice", "INV-100", "InvoiceIssued", invoicePayload)
@@ -114,7 +114,7 @@ In-memory compilation via `wkhtmltopdf` (requires host `wkhtmltopdf` binary, NOT
   - `pdf.ReceiptTemplate`: Clean, modern payment receipt for SaaS and transaction settlements.
 
 ```go
-import "github.com/Abeta-dev/go-app-kit/pdf"
+import "github.com/abeta-dev/go-app-kit/pdf"
 
 // Compile GST Tax Invoice into in-memory PDF buffer
 pdfBuf, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, invoiceData,
@@ -127,7 +127,7 @@ pdfBuf, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, invoiceData,
 ---
 
 ### 3. `notifications` - Multi-Channel Notification Dispatcher
-Central broker powered by bounded workerpools (adhering to the [`go-libs/workerpool`](https://github.com/Abeta-dev/go-libs/tree/main/workerpool) concurrency architecture) supporting sync and async delivery:
+Central broker powered by bounded workerpools (adhering to the [`go-libs/workerpool`](https://github.com/abeta-dev/go-libs/tree/main/workerpool) concurrency architecture) supporting sync and async delivery:
 - **SMTP Email** (`NewEmailSender`) & **Brevo Transactional Email** (`NewBrevoSender`): RFC 2822 / MIME multipart messaging (text/plain, text/html, attachments, and authentication) and Brevo v3 REST API.
 - **WhatsApp** (`NewWhatsAppSender`): Meta WhatsApp Cloud API v20+ with Bearer authorization, structured payload dispatch, and simulated testing mode.
 - **SMS** (`NewSMSSender`): Indian DLT-compliant transactional SMS gateway with Principal Entity ID (`pe_id`), DLT Template ID (`template_id` via `SMSConfig.TemplateID` or `Message.Metadata["template_id"]`), and approved sender headers.
@@ -135,7 +135,7 @@ Central broker powered by bounded workerpools (adhering to the [`go-libs/workerp
 - **Webhook** (`NewWebhookSender`, `VerifyWebhook`, `WebhookVerifier`): HTTP POST webhook with `X-Signature-SHA256` HMAC tamper-proofing, replay prevention via timestamp binding, and constant-time signature verification.
 
 ```go
-import "github.com/Abeta-dev/go-app-kit/notifications"
+import "github.com/abeta-dev/go-app-kit/notifications"
 
 broker := notifications.NewBroker(notifications.DefaultConfig())
 broker.RegisterSender(notifications.NewEmailSender(emailConfig))
@@ -164,7 +164,7 @@ Structured audit logging with relational persistence, cryptographic hash-chainin
 - **Context Extraction**: Pulls `Actor`, IP address, and comments from context without contaminating domain signatures.
 
 ```go
-import "github.com/Abeta-dev/go-app-kit/audit"
+import "github.com/abeta-dev/go-app-kit/audit"
 
 // Computes field-level differences and records asynchronously
 event := audit.NewEvent(ctx, "INVOICE_UPDATE", "Invoice", "INV-100", beforeState, afterState)
@@ -183,7 +183,7 @@ High-throughput, low-memory CSV streaming:
 ```go
 import (
     fintech "github.com/umesh0492/go-fintech-india"
-    "github.com/Abeta-dev/go-app-kit/export"
+    "github.com/abeta-dev/go-app-kit/export"
 )
 
 columns := []export.Column[InvoiceRow]{
@@ -207,7 +207,7 @@ streamer.Flush()
 
 ### Companion Architecture: Indian Statutory Compliance (go-fintech-india)
 
-For pure domain statutory checks, zero-allocation paise arithmetic, and Indian banking/tax validation, developers should import [`github.com/umesh0492/go-fintech-india`](https://github.com/Abeta-dev/go-fintech-india) directly as a companion library:
+For pure domain statutory checks, zero-allocation paise arithmetic, and Indian banking/tax validation, developers should import [`github.com/umesh0492/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india) directly as a companion library:
 
 ```go
 import (
@@ -239,7 +239,7 @@ if fintech.IsValidAadhaar("234567890128") {
 
 | Problem | Recommended Module | Why Use It |
 | :--- | :--- | :--- |
-| **Indian Tax & Banking Compliance** | [`go-fintech-india`](https://github.com/Abeta-dev/go-fintech-india) *(Companion)* | Zero dependencies; pure domain statutory primitives for GSTIN mod-36, Aadhaar Verhoeff $D_5$, PAN legal entities, IFSC codes, and integer paise math. |
+| **Indian Tax & Banking Compliance** | [`go-fintech-india`](https://github.com/abeta-dev/go-fintech-india) *(Companion)* | Zero dependencies; pure domain statutory primitives for GSTIN mod-36, Aadhaar Verhoeff $D_5$, PAN legal entities, IFSC codes, and integer paise math. |
 | **B2B Billing Documents** | `go-app-kit/pdf` | Pre-bundled GST tax invoice & payment receipt templates; in-memory byte rendering with customizable layout. |
 | **Cross-Service Dual-Write Safety** | `go-app-kit/outbox` | Atomically commits domain state and events in the same Postgres TX; `SKIP LOCKED` scales poller across $N$ instances. |
 | **Multi-Channel User Alerts** | `go-app-kit/notifications` | Unified broker routing to SMTP, Slack, and HMAC-signed webhooks; non-blocking delivery via `workerpool`. |

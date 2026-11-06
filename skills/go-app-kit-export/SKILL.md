@@ -1,11 +1,11 @@
 ---
 name: go-app-kit-export
-description: "Stream large CSV datasets with constant memory, Excel UTF-8 BOM support, and spreadsheet formula-injection escaping using github.com/Abeta-dev/go-app-kit/export. Use when building CSV download endpoints, streaming database cursors to HTTP responses, or preventing CSV injection attacks."
+description: "Stream large CSV datasets with constant memory, Excel UTF-8 BOM support, and spreadsheet formula-injection escaping using github.com/abeta-dev/go-app-kit/export. Use when building CSV download endpoints, streaming database cursors to HTTP responses, or preventing CSV injection attacks."
 ---
 
 # `go-app-kit/export` — Streaming CSV Exporter Subskill
 
-Use this skill when building CSV report downloads or streaming database query cursors with `github.com/Abeta-dev/go-app-kit/export`.
+Use this skill when building CSV report downloads or streaming database query cursors with `github.com/abeta-dev/go-app-kit/export`.
 
 ## 1. Security & Memory Guarantees
 
@@ -22,8 +22,8 @@ For slices already loaded in memory, use `export.StreamHTTP` (sets `Content-Type
 ```go
 import (
 	"net/http"
-	"github.com/Abeta-dev/go-app-kit/export"
-	fintech "github.com/Abeta-dev/go-fintech-india"
+	"github.com/abeta-dev/go-app-kit/export"
+	fintech "github.com/abeta-dev/go-fintech-india"
 )
 
 var invoiceColumns = []export.Column[InvoiceRow]{

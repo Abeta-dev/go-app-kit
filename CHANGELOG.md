@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - examples/invoice_service: Added `ExportInvoicesCSV` on `InvoiceService` demonstrating HTTP streaming CSV export of `InvoiceRequest` records with `StreamHTTP`.
 
 ### Changed
-- module: Migrated canonical Go module path to `github.com/Abeta-dev/go-app-kit` (`v0.5.0`) across `go.mod`, packages, examples, scripts, workflows, documentation, and agent skills.
+- module: Migrated canonical Go module path to `github.com/abeta-dev/go-app-kit` (`v0.5.0`) across `go.mod`, packages, examples, scripts, workflows, documentation, and agent skills.
 - tests: Achieved **100.0% statement coverage** across all 5 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`) and `examples/invoice_service`.
 
 ### Fixed

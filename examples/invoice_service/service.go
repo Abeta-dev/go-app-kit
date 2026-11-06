@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Abeta-dev/go-app-kit/audit"
-	"github.com/Abeta-dev/go-app-kit/export"
-	"github.com/Abeta-dev/go-app-kit/notifications"
-	"github.com/Abeta-dev/go-app-kit/outbox"
-	"github.com/Abeta-dev/go-app-kit/pdf"
+	"github.com/abeta-dev/go-app-kit/audit"
+	"github.com/abeta-dev/go-app-kit/export"
+	"github.com/abeta-dev/go-app-kit/notifications"
+	"github.com/abeta-dev/go-app-kit/outbox"
+	"github.com/abeta-dev/go-app-kit/pdf"
 	fintech "github.com/umesh0492/go-fintech-india"
 )
 

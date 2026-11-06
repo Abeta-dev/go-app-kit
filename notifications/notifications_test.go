@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Abeta-dev/go-app-kit/notifications"
+	"github.com/abeta-dev/go-app-kit/notifications"
 )
 
 type mockSender struct {

@@ -46,7 +46,7 @@ fi
 # 3. Validates that README.md has this exact version.
 echo "-> Validating README.md version references..."
 readme_pub="$(sed -n -E "s/^> Current main-line published release: \`v(${SEMVER_PATTERN})\`\..*/\1/p" README.md | head -n1)"
-readme_inst="$(sed -n -E "s|.*github\.com/Abeta-dev/go-app-kit@v(${SEMVER_PATTERN}).*|\1|p" README.md | head -n1)"
+readme_inst="$(sed -n -E "s|.*github\.com/abeta-dev/go-app-kit@v(${SEMVER_PATTERN}).*|\1|p" README.md | head -n1)"
 if [[ "${readme_pub}" != "${version}" ]]; then
   fail "README.md published release header is v${readme_pub:-none}, but expected v${version}"
 fi

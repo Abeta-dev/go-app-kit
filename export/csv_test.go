@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Abeta-dev/go-app-kit/export"
+	"github.com/abeta-dev/go-app-kit/export"
 )
 
 type InvoiceRecord struct {

@@ -1,21 +1,21 @@
 ---
 name: go-app-kit-notifications
-description: "Dispatch synchronous and asynchronous multi-channel notifications (SMTP Email, Brevo Email, Meta WhatsApp Cloud API, Indian DLT SMS, Slack, and HMAC-SHA256 Webhooks) using github.com/Abeta-dev/go-app-kit/notifications. Use when wiring notification brokers, sending email attachments, or verifying webhook signatures."
+description: "Dispatch synchronous and asynchronous multi-channel notifications (SMTP Email, Brevo Email, Meta WhatsApp Cloud API, Indian DLT SMS, Slack, and HMAC-SHA256 Webhooks) using github.com/abeta-dev/go-app-kit/notifications. Use when wiring notification brokers, sending email attachments, or verifying webhook signatures."
 ---
 
 # `go-app-kit/notifications` — Multi-Channel Notification Broker Subskill
 
-Use this skill when dispatching notifications across Email, Brevo, WhatsApp, SMS, Slack, or signed Webhooks via `github.com/Abeta-dev/go-app-kit/notifications`.
+Use this skill when dispatching notifications across Email, Brevo, WhatsApp, SMS, Slack, or signed Webhooks via `github.com/abeta-dev/go-app-kit/notifications`.
 
 ## 1. Broker Setup & Pluggable Channel Senders
 
-`notifications.Broker` uses `github.com/Abeta-dev/go-libs/workerpool` under the hood for bounded, panic-safe asynchronous fan-out:
+`notifications.Broker` uses `github.com/abeta-dev/go-libs/workerpool` under the hood for bounded, panic-safe asynchronous fan-out:
 
 ```go
 import (
 	"context"
 	"time"
-	"github.com/Abeta-dev/go-app-kit/notifications"
+	"github.com/abeta-dev/go-app-kit/notifications"
 )
 
 cfg := notifications.DefaultConfig()

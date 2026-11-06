@@ -10,7 +10,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${ROOT_DIR}"
 
 readonly SEMVER_PATTERN='[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?'
-readonly MODULE='github.com/Abeta-dev/go-app-kit'
+readonly MODULE='github.com/abeta-dev/go-app-kit'
 
 fail() {
   echo "ERROR: $*" >&2

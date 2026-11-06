@@ -1,6 +1,6 @@
 ---
 name: go-app-kit-outbox
-description: "Implement reliable at-least-once event publishing using github.com/Abeta-dev/go-app-kit/outbox with PostgreSQL SELECT FOR UPDATE SKIP LOCKED, UUID lease-token fencing, and exponential jitter backoff. Use when solving dual-write problems, wiring outbox relays, or applying PostgreSQL outbox DDL."
+description: "Implement reliable at-least-once event publishing using github.com/abeta-dev/go-app-kit/outbox with PostgreSQL SELECT FOR UPDATE SKIP LOCKED, UUID lease-token fencing, and exponential jitter backoff. Use when solving dual-write problems, wiring outbox relays, or applying PostgreSQL outbox DDL."
 ---
 
 # `go-app-kit/outbox` — PostgreSQL Transactional Outbox Subskill
@@ -25,7 +25,7 @@ Always insert the outbox event inside the **same database transaction (`pgx.Tx`)
 import (
 	"context"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/Abeta-dev/go-app-kit/outbox"
+	"github.com/abeta-dev/go-app-kit/outbox"
 )
 
 func CreateInvoiceTx(ctx context.Context, pool *pgxpool.Pool, store outbox.Store, inv Invoice) error {

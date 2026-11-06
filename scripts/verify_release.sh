@@ -146,7 +146,7 @@ import (
 	"bytes"
 	"fmt"
 
-	kitexport "github.com/Abeta-dev/go-app-kit/export"
+	kitexport "github.com/abeta-dev/go-app-kit/export"
 )
 
 func main() {

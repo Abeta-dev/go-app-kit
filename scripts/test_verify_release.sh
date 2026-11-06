@@ -29,7 +29,7 @@ cat > "${FAKE_GO}" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ "$1" == 'list' ]]; then
-  printf '%s\n' 'github.com/Abeta-dev/go-app-kit'
+  printf '%s\n' 'github.com/abeta-dev/go-app-kit'
   exit 0
 fi
 if [[ "$1" == 'mod' && "$2" == 'init' ]]; then
@@ -48,7 +48,7 @@ if [[ "$1" == 'mod' && "$2" == 'download' ]] || [[ "$1" == 'get' ]]; then
   fi
   cat <<JSON
 {
-  "Path": "github.com/Abeta-dev/go-app-kit",
+  "Path": "github.com/abeta-dev/go-app-kit",
   "Version": "v0.2.1",
   "Sum": "h1:synthetic-module-sum",
   "GoModSum": "h1:synthetic-go-mod-sum"
@@ -85,7 +85,7 @@ output=$(cd "${TEST_REPO}" && \
   RELEASE_MANIFEST_PATH="${MANIFEST_PATH}" GIT_REMOTE=origin \
   ./scripts/verify_release.sh v0.2.1 2>&1)
 printf '%s\n' "${output}" | grep -F 'attempt 1/3'
-printf '%s\n' "${output}" | grep -F 'attempt 1/3 for github.com/Abeta-dev/go-app-kit/export@v0.2.1 isolated consumer'
+printf '%s\n' "${output}" | grep -F 'attempt 1/3 for github.com/abeta-dev/go-app-kit/export@v0.2.1 isolated consumer'
 [[ "$(cat "${STATE_FILE}")" == '4' ]]
 printf '1\n1\n' | cmp -s - "${SLEEP_LOG}"
 grep -F '"verification_status": "verified"' "${MANIFEST_PATH}"
@@ -93,7 +93,7 @@ grep -F 'h1:synthetic-module-sum' "${MANIFEST_PATH}"
 
 cat > "${TMP_DIR}/always-fail-go" <<'EOF'
 #!/usr/bin/env bash
-if [[ "$1" == 'list' ]]; then printf '%s\n' 'github.com/Abeta-dev/go-app-kit'; exit 0; fi
+if [[ "$1" == 'list' ]]; then printf '%s\n' 'github.com/abeta-dev/go-app-kit'; exit 0; fi
 echo 'synthetic final proxy diagnostic' >&2
 exit 1
 EOF

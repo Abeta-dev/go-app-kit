@@ -166,7 +166,7 @@ import (
     "time"
 
     "github.com/jackc/pgx/v5/pgxpool"
-    "github.com/Abeta-dev/go-app-kit/outbox"
+    "github.com/abeta-dev/go-app-kit/outbox"
 )
 
 func main() {

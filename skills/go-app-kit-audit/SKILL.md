@@ -1,11 +1,11 @@
 ---
 name: go-app-kit-audit
-description: "Record tamper-evident compliance audit trails and field-level JSON state diffs using github.com/Abeta-dev/go-app-kit/audit and PostgreSQL range partitioning. Use when tracking entity mutations, computing before/after state diffs, or applying append-only PostgreSQL audit DDL."
+description: "Record tamper-evident compliance audit trails and field-level JSON state diffs using github.com/abeta-dev/go-app-kit/audit and PostgreSQL range partitioning. Use when tracking entity mutations, computing before/after state diffs, or applying append-only PostgreSQL audit DDL."
 ---
 
 # `go-app-kit/audit` — Partitioned Compliance Audit Trail Subskill
 
-Use this skill when implementing compliance audit logging and automated before/after JSON state diffing with `github.com/Abeta-dev/go-app-kit/audit`.
+Use this skill when implementing compliance audit logging and automated before/after JSON state diffing with `github.com/abeta-dev/go-app-kit/audit`.
 
 ## 1. Required PostgreSQL Schema (`audit/ddl/001_audit_logs.sql`)
 
@@ -22,7 +22,7 @@ Attach actor identity, client IP, and reason metadata to `context.Context` in HT
 ```go
 import (
 	"context"
-	"github.com/Abeta-dev/go-app-kit/audit"
+	"github.com/abeta-dev/go-app-kit/audit"
 )
 
 // 1. Enrich context in auth/request middleware

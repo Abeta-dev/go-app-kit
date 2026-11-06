@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Abeta-dev/go-app-kit/pdf"
 	wkhtml "github.com/SebastiaanKlippert/go-wkhtmltopdf"
+	"github.com/abeta-dev/go-app-kit/pdf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

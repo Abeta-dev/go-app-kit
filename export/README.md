@@ -50,7 +50,7 @@ import (
     "fmt"
     "os"
 
-    "github.com/Abeta-dev/go-app-kit/export"
+    "github.com/abeta-dev/go-app-kit/export"
 )
 
 type Transaction struct {

@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Abeta-dev/go-app-kit/audit"
+	"github.com/abeta-dev/go-app-kit/audit"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 

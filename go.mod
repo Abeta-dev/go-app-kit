@@ -1,4 +1,4 @@
-module github.com/Abeta-dev/go-app-kit
+module github.com/abeta-dev/go-app-kit
 
 go 1.26.0
 

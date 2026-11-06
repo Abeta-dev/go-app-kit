@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Abeta-dev/go-app-kit/notifications"
+	"github.com/abeta-dev/go-app-kit/notifications"
 )
 
 func TestWhatsAppSender_Simulated(t *testing.T) {

@@ -1,11 +1,11 @@
 ---
 name: go-app-kit-pdf
-description: "Compile HTML templates into in-memory PDF documents and Indian GST B2B tax invoices using github.com/Abeta-dev/go-app-kit/pdf. Use when generating GST invoices, payment receipts, bounding wkhtmltopdf subprocess concurrency, or mocking PDF rendering in unit tests."
+description: "Compile HTML templates into in-memory PDF documents and Indian GST B2B tax invoices using github.com/abeta-dev/go-app-kit/pdf. Use when generating GST invoices, payment receipts, bounding wkhtmltopdf subprocess concurrency, or mocking PDF rendering in unit tests."
 ---
 
 # `go-app-kit/pdf` — HTML-to-PDF & GST Tax Invoice Subskill
 
-Use this skill when generating PDF documents, GST tax invoices, or payment receipts with `github.com/Abeta-dev/go-app-kit/pdf`.
+Use this skill when generating PDF documents, GST tax invoices, or payment receipts with `github.com/abeta-dev/go-app-kit/pdf`.
 
 ## 1. Architecture & Renderer Abstraction
 
@@ -22,8 +22,8 @@ Combine `go-fintech-india` (for exact paise arithmetic and words conversion) wit
 import (
 	"bytes"
 	"context"
-	"github.com/Abeta-dev/go-app-kit/pdf"
-	fintech "github.com/Abeta-dev/go-fintech-india"
+	"github.com/abeta-dev/go-app-kit/pdf"
+	fintech "github.com/abeta-dev/go-fintech-india"
 )
 
 func RenderGSTInvoice(ctx context.Context, sellerGSTIN, buyerGSTIN string, data map[string]any) (*bytes.Buffer, error) {

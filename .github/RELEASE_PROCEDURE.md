@@ -53,7 +53,7 @@ make install-hooks
    ```
 2. Update documentation and release metadata:
    - **`CHANGELOG.md`**: Add `## [X.Y.Z] - YYYY-MM-DD` at the top of released versions. Document all changes under appropriate categories (`Changed`, `Added`, `Fixed`).
-   - **`README.md`**: Update current published release header and `go get github.com/Abeta-dev/go-app-kit@vX.Y.Z` snippet.
+   - **`README.md`**: Update current published release header and `go get github.com/abeta-dev/go-app-kit@vX.Y.Z` snippet.
    - **`SECURITY.md`**: Verify that the version series is marked **Active / Current**.
    - **`docs/RELEASE_BASELINE.md`**: Document the release baseline and history.
    - **`scripts/check_version.sh`**: Ensure dependency versions and expectations match `go.mod`.
