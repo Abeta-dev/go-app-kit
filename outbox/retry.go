@@ -35,10 +35,6 @@ func BackoffWithJitter(attempt int, baseDelay, maxDelay time.Duration) time.Dura
 		ceiling = maxDelay
 	}
 
-	if ceiling <= 0 {
-		return 0
-	}
-
 	if int64(ceiling) == math.MaxInt64 {
 		//nolint:gosec // G404: backoff jitter does not require cryptographic PRNG
 		return time.Duration(rand.Int64N(math.MaxInt64))

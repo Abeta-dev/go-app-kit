@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/umesh0492/go-app-kit/notifications"
+	"github.com/abeta-dev/go-app-kit/notifications"
 )
 
 type mockSender struct {
@@ -1165,5 +1165,89 @@ func TestWebhookVerifier_EdgeCases(t *testing.T) {
 	// 3. Missing timestamp in both arg and sig
 	if err := v.Verify("", "v1=abcdef", payload); !errors.Is(err, notifications.ErrMissingTimestamp) {
 		t.Errorf("expected ErrMissingTimestamp, got: %v", err)
+	}
+
+	// 4. Direct struct literal with Tolerance == 0 defaults to DefaultWebhookTolerance
+	directVerifier := &notifications.WebhookVerifier{Secret: "secret"}
+	nowTS := strconv.FormatInt(time.Now().Unix(), 10)
+	sig := notifications.ComputeWebhookSignature("secret", nowTS, payload)
+	if err := directVerifier.Verify(nowTS, sig, payload); err != nil {
+		t.Errorf("expected direct WebhookVerifier.Verify to succeed, got: %v", err)
+	}
+}
+
+type failingHTTPClient struct{}
+
+func (f *failingHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	return nil, errors.New("simulated network failure")
+}
+
+func TestSlackWebhookEmailBroker_RemainingBranches(t *testing.T) {
+	ctx := context.Background()
+
+	// 1. Slack invalid URL and transport error
+	slackBadURL := notifications.NewSlackSender(notifications.SlackConfig{
+		WebhookURL: "http://\x7f",
+	})
+	if err := slackBadURL.Send(ctx, notifications.Message{Title: "T", Body: "B"}); err == nil {
+		t.Fatal("expected error for invalid Slack WebhookURL")
+	}
+
+	slackFailClient := notifications.NewSlackSender(notifications.SlackConfig{
+		WebhookURL: "https://hooks.slack.com/services/T00/B00/X00",
+		HTTPClient: &failingHTTPClient{},
+	})
+	if err := slackFailClient.Send(ctx, notifications.Message{Title: "T", Body: "B"}); err == nil {
+		t.Fatal("expected error for failing Slack HTTPClient")
+	}
+
+	// 2. Webhook invalid URL and transport error
+	whBadURL := notifications.NewWebhookSender(notifications.WebhookConfig{
+		EndpointURL: "http://\x7f",
+	})
+	if err := whBadURL.Send(ctx, notifications.Message{Title: "T", Body: "B"}); err == nil {
+		t.Fatal("expected error for invalid Webhook EndpointURL")
+	}
+
+	whFailClient := notifications.NewWebhookSender(notifications.WebhookConfig{
+		EndpointURL: "https://example.com/webhook",
+		HTTPClient:  &failingHTTPClient{},
+	})
+	if err := whFailClient.Send(ctx, notifications.Message{Title: "T", Body: "B"}); err == nil {
+		t.Fatal("expected error for failing Webhook HTTPClient")
+	}
+
+	// 3. EmailSender with empty Host (uses os.Hostname() fallback)
+	emailNoHost := notifications.NewEmailSender(notifications.EmailConfig{
+		Host: "",
+		Port: 25,
+		From: "noreply@example.com",
+		SendMailFunc: func(addr string, a smtp.Auth, from string, to []string, msg []byte) error {
+			return nil
+		},
+	})
+	if err := emailNoHost.Send(ctx, notifications.Message{
+		Title:      "No Host",
+		Body:       "Body",
+		Recipients: []string{"user@example.com"},
+	}); err != nil {
+		t.Fatalf("expected EmailSender with empty Host to succeed, got: %v", err)
+	}
+
+	// 4. Broker.Send when registered sender returns an error
+	b := notifications.NewBroker(notifications.DefaultConfig())
+	defer b.Close()
+	b.RegisterSender(&mockSender{
+		ch: notifications.ChannelEmail,
+		sendFunc: func(ctx context.Context, msg notifications.Message) error {
+			return errors.New("smtp relay rejected message")
+		},
+	})
+	err := b.Send(ctx, notifications.Message{
+		Recipients: []string{"user@example.com"},
+		Channels:   []notifications.Channel{notifications.ChannelEmail},
+	})
+	if err == nil || !strings.Contains(err.Error(), "channel EMAIL failed") {
+		t.Fatalf("expected channel failure from Broker.Send, got: %v", err)
 	}
 }

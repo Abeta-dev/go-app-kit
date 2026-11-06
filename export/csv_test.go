@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/umesh0492/go-app-kit/export"
+	"github.com/abeta-dev/go-app-kit/export"
 )
 
 type InvoiceRecord struct {
@@ -329,5 +329,22 @@ func TestCSVStreamer_FlushAndWriteRows_Errors(t *testing.T) {
 	err = streamer3.WriteRow(InvoiceRecord{ID: "99"})
 	if err == nil {
 		t.Fatalf("expected error from periodic flush, got nil")
+	}
+
+	// 4. Direct csvWriter.Write error in WriteHeader and WriteRow (invalid delimiter)
+	var invalidDelimBuf bytes.Buffer
+	invalidHeaderStreamer := export.NewCSVStreamer(&invalidDelimBuf, columns, export.WithDelimiter('\n'))
+	if err := invalidHeaderStreamer.WriteHeader(); err == nil {
+		t.Fatalf("expected error from WriteHeader with invalid delimiter, got nil")
+	}
+
+	// 5. Direct csvWriter.Write error in WriteRow (>4096 byte row flushing to failing writer after header)
+	wRowErr := &failAfterNWriter{writesAllowed: 1} // header flush succeeds
+	rowErrStreamer := export.NewCSVStreamer(wRowErr, columns, export.WithBOM(false), export.WithFlushInterval(100))
+	if err := rowErrStreamer.WriteHeader(); err != nil {
+		t.Fatalf("expected WriteHeader to succeed, got %v", err)
+	}
+	if err := rowErrStreamer.WriteRow(InvoiceRecord{ID: strings.Repeat("X", 5000)}); err == nil {
+		t.Fatalf("expected error from WriteRow when buffer overflows onto failing writer")
 	}
 }

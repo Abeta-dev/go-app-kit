@@ -1,11 +1,11 @@
 ---
 name: go-app-kit-audit
-description: "Record tamper-evident compliance audit trails and field-level JSON state diffs using github.com/umesh0492/go-app-kit/audit and PostgreSQL range partitioning. Use when tracking entity mutations, computing before/after state diffs, or applying append-only PostgreSQL audit DDL."
+description: "Record tamper-evident compliance audit trails and field-level JSON state diffs using github.com/abeta-dev/go-app-kit/audit and PostgreSQL range partitioning. Use when tracking entity mutations, computing before/after state diffs, or applying append-only PostgreSQL audit DDL."
 ---
 
 # `go-app-kit/audit` — Partitioned Compliance Audit Trail Subskill
 
-Use this skill when implementing compliance audit logging and automated before/after JSON state diffing with `github.com/umesh0492/go-app-kit/audit`.
+Use this skill when implementing compliance audit logging and automated before/after JSON state diffing with `github.com/abeta-dev/go-app-kit/audit`.
 
 ## 1. Required PostgreSQL Schema (`audit/ddl/001_audit_logs.sql`)
 
@@ -22,16 +22,26 @@ Attach actor identity, client IP, and reason metadata to `context.Context` in HT
 ```go
 import (
 	"context"
-	"github.com/umesh0492/go-app-kit/audit"
+	"github.com/abeta-dev/go-app-kit/audit"
 )
 
 // 1. Enrich context in auth/request middleware
-ctx = audit.WithActor(ctx, "user-42")
-ctx = audit.WithIP(ctx, clientIP)
+ctx = audit.ContextWithActor(ctx, audit.Actor{
+	ID:        "user-42",
+	Role:      "USER",
+	IPAddress: clientIP,
+})
 ctx = audit.WithComment(ctx, "Approved credit note adjustment")
 
 // 2. Initialize PostgreSQL recorder with background workerpool
-recorder := audit.NewPGRecorder(pgPool, audit.WithWorkers(4, 128))
+recorder, err := audit.NewPGRecorder(audit.Config{
+	DB:        pgPool,
+	Workers:   4,
+	QueueSize: 128,
+})
+if err != nil {
+	return err
+}
 defer recorder.Close()
 
 // 3. Compute field-level JSON diff (beforeState vs afterState) and record
@@ -40,8 +50,8 @@ evt := audit.NewEvent(
 	"INVOICE_STATUS_CHANGE",
 	"Invoice",
 	invoiceID,
-	beforeInvoice, // struct or map (pass nil for CREATE)
-	afterInvoice,  // struct or map (pass nil for DELETE)
+	beforeInvoice, // map[string]any (pass nil for CREATE)
+	afterInvoice,  // map[string]any (pass nil for DELETE)
 )
 
 // Non-blocking async persistence via bounded workerpool:

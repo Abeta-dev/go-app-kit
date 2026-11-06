@@ -48,10 +48,9 @@ package main
 
 import (
     "fmt"
-    "net/http"
     "os"
 
-    "github.com/umesh0492/go-app-kit/export"
+    "github.com/abeta-dev/go-app-kit/export"
 )
 
 type Transaction struct {
@@ -80,15 +79,11 @@ func main() {
     defer file.Close()
 
     // 3. Initialize streaming exporter with Excel UTF-8 BOM support
-    streamer, err := export.NewCSVStreamer(file, columns,
+    streamer := export.NewCSVStreamer(file, columns,
         export.WithBOM(true),
         export.WithCRLF(true),
         export.WithFlushInterval(500),
     )
-    if err != nil {
-        panic(err)
-    }
-    defer streamer.Close()
 
     // Write header
     if err := streamer.WriteHeader(); err != nil {
@@ -105,6 +100,9 @@ func main() {
         if err := streamer.WriteRow(row); err != nil {
             panic(err)
         }
+    }
+    if err := streamer.Flush(); err != nil {
+        panic(err)
     }
 
     fmt.Printf("Successfully exported %d rows with constant memory footprint.\n", streamer.RowCount())

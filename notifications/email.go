@@ -52,9 +52,7 @@ func sanitizeCRLF(val string) string {
 
 func randomBoundary(prefix string) string {
 	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
-		return fmt.Sprintf("%s_%s", prefix, uuid.New().String())
-	}
+	_, _ = rand.Read(b)
 	return fmt.Sprintf("%s_%s", prefix, hex.EncodeToString(b))
 }
 
@@ -139,10 +137,9 @@ func (s *emailSender) buildMIMEMessage(msg Message) []byte {
 
 	hostname := s.cfg.Host
 	if hostname == "" {
+		hostname = "localhost"
 		if h, err := os.Hostname(); err == nil && h != "" {
 			hostname = h
-		} else {
-			hostname = "localhost"
 		}
 	}
 	hostname = sanitizeCRLF(hostname)

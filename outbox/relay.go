@@ -112,14 +112,7 @@ func (r *Relay) handlePublishFailure(ctx context.Context, event Event, pubErr er
 	isPoisonPill := IsNonRetryable(pubErr)
 	finalFail := newRetryCount >= event.MaxRetries || isPoisonPill
 
-	maxDelay := r.cfg.BackoffMax
-	if maxDelay <= 0 {
-		maxDelay = 1 * time.Minute
-	}
-	if maxDelay < r.cfg.BackoffBase {
-		maxDelay = r.cfg.BackoffBase
-	}
-	backoff := BackoffWithJitter(event.RetryCount, r.cfg.BackoffBase, maxDelay)
+	backoff := BackoffWithJitter(event.RetryCount, r.cfg.BackoffBase, r.cfg.BackoffMax)
 	nextRetry := time.Now().UTC().Add(backoff)
 
 	r.cfg.Logger.Warn("outbox event publish failed",

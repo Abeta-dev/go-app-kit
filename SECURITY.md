@@ -6,10 +6,9 @@
 
 | Version Series | Security Updates        | Status               |
 | -------------- | ----------------------- | -------------------- |
-| 0.3.x          | :white_check_mark: Yes  | **Active / Current** |
-| 0.2.x          | :white_check_mark: Yes  | Maintenance          |
-| 0.1.x          | :x: No                  | End-of-Life          |
-| < 0.1.0        | :x: No                  | End-of-Life          |
+| 0.5.x          | :white_check_mark: Yes  | **Active / Current** |
+| 0.4.x          | :white_check_mark: Yes  | Maintenance          |
+| < 0.4.0        | :x: No                  | End-of-Life          |
 
 ---
 
@@ -21,7 +20,7 @@ Instead, report vulnerabilities through one of the following confidential channe
 
 ### 1. GitHub Private Vulnerability Reporting (Preferred)
 Submit a confidential advisory directly via GitHub:
-- Navigate to the **Security** tab of `github.com/Abeta-dev/go-app-kit`.
+- Navigate to the **Security** tab of `github.com/abeta-dev/go-app-kit`.
 - Click **"Report a vulnerability"** to open a private advisory draft.
 - Include a description, affected package(s), minimal reproduction or proof-of-concept (PoC), and potential impact.
 

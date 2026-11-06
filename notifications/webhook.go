@@ -72,10 +72,7 @@ func (s *webhookSender) Send(ctx context.Context, msg Message) error {
 		return fmt.Errorf("webhook endpoint URL cannot be empty")
 	}
 
-	payload, err := json.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal webhook payload: %w", err)
-	}
+	payload, _ := json.Marshal(msg)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.cfg.EndpointURL, bytes.NewReader(payload))
 	if err != nil {

@@ -267,4 +267,35 @@ func TestBrevoSender_EdgeCases(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "<p>Hello</p>", payload2.HTMLContent)
 	assert.Equal(t, "<p>Hello</p>", payload2.TextContent)
+
+	// 5. Invalid BaseURL in Send
+	badURLSender, err := NewBrevoSender(BrevoConfig{
+		APIKey:      "xkeysib-mock",
+		SenderEmail: "sender@example.com",
+		BaseURL:     "http://\x7f",
+	})
+	require.NoError(t, err)
+	err = badURLSender.Send(context.Background(), Message{
+		Recipients: []string{"a@b.com"},
+		Body:       "Hi",
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create http request")
+
+	// 6. Transport failure in Send
+	closedTS := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	closedTS.Close()
+	transportFailSender, err := NewBrevoSender(BrevoConfig{
+		APIKey:      "xkeysib-mock",
+		SenderEmail: "sender@example.com",
+		BaseURL:     closedTS.URL,
+		HTTPClient:  closedTS.Client(),
+	})
+	require.NoError(t, err)
+	err = transportFailSender.Send(context.Background(), Message{
+		Recipients: []string{"a@b.com"},
+		Body:       "Hi",
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to send brevo email")
 }
