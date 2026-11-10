@@ -21,6 +21,7 @@ var (
 // SMSConfig configures the transactional SMS gateway adapter (compatible with Indian DLT gateways).
 type SMSConfig struct {
 	EntityID    string // Principal Entity ID for DLT compliance
+	TemplateID  string // Approved DLT Content Template ID
 	SenderID    string // Approved header/sender ID (e.g. 6-character alphabetic)
 	APIKey      string
 	Endpoint    string // HTTP gateway URL (e.g. https://api.sms-gateway.com/send)
@@ -76,6 +77,13 @@ func (s *smsSender) Send(ctx context.Context, msg Message) error {
 		params.Set("message", msg.Body)
 		if s.cfg.EntityID != "" {
 			params.Set("pe_id", s.cfg.EntityID)
+		}
+		templateID := s.cfg.TemplateID
+		if msg.Metadata != nil && msg.Metadata["template_id"] != "" {
+			templateID = msg.Metadata["template_id"]
+		}
+		if templateID != "" {
+			params.Set("template_id", templateID)
 		}
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.cfg.Endpoint, strings.NewReader(params.Encode()))

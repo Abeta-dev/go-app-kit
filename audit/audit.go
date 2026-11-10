@@ -2,12 +2,15 @@ package audit
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"reflect"
 	"regexp"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -86,7 +89,25 @@ type Event struct {
 	Diff        map[string]FieldDiff `json:"diff,omitempty"`
 	Comment     string               `json:"comment,omitempty"`
 	Metadata    map[string]string    `json:"metadata,omitempty"`
+	PrevHash    string               `json:"prev_hash,omitempty"`
+	Hash        string               `json:"hash,omitempty"`
 	CreatedAt   time.Time            `json:"created_at"`
+}
+
+// ComputeHash calculates a deterministic SHA-256 tamper-evident hash chaining prevHash with the event fields.
+func ComputeHash(prevHash string, event Event) string {
+	h := sha256.New()
+	_, _ = fmt.Fprintf(h, "%s|%s|%s|%s|%s|%s|%s|%d",
+		prevHash,
+		event.ID.String(),
+		event.Actor.ID,
+		event.Action,
+		event.EntityType,
+		event.EntityID,
+		event.Comment,
+		event.CreatedAt.UTC().UnixNano(),
+	)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 // ComputeDiff calculates structural property differences between before and after states.
@@ -211,6 +232,8 @@ type pgRecorder struct {
 	insertQuery         string
 	initErr             error
 	syncFallbackTimeout time.Duration
+	chainMu             sync.Mutex
+	lastHash            string
 }
 
 // NewPGRecorder initializes an audit recorder backed by PostgreSQL and a bounded workerpool.
@@ -262,11 +285,6 @@ func NewPGRecorder(cfg Config, opts ...Option) (Recorder, error) {
 		return nil, r.initErr
 	}
 
-	// Validate r.tableName before fmt.Sprintf to prevent SQL injection
-	if !tableNameRegex.MatchString(r.tableName) {
-		return nil, fmt.Errorf("%w: %q does not match identifier pattern '^[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)?$'", ErrInvalidTableName, r.tableName)
-	}
-
 	r.insertQuery = fmt.Sprintf(`
 		INSERT INTO %s (
 			id, actor_id, actor_email, actor_role, ip_address, user_agent,
@@ -291,7 +309,7 @@ func (r *pgRecorder) Record(ctx context.Context, event Event) error {
 		event.CreatedAt = time.Now().UTC()
 	}
 
-	var beforeJSON, afterJSON, diffJSON, metaJSON []byte
+	var beforeJSON, afterJSON, diffJSON []byte
 	var err error
 
 	if event.BeforeState != nil {
@@ -309,28 +327,25 @@ func (r *pgRecorder) Record(ctx context.Context, event Event) error {
 			return fmt.Errorf("failed to marshal diff: %w", err)
 		}
 	}
-	if event.Metadata != nil {
-		if metaJSON, err = json.Marshal(event.Metadata); err != nil {
-			return fmt.Errorf("failed to marshal metadata: %w", err)
-		}
-	}
 
-	query := r.insertQuery
-	if query == "" {
-		query = fmt.Sprintf(`
-			INSERT INTO %s (
-				id, actor_id, actor_email, actor_role, ip_address, user_agent,
-				action, entity_type, entity_id, before_state, after_state, diff,
-				comment, metadata, created_at
-			) VALUES (
-				$1, $2, $3, $4, $5, $6,
-				$7, $8, $9, $10, $11, $12,
-				$13, $14, $15
-			)
-		`, r.tableName)
+	r.chainMu.Lock()
+	prevHash := event.PrevHash
+	if prevHash == "" {
+		prevHash = r.lastHash
 	}
+	hash := ComputeHash(prevHash, event)
+	r.lastHash = hash
+	r.chainMu.Unlock()
 
-	_, err = r.db.Exec(ctx, query,
+	meta := make(map[string]string, len(event.Metadata)+2)
+	for k, v := range event.Metadata {
+		meta[k] = v
+	}
+	meta["prev_hash"] = prevHash
+	meta["hash"] = hash
+	metaJSON, _ := json.Marshal(meta)
+
+	_, err = r.db.Exec(ctx, r.insertQuery,
 		event.ID,
 		event.Actor.ID,
 		event.Actor.Email,
@@ -384,11 +399,7 @@ func (r *pgRecorder) RecordAsync(event Event) error {
 				"action", event.Action,
 				"entity_type", event.EntityType,
 			)
-			fallbackTimeout := r.syncFallbackTimeout
-			if fallbackTimeout <= 0 {
-				fallbackTimeout = DefaultSyncFallbackTimeout
-			}
-			ctx, cancel := context.WithTimeout(context.Background(), fallbackTimeout)
+			ctx, cancel := context.WithTimeout(context.Background(), r.syncFallbackTimeout)
 			defer cancel()
 			return r.Record(ctx, event)
 		case PolicyBlock:

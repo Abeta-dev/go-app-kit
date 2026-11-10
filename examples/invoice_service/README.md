@@ -81,10 +81,10 @@ import (
     "os"
 
     "github.com/jackc/pgx/v5/pgxpool"
-    "github.com/umesh0492/go-app-kit/audit"
+    "github.com/abeta-dev/go-app-kit/audit"
     fintech "github.com/umesh0492/go-fintech-india"
-    "github.com/umesh0492/go-app-kit/notifications"
-    "github.com/umesh0492/go-app-kit/outbox"
+    "github.com/abeta-dev/go-app-kit/notifications"
+    "github.com/abeta-dev/go-app-kit/outbox"
 )
 
 func main() {

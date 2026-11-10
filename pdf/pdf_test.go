@@ -10,9 +10,9 @@ import (
 	"time"
 
 	wkhtml "github.com/SebastiaanKlippert/go-wkhtmltopdf"
+	"github.com/abeta-dev/go-app-kit/pdf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/umesh0492/go-app-kit/pdf"
 )
 
 type mockRenderer struct {

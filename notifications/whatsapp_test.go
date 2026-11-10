@@ -4,11 +4,13 @@ package notifications_test
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
-	"github.com/umesh0492/go-app-kit/notifications"
+	"github.com/abeta-dev/go-app-kit/notifications"
 )
 
 func TestWhatsAppSender_Simulated(t *testing.T) {
@@ -57,7 +59,7 @@ func TestWhatsAppSender_LiveHTTP(t *testing.T) {
 	}
 
 	err = sender.Send(context.Background(), notifications.Message{
-		Recipients: []string{"+919876543210"},
+		Recipients: []string{"   ", "+", "+919876543210"},
 		Body:       "Hello via WhatsApp",
 	})
 	if err != nil {
@@ -72,9 +74,57 @@ func TestWhatsAppSender_LiveHTTP(t *testing.T) {
 	}
 }
 
-func TestWhatsAppSender_MissingCredentials(t *testing.T) {
+func TestWhatsAppSender_MissingCredentialsAndErrors(t *testing.T) {
 	_, err := notifications.NewWhatsAppSender(notifications.WhatsAppConfig{})
-	if err == nil {
-		t.Fatal("expected error when credentials missing and not simulated")
+	if !errors.Is(err, notifications.ErrWhatsAppTokenMissing) {
+		t.Fatalf("expected ErrWhatsAppTokenMissing, got %v", err)
+	}
+
+	_, err = notifications.NewWhatsAppSender(notifications.WhatsAppConfig{
+		AccessToken: "token-only",
+	})
+	if !errors.Is(err, notifications.ErrWhatsAppPhoneIDMissing) {
+		t.Fatalf("expected ErrWhatsAppPhoneIDMissing, got %v", err)
+	}
+
+	// 1. Invalid URL error in NewRequestWithContext
+	badURLSender, err := notifications.NewWhatsAppSender(notifications.WhatsAppConfig{
+		AccessToken:   "tok",
+		PhoneNumberID: "123",
+		BaseURL:       "http://\x7f",
+	})
+	if err != nil {
+		t.Fatalf("NewWhatsAppSender failed: %v", err)
+	}
+	if err := badURLSender.Send(context.Background(), notifications.Message{
+		Recipients: []string{"+919876543210"},
+		Body:       "test",
+	}); err == nil {
+		t.Fatal("expected error for invalid WhatsApp BaseURL")
+	}
+
+	// 2. Non-2xx status and transport error
+	errServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"bad request"}`))
+	}))
+	statusSender, _ := notifications.NewWhatsAppSender(notifications.WhatsAppConfig{
+		AccessToken:   "tok",
+		PhoneNumberID: "123",
+		BaseURL:       errServer.URL,
+	})
+	if err := statusSender.Send(context.Background(), notifications.Message{
+		Recipients: []string{"+919876543210"},
+		Body:       "test",
+	}); err == nil || !strings.Contains(err.Error(), "status 400") {
+		t.Fatalf("expected status 400 error, got: %v", err)
+	}
+
+	errServer.Close()
+	if err := statusSender.Send(context.Background(), notifications.Message{
+		Recipients: []string{"+919876543210"},
+		Body:       "test",
+	}); err == nil {
+		t.Fatal("expected transport error when WhatsApp server is closed")
 	}
 }

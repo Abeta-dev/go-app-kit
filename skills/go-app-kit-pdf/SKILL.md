@@ -1,11 +1,11 @@
 ---
 name: go-app-kit-pdf
-description: "Compile HTML templates into in-memory PDF documents and Indian GST B2B tax invoices using github.com/umesh0492/go-app-kit/pdf. Use when generating GST invoices, payment receipts, bounding wkhtmltopdf subprocess concurrency, or mocking PDF rendering in unit tests."
+description: "Compile HTML templates into in-memory PDF documents and Indian GST B2B tax invoices using github.com/abeta-dev/go-app-kit/pdf. Use when generating GST invoices, payment receipts, bounding wkhtmltopdf subprocess concurrency, or mocking PDF rendering in unit tests."
 ---
 
 # `go-app-kit/pdf` — HTML-to-PDF & GST Tax Invoice Subskill
 
-Use this skill when generating PDF documents, GST tax invoices, or payment receipts with `github.com/umesh0492/go-app-kit/pdf`.
+Use this skill when generating PDF documents, GST tax invoices, or payment receipts with `github.com/abeta-dev/go-app-kit/pdf`.
 
 ## 1. Architecture & Renderer Abstraction
 
@@ -20,24 +20,26 @@ Combine `go-fintech-india` (for exact paise arithmetic and words conversion) wit
 
 ```go
 import (
+	"bytes"
 	"context"
-	"github.com/umesh0492/go-app-kit/pdf"
-	fintech "github.com/umesh0492/go-fintech-india"
+	"github.com/abeta-dev/go-app-kit/pdf"
+	fintech "github.com/abeta-dev/go-fintech-india"
 )
 
-func RenderGSTInvoice(ctx context.Context, data pdf.InvoiceData) ([]byte, error) {
+func RenderGSTInvoice(ctx context.Context, sellerGSTIN, buyerGSTIN string, data map[string]any) (*bytes.Buffer, error) {
 	// Ensure GSTINs are validated via go-fintech-india before rendering
-	if err := fintech.ValidateGSTIN(data.SellerGSTIN); err != nil {
+	if err := fintech.ValidateGSTIN(sellerGSTIN); err != nil {
 		return nil, err
 	}
-	if data.BuyerGSTIN != "" {
-		if err := fintech.ValidateGSTIN(data.BuyerGSTIN); err != nil {
+	if buyerGSTIN != "" {
+		if err := fintech.ValidateGSTIN(buyerGSTIN); err != nil {
 			return nil, err
 		}
 	}
 
-	// Render in-memory A4 Portrait PDF
-	return pdf.GenerateFromTemplate(
+	// Render in-memory A4 Portrait PDF (*bytes.Buffer)
+	return pdf.GenerateFromTemplateWithContext(
+		ctx,
 		pdf.GSTInvoiceTemplate,
 		data,
 		pdf.WithPageSize("A4"),
@@ -57,7 +59,7 @@ To prevent `wkhtmltopdf` memory spikes under heavy load, instantiate a shared `W
 ```go
 renderer := pdf.NewWkhtmlRenderer(4) // max 4 concurrent wkhtmltopdf subprocesses
 
-pdfBytes, err := pdf.GenerateFromTemplate(
+pdfBuf, err := pdf.GenerateFromTemplate(
 	pdf.ReceiptTemplate,
 	receiptData,
 	pdf.WithRenderer(renderer),
@@ -69,7 +71,7 @@ pdfBytes, err := pdf.GenerateFromTemplate(
 ```go
 type stubRenderer struct{}
 
-func (s stubRenderer) RenderHTML(ctx context.Context, html string, opts pdf.Options) ([]byte, error) {
+func (s stubRenderer) Render(html string, opts pdf.Options) ([]byte, error) {
 	return []byte("%PDF-1.4 mock-bytes"), nil
 }
 

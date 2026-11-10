@@ -3,11 +3,13 @@
 package export_test
 
 import (
+	"errors"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/umesh0492/go-app-kit/export"
+	"github.com/abeta-dev/go-app-kit/export"
 )
 
 type sampleRecord struct {
@@ -15,6 +17,28 @@ type sampleRecord struct {
 	Name string
 	Role string
 }
+
+type failingResponseWriter struct {
+	header        http.Header
+	writesAllowed int
+}
+
+func (f *failingResponseWriter) Header() http.Header {
+	if f.header == nil {
+		f.header = make(http.Header)
+	}
+	return f.header
+}
+
+func (f *failingResponseWriter) Write(p []byte) (int, error) {
+	if f.writesAllowed <= 0 {
+		return 0, errors.New("simulated response write failure")
+	}
+	f.writesAllowed--
+	return len(p), nil
+}
+
+func (f *failingResponseWriter) WriteHeader(statusCode int) {}
 
 func TestStreamHTTP(t *testing.T) {
 	rec := httptest.NewRecorder()
@@ -36,6 +60,9 @@ func TestStreamHTTP(t *testing.T) {
 	if rec.Header().Get("Content-Type") != "text/csv; charset=utf-8" {
 		t.Fatalf("unexpected content type: %s", rec.Header().Get("Content-Type"))
 	}
+	if rec.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Fatalf("expected X-Content-Type-Options: nosniff, got %s", rec.Header().Get("X-Content-Type-Options"))
+	}
 	if rec.Header().Get("Content-Disposition") != `attachment; filename="users.csv"` {
 		t.Fatalf("unexpected content disposition: %s", rec.Header().Get("Content-Disposition"))
 	}
@@ -50,5 +77,46 @@ func TestStreamHTTP(t *testing.T) {
 	}
 	if !strings.Contains(body, "usr-1,Alice,Admin\r\n") || !strings.Contains(body, "usr-2,Bob,Member\r\n") {
 		t.Fatalf("unexpected data rows in CSV body: %s", body)
+	}
+}
+
+func TestStreamHTTP_FilenameSanitizationAndErrors(t *testing.T) {
+	cols := []export.Column[sampleRecord]{
+		{Header: "ID", Extractor: func(r sampleRecord) string { return r.ID }},
+	}
+
+	cases := []struct {
+		input    string
+		expected string
+	}{
+		{"../../etc/passwd.csv", `attachment; filename="passwd.csv"`},
+		{"invoices\r\nX-Injected: true.csv", `attachment; filename="invoicesX-Injected: true.csv"`},
+		{`bad"quote\slash.csv`, `attachment; filename="badquoteslash.csv"`},
+		{"", `attachment; filename="export.csv"`},
+		{"   ", `attachment; filename="export.csv"`},
+		{".", `attachment; filename="export.csv"`},
+		{"/", `attachment; filename="export.csv"`},
+	}
+
+	for _, tc := range cases {
+		rec := httptest.NewRecorder()
+		if err := export.StreamHTTP(rec, tc.input, cols, nil); err != nil {
+			t.Fatalf("StreamHTTP(%q) failed: %v", tc.input, err)
+		}
+		if got := rec.Header().Get("Content-Disposition"); got != tc.expected {
+			t.Errorf("StreamHTTP(%q) Content-Disposition = %q, want %q", tc.input, got, tc.expected)
+		}
+	}
+
+	// Error branch 1: WriteHeader fails (0 writes allowed, fails on BOM)
+	w1 := &failingResponseWriter{writesAllowed: 0}
+	if err := export.StreamHTTP(w1, "test.csv", cols, []sampleRecord{{ID: "1"}}); err == nil {
+		t.Fatalf("expected error when WriteHeader fails")
+	}
+
+	// Error branch 2: WriteRows fails (BOM + Header succeed = 2 writes, row > 4096 bytes triggers 3rd write)
+	w2 := &failingResponseWriter{writesAllowed: 2}
+	if err := export.StreamHTTP(w2, "test.csv", cols, []sampleRecord{{ID: strings.Repeat("A", 5000)}}); err == nil {
+		t.Fatalf("expected error when WriteRows fails")
 	}
 }
