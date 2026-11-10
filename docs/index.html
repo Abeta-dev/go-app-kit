@@ -1546,7 +1546,7 @@
             <span class="feat-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">Pure Domain Primitives</span>
           </div>
           <div class="feat-import">
-            <span style="color: #fbbf24;">import "github.com/umesh0492/go-fintech-india"</span>
+            <span style="color: #fbbf24;">import "github.com/abeta-dev/go-fintech-india"</span>
           </div>
           <p class="feat-desc">
             Zero-dependency statutory Indian domain primitives: Verhoeff D5, GSTIN Mod-36, UPI VPAs, IFSC banking checks, and exact integer paise currency calculations.
@@ -1710,7 +1710,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	fintech "github.com/umesh0492/go-fintech-india"
+	fintech "github.com/abeta-dev/go-fintech-india"
 	"github.com/abeta-dev/go-app-kit/audit"
 	"github.com/abeta-dev/go-app-kit/notifications"
 	"github.com/abeta-dev/go-app-kit/outbox"
@@ -1958,7 +1958,7 @@ func main() {
 import (
 	"net/http"
 	"github.com/abeta-dev/go-app-kit/export"
-	fintech "github.com/umesh0492/go-fintech-india"
+	fintech "github.com/abeta-dev/go-fintech-india"
 )
 
 type InvoiceExportRow struct {
@@ -2003,7 +2003,7 @@ import (
 	"github.com/abeta-dev/go-app-kit/notifications"
 	"github.com/abeta-dev/go-app-kit/outbox"
 	"github.com/abeta-dev/go-app-kit/pdf"
-	fintech "github.com/umesh0492/go-fintech-india"
+	fintech "github.com/abeta-dev/go-fintech-india"
 )
 
 // ProcessInvoice combines validation, PDF generation, outbox, audit, and notifications.
@@ -2188,7 +2188,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
 
       <div class="footer-bottom">
         <div>
-          © 2026 abeta-dev & umesh0492. Licensed under the MIT License.
+          © 2026 abeta-dev. Licensed under the MIT License.
         </div>
         <div>
           Built with Go 1.26.0 · Verified 100.0% Coverage · 0 Data Races

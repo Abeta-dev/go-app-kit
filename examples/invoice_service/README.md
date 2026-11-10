@@ -82,7 +82,7 @@ import (
 
     "github.com/jackc/pgx/v5/pgxpool"
     "github.com/abeta-dev/go-app-kit/audit"
-    fintech "github.com/umesh0492/go-fintech-india"
+    fintech "github.com/abeta-dev/go-fintech-india"
     "github.com/abeta-dev/go-app-kit/notifications"
     "github.com/abeta-dev/go-app-kit/outbox"
 )

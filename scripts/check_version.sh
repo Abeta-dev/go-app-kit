@@ -51,8 +51,8 @@ fi
 changelog_version="$(first_release_version)"
 readme_version="$(readme_current_version)"
 install_version="$(readme_install_version)"
-golibs_version="$(awk '$1 == "github.com/umesh0492/go-libs" { print $2; exit }' go.mod)"
-fintech_version="$(awk '$1 == "github.com/umesh0492/go-fintech-india" { print $2; exit }' go.mod)"
+golibs_version="$(awk '$1 == "github.com/abeta-dev/go-libs" { print $2; exit }' go.mod)"
+fintech_version="$(awk '$1 == "github.com/abeta-dev/go-fintech-india" { print $2; exit }' go.mod)"
 
 echo '========================================================'
 echo 'Verifying version, documentation, and measured truth'
@@ -75,8 +75,8 @@ fi
 if grep -qE '^[[:space:]]*replace[[:space:]]+' go.mod; then
   fail 'go.mod contains a replace directive; use a caller-owned go.work for local companion development'
 fi
-[[ "${golibs_version}" == 'v0.3.0' ]] || fail "go.mod must require go-libs v0.3.0, got ${golibs_version:-none}"
-[[ "${fintech_version}" == 'v0.2.3' ]] || fail "go.mod must require go-fintech-india v0.2.3, got ${fintech_version:-none}"
+[[ "${golibs_version}" == 'v0.3.4-0.20261110112222-1b53d738ac3b' || "${golibs_version}" == 'v0.4.0' ]] || fail "go.mod must require github.com/abeta-dev/go-libs v0.3.4-0.20261110112222-1b53d738ac3b (or v0.4.0), got ${golibs_version:-none}"
+[[ "${fintech_version}" == 'v0.2.7-0.20261110112448-92b084349544' || "${fintech_version}" == 'v0.3.0' ]] || fail "go.mod must require github.com/abeta-dev/go-fintech-india v0.2.7-0.20261110112448-92b084349544 (or v0.3.0), got ${fintech_version:-none}"
 
 # Bash 3.2 has indexed arrays but not mapfile/readarray. Populate arrays with
 # newline-delimited paths; repository file names must not contain newlines.

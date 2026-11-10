@@ -13,8 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - examples/invoice_service: Added `ExportInvoicesCSV` on `InvoiceService` demonstrating HTTP streaming CSV export of `InvoiceRequest` records with `StreamHTTP`.
 
 ### Changed
-- module: Migrated canonical Go module path to `github.com/abeta-dev/go-app-kit` (`v0.5.0`) across `go.mod`, packages, examples, scripts, workflows, documentation, and agent skills.
-- tests: Achieved **100.0% statement coverage** across all 5 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`) and `examples/invoice_service`.
+- module: Migrated canonical Go module path to lowercase `github.com/abeta-dev/go-app-kit` (`v0.5.0`) and companion dependencies (`github.com/abeta-dev/go-libs`, `github.com/abeta-dev/go-fintech-india`) across `go.mod`, packages, examples, scripts, workflows, documentation, and agent skills.
+- tests: Achieved **100.0% statement coverage** across all 5 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`) and `examples/invoice_service`, enforced via `./scripts/check_coverage.sh`.
+- security: Added `./scripts/check_secrets.sh` (TruffleHog verified-secret scanning + deterministic credential pattern gate) wired into `./scripts/check_version.sh` and CI (`test` and `docs-match-tree`), and bumped `actions/upload-artifact` to `v7.0.2` and `actions/download-artifact` to `v8.0.2`.
 
 ### Fixed
 - export: Sanitized `Content-Disposition` filename in `StreamHTTP` against CRLF/header-injection and path-traversal characters, and added `X-Content-Type-Options: nosniff`.
@@ -42,17 +43,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0] - 2026-09-20
 
 ### Removed
-- india: Discontinued deprecated backward-compatibility façade. Canonical statutory Indian primitives (GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, Money) should be imported directly from `github.com/umesh0492/go-fintech-india`.
+- india: Discontinued deprecated backward-compatibility façade. Canonical statutory Indian primitives (GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, Money) should be imported directly from `github.com/abeta-dev/go-fintech-india`.
 
 ### Changed
-- examples/invoice_service: Migrated reference billing pipeline to import `github.com/umesh0492/go-fintech-india` directly.
+- examples/invoice_service: Migrated reference billing pipeline to import `github.com/abeta-dev/go-fintech-india` directly.
 - docs: Refactored documentation portal, architecture diagrams, and README to showcase the 5 core enterprise application infrastructure packages (outbox, pdf, notifications, audit, export) and direct companion composition with `go-fintech-india`.
 
 ## [0.3.2] - 2026-09-18
 
 ### Changed
 - release: Reconciled release baseline following v0.3.1 truth-gate trip; published monotonic v0.3.2.
-- dependencies: Bumped `github.com/umesh0492/go-libs` to `v0.3.0`.
+- dependencies: Bumped `github.com/abeta-dev/go-libs` to `v0.3.0`.
 - outbox: Added `TypeMap()` implementation to test `mockRows` for pgx/v5 5.11.0 compatibility.
 - tooling: Added `scripts/check_tag_readiness.sh`, `scripts/git-hooks/pre-push`, and `make tag-release` to structurally prevent untracked changelog releases.
 
@@ -74,10 +75,10 @@ Encapsulated PDF subprocess semaphore, india façade deprecation notice, and go-
 - pdf: Encapsulated instance semaphore and constructor `NewWkhtmlRenderer` for bounded wkhtmltopdf subprocess concurrency.
 
 ### Deprecated
-- india: Package marked deprecated in favor of direct imports of `github.com/umesh0492/go-fintech-india` for canonical statutory Indian primitives.
+- india: Package marked deprecated in favor of direct imports of `github.com/abeta-dev/go-fintech-india` for canonical statutory Indian primitives.
 
 ### Changed
-- dependencies: Bumped `github.com/umesh0492/go-libs` to `v0.2.1`.
+- dependencies: Bumped `github.com/abeta-dev/go-libs` to `v0.2.1`.
 - pdf: Removed package-global semaphore maps in favor of struct-encapsulated semaphore bounding on `WkhtmlRenderer`.
 
 ## [0.2.0] - 2026-09-17
@@ -86,17 +87,17 @@ Clean-slate architecture: Decoupled PDF compilation and unified statutory Indian
 
 ### Added
 - pdf: Pluggable `Renderer` interface (`Renderer`, `WithRenderer`, `ErrNoRendererAvailable`) decoupling PDF generation from mandatory host `wkhtmltopdf` binaries.
-- india: Statutory validation, financial year arithmetic, and zero-allocation currency engines unified by delegating to `github.com/umesh0492/go-fintech-india@v0.2.2`.
+- india: Statutory validation, financial year arithmetic, and zero-allocation currency engines unified by delegating to `github.com/abeta-dev/go-fintech-india@v0.2.2`.
 - outbox: PostgreSQL transactional outbox implementation with `SELECT FOR UPDATE SKIP LOCKED` lease fencing.
 
 ### Changed
-- dependencies: Upgraded `github.com/umesh0492/go-fintech-india` to `v0.2.2` with zero-allocation `AppendINR`.
+- dependencies: Upgraded `github.com/abeta-dev/go-fintech-india` to `v0.2.2` with zero-allocation `AppendINR`.
 
 ## [0.1.0] - 2026-09-15
 
 Initial public release. Production-grade enterprise application and domain accelerator kit for Go.
 
-Clean-slate architecture: No backward compatibility preserved. Statutory Indian validation engines unified under github.com/umesh0492/go-fintech-india@v0.1.0, and deprecated interfaces dropped, as no external developers are actively consuming pre-release revisions.
+Clean-slate architecture: No backward compatibility preserved. Statutory Indian validation engines unified under github.com/abeta-dev/go-fintech-india@v0.1.0, and deprecated interfaces dropped, as no external developers are actively consuming pre-release revisions.
 
 ### Added
 - audit: Structured PostgreSQL audit trail with append-only partitioning, trigger DDL, and JSON state diffing (`Recorder`, `Event`, `PGRecorder`).
