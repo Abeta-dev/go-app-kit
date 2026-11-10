@@ -66,7 +66,7 @@ go work init ./go-app-kit ./go-libs
 With `go.work` in place, any changes in `go-libs` are immediately reflected in `go-app-kit` during compilation, testing, and debugging.
 
 ### Standard Distribution
-`go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/umesh0492/go-libs@v0.3.0` and `github.com/umesh0492/go-fintech-india@v0.2.3` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md).
+`go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/abeta-dev/go-libs` and `github.com/abeta-dev/go-fintech-india` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md).
 
 ### Concurrency Architecture & Dependency on `go-libs/workerpool`
 `go-app-kit`'s asynchronous background execution in `notifications` (async multi-channel fan-out) and `audit` (asynchronous audit log ingestion) imports [`go-libs/workerpool`](https://github.com/abeta-dev/go-libs/tree/main/workerpool) directly. It leverages bounded concurrency, graceful draining, panic resilience, and Prometheus saturation metrics without maintaining any duplicated forks.
@@ -182,7 +182,7 @@ High-throughput, low-memory CSV streaming:
 
 ```go
 import (
-    fintech "github.com/umesh0492/go-fintech-india"
+    fintech "github.com/abeta-dev/go-fintech-india"
     "github.com/abeta-dev/go-app-kit/export"
 )
 
@@ -207,12 +207,12 @@ streamer.Flush()
 
 ### Companion Architecture: Indian Statutory Compliance (go-fintech-india)
 
-For pure domain statutory checks, zero-allocation paise arithmetic, and Indian banking/tax validation, developers should import [`github.com/umesh0492/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india) directly as a companion library:
+For pure domain statutory checks, zero-allocation paise arithmetic, and Indian banking/tax validation, developers should import [`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india) directly as a companion library:
 
 ```go
 import (
     "fmt"
-    fintech "github.com/umesh0492/go-fintech-india"
+    fintech "github.com/abeta-dev/go-fintech-india"
 )
 
 // 1. Exact Paise Integer Arithmetic (Zero floating-point inaccuracies)
@@ -297,6 +297,12 @@ Coverage across packages in `go-app-kit` is measured using Go's statement-level 
 Run the full verification suite locally:
 
 ```bash
+# Run Bash 3.2 compatibility, TruffleHog secret scan, version/symbol/doc truth gate, and 100.0% coverage gate
+./scripts/test_bash_compat.sh
+./scripts/check_secrets.sh
+./scripts/check_coverage.sh
+./scripts/check_version.sh
+
 # Run all tests with race detector
 make test-race
 

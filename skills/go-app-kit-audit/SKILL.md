@@ -62,6 +62,7 @@ if err := recorder.RecordAsync(evt); err != nil {
 
 ---
 
-## 3. Standalone Field-Level Diffing (`ComputeDiff`)
+## 3. Standalone Field-Level Diffing (`ComputeDiff`) & Hash Chaining (`ComputeHash`)
 
-You can call `audit.ComputeDiff(oldState, newState)` directly to inspect property changes (`map[string]audit.FieldDiff{Old, New}`) for custom validation or change-log UI views.
+- Call `audit.ComputeDiff(oldState, newState)` directly to inspect property changes (`map[string]audit.FieldDiff{Old, New}`) for custom validation or change-log UI views.
+- `NewPGRecorder` automatically computes a tamper-evident SHA-256 hash chain across sequential events (`Event.PrevHash`, `Event.Hash`, and `audit.ComputeHash(evt, prevHash)`), persisting `prev_hash` and `hash` inside the `metadata` JSONB column.

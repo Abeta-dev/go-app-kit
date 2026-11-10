@@ -31,7 +31,7 @@ if whatsappSender, err := notifications.NewWhatsAppSender(whatsappCfg); err == n
 	broker.RegisterSender(whatsappSender) // Meta Cloud API v20+
 }
 if smsSender, err := notifications.NewSMSSender(smsCfg); err == nil {
-	broker.RegisterSender(smsSender) // Indian DLT (pe_id, template_id)
+	broker.RegisterSender(smsSender) // Indian DLT (PEID, TemplateID, or per-message Metadata["template_id"])
 }
 if brevoSender, err := notifications.NewBrevoSender(brevoCfg); err == nil {
 	broker.RegisterSender(brevoSender) // Brevo API v3 transactional email

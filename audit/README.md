@@ -19,7 +19,8 @@ Structured audit logging engine with automated JSON state diffing, actor context
 2. **Automated Deep Structural Diffing (`ComputeDiff`)**: Inspects `before_state` and `after_state` maps using deep reflection, producing structured JSON diffs (`{ "tax_rate": { "old": 18.0, "new": 12.0 } }`). Operators can immediately see modified fields without diffing entire snapshots manually.
 3. **Seamless Context Integration**: Automatically extracts actor credentials via `ActorFromContext` and operational justification comments via `audit.Comment(ctx)` (set via `audit.WithComment(ctx, comment)`), bridging HTTP middleware context directly into database rows.
 4. **Non-Blocking Asynchronous Execution (`RecordAsync`)**: Backed by `workerpool.Pool`. Incoming audit events are dispatched to a bounded background queue in sub-microsecond time, protecting the primary application transaction from audit write latency.
-5. **JSONB Query Flexibility**: Persists snapshots and metadata into native PostgreSQL `JSONB` columns, enabling GIN indexing and arbitrary JSON path queries across dynamic entity properties.
+5. **Tamper-Evident SHA-256 Hash Chaining (`ComputeHash`, `PrevHash`, `Hash`)**: `NewPGRecorder` links sequential audit events in a cryptographic SHA-256 hash chain (`event.PrevHash` and `event.Hash`, persisted in `metadata["prev_hash"]` and `metadata["hash"]`) so privileged database tampering can be detected.
+6. **JSONB Query Flexibility**: Persists snapshots and metadata into native PostgreSQL `JSONB` columns, enabling GIN indexing and arbitrary JSON path queries across dynamic entity properties.
 
 ---
 

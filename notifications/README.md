@@ -1,6 +1,6 @@
 # `notifications`
 
-Unified, multi-channel notification broker supporting SMTP Email with multipart MIME attachments, Slack incoming webhooks with priority color coding, and HMAC-SHA256 signed HTTP webhooks, powered by bounded in-process worker pools.
+Unified, multi-channel notification broker supporting SMTP Email with multipart MIME attachments, Brevo Transactional Email API v3, Meta WhatsApp Cloud API v20+, Indian DLT-compliant SMS (`PEID` & `TemplateID`), Slack incoming webhooks with priority color coding, and HMAC-SHA256 signed HTTP webhooks, powered by bounded in-process worker pools.
 
 ---
 

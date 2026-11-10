@@ -47,6 +47,16 @@
       scroll-behavior: smooth;
     }
 
+    ::selection {
+      background: rgba(56, 189, 248, 0.25);
+      color: var(--text);
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
     code, pre {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     }
@@ -89,14 +99,14 @@
       width: 32px;
       height: 32px;
       border-radius: 8px;
-      background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+      background: var(--accent);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      color: #0b0f19;
       font-weight: 900;
       font-size: 1.1rem;
-      box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
 
     .brand-badge {
@@ -152,7 +162,7 @@
       background: #334155;
       border-color: var(--accent);
       color: #fff;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
     }
 
     /* Hero */
@@ -195,9 +205,7 @@
       font-weight: 800;
       letter-spacing: -0.02em;
       margin-bottom: 20px;
-      background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 50%, #94a3b8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: var(--text);
     }
 
     .hero-sub {
@@ -221,7 +229,7 @@
     }
 
     .install-prompt {
-      color: #64748b;
+      color: var(--text-muted);
       user-select: none;
     }
 
@@ -293,6 +301,7 @@
       font-weight: 800;
       color: var(--accent);
       margin-bottom: 6px;
+      font-variant-numeric: tabular-nums;
     }
 
     .stat-lbl {
@@ -428,7 +437,7 @@
     .layer-arrow {
       text-align: center;
       margin: -8px 0 16px;
-      color: #64748b;
+      color: var(--text-muted);
       font-size: 1.4rem;
       display: flex;
       align-items: center;
@@ -440,7 +449,7 @@
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      color: #64748b;
+      color: var(--text-muted);
       font-weight: 600;
     }
 
@@ -497,7 +506,7 @@
     }
 
     .pipe-arrow {
-      color: #64748b;
+      color: var(--text-muted);
       font-size: 1rem;
     }
 
@@ -523,7 +532,8 @@
 
     .search-input:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
     }
 
     .category-pills {
@@ -949,10 +959,11 @@
       width: 100%;
       border-collapse: collapse;
       text-align: left;
+      font-variant-numeric: tabular-nums;
     }
 
     th {
-      color: #64748b;
+      color: var(--text-muted);
       font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -1057,9 +1068,50 @@
       justify-content: space-between;
       align-items: center;
       font-size: 0.85rem;
-      color: #64748b;
+      color: var(--text-muted);
       flex-wrap: wrap;
       gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+      .hero h1 {
+        font-size: 2.25rem;
+      }
+      .install-box {
+        flex-wrap: wrap;
+        justify-content: center;
+        max-width: 100%;
+      }
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html, body {
+        scroll-behavior: auto;
+      }
+      .stat-card,
+      .feat-card,
+      .flow-step-card,
+      .nav-btn,
+      .copy-btn,
+      .pill-btn,
+      .feat-btn,
+      .tab-btn,
+      .snippet-copy,
+      .toast {
+        transition: none;
+        transform: none;
+      }
+      .stat-card:hover,
+      .feat-card:hover,
+      .flow-step-card:hover {
+        transform: none;
+      }
     }
 
     /* Toast Notification */
@@ -1091,7 +1143,7 @@
 <body>
 
   <!-- Navigation -->
-  <nav class="navbar">
+  <nav class="navbar" aria-label="Primary Navigation">
     <div class="container nav-inner">
       <a href="#" class="brand">
         <div class="brand-logo">G</div>
@@ -1172,6 +1224,8 @@
     </div>
   </header>
 
+  <main id="main-content">
+
   <!-- Architecture & Clean Hexagonal Layer Map -->
   <section id="architecture" class="container" style="padding: 40px 0;">
     <div class="section-head">
@@ -1181,7 +1235,7 @@
 
     <div class="arch-container">
       <!-- Tier 3: Enterprise Microservices -->
-      <div class="layer-card" style="border-left: 4px solid #818cf8;">
+      <div class="layer-card" style="border-color: rgba(129, 140, 248, 0.35);">
         <div class="layer-header">
           <span class="layer-title">
             <span style="color: #818cf8;">●</span> Layer 3: Enterprise Microservices
@@ -1198,7 +1252,7 @@
       </div>
 
       <!-- Tier 2: go-app-kit -->
-      <div class="layer-card" style="border-left: 4px solid #38bdf8; background: rgba(15, 23, 42, 0.8);">
+      <div class="layer-card" style="border-color: rgba(56, 189, 248, 0.35); background: rgba(15, 23, 42, 0.8);">
         <div class="layer-header">
           <span class="layer-title">
             <span style="color: #38bdf8;">●</span> Layer 2: github.com/abeta-dev/go-app-kit
@@ -1253,7 +1307,7 @@
 
       <!-- Companion Tier: go-fintech-india & go-libs -->
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
-        <div class="layer-card" style="border-left: 4px solid #f59e0b; background: rgba(30, 41, 59, 0.7);">
+        <div class="layer-card" style="border-color: rgba(245, 158, 11, 0.35); background: rgba(30, 41, 59, 0.7);">
           <div class="layer-header">
             <span class="layer-title">
               <span style="color: #f59e0b;">●</span> Companion: go-fintech-india
@@ -1265,7 +1319,7 @@
           </div>
         </div>
 
-        <div class="layer-card" style="border-left: 4px solid #10b981; background: rgba(30, 41, 59, 0.7);">
+        <div class="layer-card" style="border-color: rgba(16, 185, 129, 0.35); background: rgba(30, 41, 59, 0.7);">
           <div class="layer-header">
             <span class="layer-title">
               <span style="color: #10b981;">●</span> Layer 1: go-libs
@@ -1311,7 +1365,7 @@
 
     <!-- Filter & Search Bar -->
     <div class="filter-bar">
-      <input type="text" id="featSearch" class="search-input" placeholder="🔍 Search capabilities, algorithms, exported types (e.g. GSTIN, SKIP LOCKED, Money, BOM, SMTP)...">
+      <input type="text" id="featSearch" class="search-input" aria-label="Search capabilities, algorithms, and exported types" placeholder="🔍 Search capabilities, algorithms, exported types (e.g. GSTIN, SKIP LOCKED, Money, BOM, SMTP)...">
       <div class="category-pills">
         <button class="pill-btn active" onclick="filterFeat('all', this)">All (5 Modules + Companion)</button>
         <button class="pill-btn" onclick="filterFeat('persistence', this)">Persistence & Outbox (outbox, audit)</button>
@@ -1350,7 +1404,7 @@
           </ul>
         </div>
         <div class="feat-action">
-          <span style="font-size: 0.8rem; color: #64748b;">PostgreSQL Dual-Write</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">PostgreSQL Dual-Write</span>
           <button class="feat-btn" onclick="selectCodeTab(1)">View Code ➔</button>
         </div>
       </div>
@@ -1381,7 +1435,7 @@
           </ul>
         </div>
         <div class="feat-action">
-          <span style="font-size: 0.8rem; color: #64748b;">Document Engine</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Document Engine</span>
           <button class="feat-btn" onclick="selectCodeTab(3)">View Code ➔</button>
         </div>
       </div>
@@ -1412,7 +1466,7 @@
           </ul>
         </div>
         <div class="feat-action">
-          <span style="font-size: 0.8rem; color: #64748b;">Multi-Channel Broker</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Multi-Channel Broker</span>
           <button class="feat-btn" onclick="selectCodeTab(2)">View Code ➔</button>
         </div>
       </div>
@@ -1443,7 +1497,7 @@
           </ul>
         </div>
         <div class="feat-action">
-          <span style="font-size: 0.8rem; color: #64748b;">Compliance Auditing</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Compliance Auditing</span>
           <button class="feat-btn" onclick="selectCodeTab(4)">View Code ➔</button>
         </div>
       </div>
@@ -1474,7 +1528,7 @@
           </ul>
         </div>
         <div class="feat-action">
-          <span style="font-size: 0.8rem; color: #64748b;">Streaming Export</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Streaming Export</span>
           <button class="feat-btn" onclick="selectCodeTab(5)">View Code ➔</button>
         </div>
       </div>
@@ -1492,7 +1546,7 @@
             <span class="feat-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-color: rgba(245, 158, 11, 0.4);">Pure Domain Primitives</span>
           </div>
           <div class="feat-import">
-            <span style="color: #fbbf24;">import "github.com/umesh0492/go-fintech-india"</span>
+            <span style="color: #fbbf24;">import "github.com/abeta-dev/go-fintech-india"</span>
           </div>
           <p class="feat-desc">
             Zero-dependency statutory Indian domain primitives: Verhoeff D5, GSTIN Mod-36, UPI VPAs, IFSC banking checks, and exact integer paise currency calculations.
@@ -1524,13 +1578,13 @@
       <div class="demo-flex">
         <!-- Input Column -->
         <div class="demo-input-group">
-          <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">ENTER GSTIN (15 characters)</label>
+          <label for="demoGSTIN" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">ENTER GSTIN (15 characters)</label>
           <input type="text" id="demoGSTIN" class="demo-input" value="27AAPFU0939F1ZV" placeholder="e.g. 27AAPFU0939F1ZV" oninput="runDemoValidation()">
 
-          <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-top: 6px;">ENTER AADHAAR NUMBER (12 digits)</label>
+          <label for="demoAadhaar" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-top: 6px;">ENTER AADHAAR NUMBER (12 digits)</label>
           <input type="text" id="demoAadhaar" class="demo-input" value="234567890128" placeholder="e.g. 234567890128" oninput="runDemoValidation()">
 
-          <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-top: 6px;">ENTER AMOUNT (INR)</label>
+          <label for="demoAmount" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-top: 6px;">ENTER AMOUNT (INR)</label>
           <input type="number" id="demoAmount" class="demo-input" value="15000.50" step="0.01" oninput="runDemoValidation()">
         </div>
 
@@ -1656,7 +1710,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	fintech "github.com/umesh0492/go-fintech-india"
+	fintech "github.com/abeta-dev/go-fintech-india"
 	"github.com/abeta-dev/go-app-kit/audit"
 	"github.com/abeta-dev/go-app-kit/notifications"
 	"github.com/abeta-dev/go-app-kit/outbox"
@@ -1904,7 +1958,7 @@ func main() {
 import (
 	"net/http"
 	"github.com/abeta-dev/go-app-kit/export"
-	fintech "github.com/umesh0492/go-fintech-india"
+	fintech "github.com/abeta-dev/go-fintech-india"
 )
 
 type InvoiceExportRow struct {
@@ -1949,7 +2003,7 @@ import (
 	"github.com/abeta-dev/go-app-kit/notifications"
 	"github.com/abeta-dev/go-app-kit/outbox"
 	"github.com/abeta-dev/go-app-kit/pdf"
-	fintech "github.com/umesh0492/go-fintech-india"
+	fintech "github.com/abeta-dev/go-fintech-india"
 )
 
 // ProcessInvoice combines validation, PDF generation, outbox, audit, and notifications.
@@ -2082,6 +2136,8 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
     </div>
   </section>
 
+  </main>
+
   <!-- Footer -->
   <footer>
     <div class="container">
@@ -2132,7 +2188,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
 
       <div class="footer-bottom">
         <div>
-          © 2026 abeta-dev & umesh0492. Licensed under the MIT License.
+          © 2026 abeta-dev. Licensed under the MIT License.
         </div>
         <div>
           Built with Go 1.26.0 · Verified 100.0% Coverage · 0 Data Races

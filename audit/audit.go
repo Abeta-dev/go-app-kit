@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/abeta-dev/go-libs/workerpool"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/umesh0492/go-libs/workerpool"
 )
 
 var (

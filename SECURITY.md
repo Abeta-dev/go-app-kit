@@ -49,8 +49,8 @@ As a focused engineering team, we commit to the following response timeline:
 
 ### 1. Database DDL & Partitioning (`audit`, `outbox`)
 - **Safe Migrations & Partitioning**: The audit log schema (`audit/ddl/001_audit_logs.sql`) uses PostgreSQL declarative range partitioning (`PARTITION BY RANGE (created_at)`). A catch-all default partition (`audit_logs_default`) is mandatory to guarantee fail-safe, unblocked ingestion even before date-specific partitions are provisioned.
-- **Append-Only Enforcement**: Database triggers (`prevent_audit_log_modification`) prohibit `UPDATE` and `DELETE` operations on audit tables for application roles (`app_user`, `PUBLIC`).
-- **Row-Level Lease Fencing**: The transactional outbox engine (`outbox/store.go`, `outbox/relay.go`) coordinates concurrent workers using `SELECT ... FOR UPDATE SKIP LOCKED`. State transitions (`MarkPublished`, `MarkFailed`) enforce atomic row-level lease token fencing (`lease_token UUID`), rejecting stale or pre-empted workers with `ErrLeaseExpired` to eliminate double-publishing race conditions.
+- **Append-Only Enforcement & Tamper-Evident Hash Chaining**: Database triggers (`prevent_audit_log_modification`) prohibit `UPDATE` and `DELETE` operations on audit tables for application roles (`app_user`, `PUBLIC`). In addition, `audit.ComputeHash` and `NewPGRecorder` compute a deterministic SHA-256 hash chain (`PrevHash` and `Hash` persisted in `metadata`) so privileged tampering is cryptographically detectable.
+- **Row-Level Lease Fencing & Overflow-Safe Backoff**: The transactional outbox engine (`outbox/store.go`, `outbox/relay.go`) coordinates concurrent workers using `SELECT ... FOR UPDATE SKIP LOCKED`. State transitions (`MarkPublished`, `MarkFailed`) enforce atomic row-level lease token fencing (`lease_token UUID`), rejecting stale or pre-empted workers with `ErrLeaseExpired` to eliminate double-publishing race conditions. `BackoffWithJitter` caps bit-shifts (`attempt > 30`) and `int64` multiplication against overflow.
 - **Table Identifier Sanitization**: To guard against SQL injection in dynamic table configurations, `WithTableName` strictly validates all table and schema names against the identifier regular expression `^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$` prior to query interpolation.
 
 ### 2. PDF Document Generation (`pdf`)
@@ -66,10 +66,15 @@ As a focused engineering team, we commit to the following response timeline:
 - **CSV Formula Injection Mitigation (CWE-1236)**: `export.CSVStreamer` enables formula sanitization by default (`WithFormulaSanitization(true)`).
 - **Trigger Character Escaping**: `export.SanitizeCSVCell` prefixes dangerous leading characters (`=`, `+`, `-`, `@`, `\t`, `\r`) with a single quote (`'`), preventing spreadsheet applications (Microsoft Excel, LibreOffice Calc, Google Sheets) from executing arbitrary DDE formulas or macro payloads.
 - **Whitespace Evasion Immunity**: The sanitizer strips leading whitespace characters, newlines (`\n`, `\r\n`), and non-breaking spaces (NBSP `\u00a0`) before evaluating formula triggers, neutralizing whitespace evasion bypasses while preserving valid positive and negative numbers (e.g. `-123.45`).
+- **HTTP Header & Filename Sanitization (`StreamHTTP`)**: `export.StreamHTTP` strips CRLF (`\r`, `\n`), quotes, and path-traversal separators (`/`, `\`) from `Content-Disposition` filenames and sets `X-Content-Type-Options: nosniff`.
 
-### 5. Indian Localized Fintech (`india`)
-- **Algorithmic Integrity (Zero External Dependencies)**: Statutory Indian financial and identity algorithms run completely in-memory with zero third-party dependencies:
+### 5. Companion Indian Localized Fintech (`github.com/abeta-dev/go-fintech-india`)
+- **Algorithmic Integrity (Zero External Dependencies)**: Statutory Indian financial and identity algorithms in companion module `github.com/abeta-dev/go-fintech-india` run completely in-memory with zero third-party dependencies:
   - **Aadhaar**: Validated using the UIDAI-mandated Verhoeff Dihedral ($D_5$) permutation algorithm (`ValidateAadhaar`) and masked by default (`MaskAadhaar` -> `XXXX-XXXX-1234`).
   - **GSTIN**: Validated using the official 15-character Goods and Services Tax format and statutory Mod-36 check digit calculation (`ValidateGSTIN`, `CalculateGSTINCheckDigit`) across 38 state/UT alphanumeric codes.
   - **PAN**: Validated using strict alphanumeric pattern matching (`^[A-Z]{5}[0-9]{4}[A-Z]$`) and statutory 4th-character legal entity mapping (Company, Individual, LLP, HUF, Trust, Government Agency).
-  - **Integer Paise Arithmetic**: `india.Money` stores monetary values as 64-bit integer paise (`int64`), preventing IEEE 754 floating-point rounding errors across GST split calculations, invoices, and ledgers.
+  - **Integer Paise Arithmetic**: `Money` stores monetary values as 64-bit integer paise (`int64`), preventing IEEE 754 floating-point rounding errors across GST split calculations, invoices, and ledgers.
+
+### 6. Secret Scanning & Supply-Chain Verification (`scripts/check_secrets.sh`)
+- **Automated Secret Gate**: `./scripts/check_secrets.sh` runs TruffleHog (`trufflehog git file://. --only-verified --fail`) alongside deterministic high-confidence credential regex scanning across all git-tracked files, enforced in `./scripts/check_version.sh` and CI (`test` and `docs-match-tree`).
+- **Vulnerability & SBOM Gate**: CI runs `govulncheck ./...` and generates a CycloneDX 1.5 SBOM (`bom.json`) on every code change.

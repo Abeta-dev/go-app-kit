@@ -13,7 +13,7 @@ import (
 	"github.com/abeta-dev/go-app-kit/notifications"
 	"github.com/abeta-dev/go-app-kit/outbox"
 	"github.com/abeta-dev/go-app-kit/pdf"
-	fintech "github.com/umesh0492/go-fintech-india"
+	fintech "github.com/abeta-dev/go-fintech-india"
 )
 
 // InvoiceItem models an individual invoice line item with exact monetary precision.

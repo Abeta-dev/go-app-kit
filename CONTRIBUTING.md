@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to `go-app-kit`!
 
-`go-app-kit` is an enterprise application accelerator kit for Go, providing business capabilities: **Indian localized fintech helpers (GSTIN, PAN, IFSC, Aadhaar), transactional outbox with PostgreSQL DDL, multi-channel notifications, PDF document generation with GST invoice templates, partitioned compliance audit logging, and streaming data exports**.
+`go-app-kit` is an enterprise application accelerator kit for Go, providing 5 core business infrastructure packages: **transactional outbox with PostgreSQL DDL (`outbox`), HTML-to-PDF document generation with GST invoice templates (`pdf`), multi-channel notifications (`notifications`), partitioned tamper-evident compliance audit logging (`audit`), and streaming data exports (`export`)** (composing seamlessly with statutory companion `github.com/abeta-dev/go-fintech-india`).
 
 We welcome contributions ranging from bug fixes and documentation clarifications to performance optimizations and test coverage improvements.
 
@@ -136,6 +136,10 @@ This removes local build binaries (`invoice_service`, `examples/invoice_service/
    - `chore(...)`: Maintenance or governance updates
 
 3. **Checklist Before Opening a PR**:
+   - [ ] `./scripts/test_bash_compat.sh` passes (zero Bash 4+ incompatibilities).
+   - [ ] `./scripts/check_secrets.sh` passes (zero leaked credentials or secrets).
+   - [ ] `./scripts/check_coverage.sh` passes (`100.0%` statement coverage maintained).
+   - [ ] `./scripts/check_version.sh` passes (version, symbol inventory, and docs synchronized).
    - [ ] `make fmt-check` reports no unformatted files.
    - [ ] `make lint` exits with code 0 (zero issues).
    - [ ] `make test-race` passes with zero race warnings.

@@ -19,7 +19,7 @@ Memory-efficient streaming tabular data exporter with Go generics, RFC 4180 comp
 2. **Compile-Time Type Safety (Go Generics)**: Column definitions bind directly to entity structs via typed extractors (`func(item T) string`), eliminating runtime reflection overhead and catching missing or renamed fields at compile time.
 3. **Microsoft Excel UTF-8 BOM Integration (`IncludeBOM`)**: Writes the UTF-8 Byte Order Mark (`\xEF\xBB\xBF`) at byte offset 0 by default. Without this header, Microsoft Excel on Windows assumes the file uses ANSI / Windows-1252 encoding and garbles international characters (e.g. `₹` becomes `â‚¹`).
 4. **Configurable Buffer Flushing (`WithFlushInterval`)**: Flushes internal `csv.Writer` buffers after every $N$ rows (default: 100), keeping client network connections alive and enabling instant browser download progress bars.
-5. **Standard RFC 4180 Conformance**: Built directly on Go's `encoding/csv` standard library to ensure quotes, embedded commas, CRLF line terminators, and newlines within cell values are properly escaped.
+5. **Standard RFC 4180 Conformance & Formula Sanitization**: Built directly on Go's `encoding/csv` standard library with automatic spreadsheet formula-injection escaping (`SanitizeCSVCell`, `WithFormulaSanitization`) and one-line HTTP streaming (`StreamHTTP[T]`) with sanitized `Content-Disposition` filenames and `X-Content-Type-Options: nosniff`.
 
 ---
 

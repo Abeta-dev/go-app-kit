@@ -50,16 +50,26 @@ Before finishing any code or documentation change inside `go-app-kit`, run this 
 # 1. Run static Bash 3.2 compatibility guard (no mapfile/readarray allowed)
 ./scripts/test_bash_compat.sh
 
-# 2. Run version, symbol inventory, package count, and coverage truth gate
+# 2. Run TruffleHog + deterministic secret scanning gate across all tracked files
+./scripts/check_secrets.sh
+
+# 3. Run statement coverage gate (verifies 100.0% coverage across all 5 packages + examples/invoice_service)
+./scripts/check_coverage.sh
+
+# 4. Run version, symbol inventory, package count, secret scan, and coverage truth gate
 ./scripts/check_version.sh
 
-# 3. Run race detector across all packages
+# 5. Run release proxy verification unit tests
+./scripts/test_verify_release.sh
+
+# 6. Run race detector across all packages
 go test -race ./...
 
-# 4. Before tagging a release vX.Y.Z
+# 7. Before tagging a release vX.Y.Z
 make check-release-readiness TAG=vX.Y.Z
 ```
 
 ### Common Failure Modes & Fixes
+- **Secret scan failure (`./scripts/check_secrets.sh`)**: Runs `trufflehog git file://. --only-verified --fail` (when installed) and deterministic regex checks for AWS keys, GitHub tokens, Slack tokens, Brevo keys (`xkeysib-` + 32+ chars), PEM private keys, and embedded database/Redis URL credentials. Never commit real credentials; use obvious short placeholders in docs/tests.
 - **`CHANGELOG.md` symbol check fails**: `./scripts/verify_changelog_symbols.sh` verifies every backticked symbol under `### Added` against non-test `.go` files. Put CI/doc/dependency changes under `### Changed` or `### Fixed`, never under `### Added`.
-- **Coverage mismatch in `README.md`**: `./scripts/check_coverage.sh` compares every package row and the global total in `README.md` against `go test -coverprofile=coverage.out ./...`. If statement coverage changes by even `0.1%`, update the table in `README.md` to match the measured numbers.
+- **Coverage mismatch in `README.md`**: `./scripts/check_coverage.sh` enforces `100.0%` statement coverage across all 5 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`) plus `examples/invoice_service` and compares every package row and the global total in `README.md` against `go test -coverprofile=coverage.out ./...`. If statement coverage changes by even `0.1%`, update the table in `README.md` to match the measured numbers.

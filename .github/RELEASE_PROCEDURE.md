@@ -60,7 +60,10 @@ make install-hooks
 3. Verify changes locally:
    ```bash
    bash scripts/test_bash_compat.sh
+   bash scripts/check_secrets.sh
+   bash scripts/check_coverage.sh
    bash scripts/check_version.sh
+   bash scripts/test_verify_release.sh
    go test -race ./...
    ```
 4. Commit and push the branch:

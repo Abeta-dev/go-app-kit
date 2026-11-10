@@ -12,11 +12,11 @@ altering local refs.
 
 | Module | Version | Remote tag form | Tagged commit | Proxy archive SHA-256 | SumDB module checksum |
 | --- | --- | --- | --- | --- | --- |
-| `github.com/umesh0492/go-app-kit` | `v0.2.1` | annotated (`277ad0741cd723d8c2c445b24dec5608cf1a1c3b`) | `bbb29710fd5622023b9b30bd3c9151d4d5517832` | `11c92c0eabf36fefe0b0a38eceebe8d3f311cda8b72e27edf479a3a64192d325` | `h1:fIcEZxtHfIsYSfaoZPN5+xMGRh6WGltgBMNmkix+mx0=` |
-| `github.com/umesh0492/go-app-kit` | `v0.3.0` | lightweight | `a4501b6ee165c475811e6e3c43dab9b20907d25e` | `52036d15c805f2f10f795e868abbe32248f71e210c6f4213524f2a464c1806f4` | `h1:vxh+SnwkUot1nLkWKDUBuhLfEPI877ABFxjOfYYdTiY=` |
-| `github.com/umesh0492/go-app-kit` | `v0.3.1` | lightweight | `815823212936738de790eba35118c36acdecfea1` | cached proxy entry (release truth-gate failure) | cached sumdb entry |
-| `github.com/umesh0492/go-libs` | `v0.3.0` | annotated (verified in its baseline) | `69e9b0857997380907ad53ec220d36baadbe53e3` | verified in go-libs baseline | `h1:B6rPK2M7OdXc5a3Q8xsxUvJawgf/C4nJVG1KvHwpyXg=` |
-| `github.com/umesh0492/go-fintech-india` | `v0.2.3` | lightweight (verified in its baseline) | `55888b8fb529bb6379eb96f9a04ce649b7a08b90` | `17b5e66a4f1164cabca95e4bfef849b956162552f32db7e2e7ea6d57b30f8504` | `h1:f2QB8HdhsxaCRFvu0HWQmu55rqPtxA6/kliAYIYNqtU=` |
+| `github.com/abeta-dev/go-app-kit` | `v0.2.1` | annotated (`277ad0741cd723d8c2c445b24dec5608cf1a1c3b`) | `bbb29710fd5622023b9b30bd3c9151d4d5517832` | `11c92c0eabf36fefe0b0a38eceebe8d3f311cda8b72e27edf479a3a64192d325` | `h1:fIcEZxtHfIsYSfaoZPN5+xMGRh6WGltgBMNmkix+mx0=` |
+| `github.com/abeta-dev/go-app-kit` | `v0.3.0` | lightweight | `a4501b6ee165c475811e6e3c43dab9b20907d25e` | `52036d15c805f2f10f795e868abbe32248f71e210c6f4213524f2a464c1806f4` | `h1:vxh+SnwkUot1nLkWKDUBuhLfEPI877ABFxjOfYYdTiY=` |
+| `github.com/abeta-dev/go-app-kit` | `v0.3.1` | lightweight | `815823212936738de790eba35118c36acdecfea1` | cached proxy entry (release truth-gate failure) | cached sumdb entry |
+| `github.com/abeta-dev/go-libs` | `v0.3.0` | annotated (verified in its baseline) | `69e9b0857997380907ad53ec220d36baadbe53e3` | verified in go-libs baseline | `h1:B6rPK2M7OdXc5a3Q8xsxUvJawgf/C4nJVG1KvHwpyXg=` |
+| `github.com/abeta-dev/go-fintech-india` | `v0.2.3` | lightweight (verified in its baseline) | `55888b8fb529bb6379eb96f9a04ce649b7a08b90` | `17b5e66a4f1164cabca95e4bfef849b956162552f32db7e2e7ea6d57b30f8504` | `h1:f2QB8HdhsxaCRFvu0HWQmu55rqPtxA6/kliAYIYNqtU=` |
 
 The `v0.3.0` tag is a legitimate immutable published artifact, but it points to
 a4501b6, which predates main's `v0.2.0` and annotated `v0.2.1` commits. It is
@@ -33,8 +33,8 @@ reconciliation is published monotonically as `v0.3.2`.
 
 The current source requires only verified published dependencies:
 
-- `github.com/umesh0492/go-libs v0.3.0`
-- `github.com/umesh0492/go-fintech-india v0.2.3`
+- `github.com/abeta-dev/go-libs`
+- `github.com/abeta-dev/go-fintech-india`
 
 There are no `replace` directives in `go.mod`. Use a caller-owned `go.work` file
 for local companion development rather than editing the published module graph.
@@ -69,6 +69,6 @@ never changed.
 Following the immutable remote caching of `v0.3.1` at commit `8158232`, this repository
 reconciled its release baseline to **`v0.3.2`**.
 The release includes:
-- Upgrading `github.com/umesh0492/go-libs` to `v0.3.0`.
+- Upgrading `github.com/abeta-dev/go-libs` to `v0.3.0`.
 - Implementing `TypeMap() *pgtype.Map` on `*mockRows` in `outbox/outbox_test.go` for pgx/v5 5.11.0 compatibility.
 - Introducing structural release guardrails: `scripts/check_tag_readiness.sh`, `scripts/git-hooks/pre-push`, and `make tag-release` to prevent untracked or unverified tags from being cut.

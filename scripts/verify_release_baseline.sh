@@ -5,7 +5,7 @@ set -euo pipefail
 # network checks and is for local release investigation or scheduled/release
 # workflows, not the pull-request fast path.
 
-readonly MODULE='github.com/umesh0492/go-app-kit'
+readonly MODULE='github.com/abeta-dev/go-app-kit'
 readonly PUBLISHED_VERSION='v0.2.1'
 readonly AMBIGUOUS_VERSION='v0.3.0'
 readonly EXPECTED_PUBLISHED_TAG_OBJECT='277ad0741cd723d8c2c445b24dec5608cf1a1c3b'
@@ -90,8 +90,8 @@ fi
 
 verify_proxy_module "${MODULE}" "${PUBLISHED_VERSION}" "${EXPECTED_PUBLISHED_COMMIT}" "${EXPECTED_PUBLISHED_ZIP_SHA256}" "${EXPECTED_PUBLISHED_MOD_SHA256}" "${EXPECTED_PUBLISHED_SUM}" "${EXPECTED_PUBLISHED_GOMOD_SUM}" app-kit-v0.2.1
 verify_proxy_module "${MODULE}" "${AMBIGUOUS_VERSION}" "${EXPECTED_AMBIGUOUS_COMMIT}" "${EXPECTED_AMBIGUOUS_ZIP_SHA256}" "${EXPECTED_AMBIGUOUS_MOD_SHA256}" "${EXPECTED_AMBIGUOUS_SUM}" "${EXPECTED_AMBIGUOUS_GOMOD_SUM}" app-kit-v0.3.0
-verify_proxy_module github.com/umesh0492/go-libs "${GOLIBS_VERSION}" "${EXPECTED_GOLIBS_COMMIT}" "${EXPECTED_GOLIBS_ZIP_SHA256}" "${EXPECTED_GOLIBS_MOD_SHA256}" "${EXPECTED_GOLIBS_SUM}" "${EXPECTED_GOLIBS_GOMOD_SUM}" go-libs-v0.2.1
-verify_proxy_module github.com/umesh0492/go-fintech-india "${FINTECH_VERSION}" "${EXPECTED_FINTECH_COMMIT}" "${EXPECTED_FINTECH_ZIP_SHA256}" "${EXPECTED_FINTECH_MOD_SHA256}" "${EXPECTED_FINTECH_SUM}" "${EXPECTED_FINTECH_GOMOD_SUM}" go-fintech-india-v0.2.3
+verify_proxy_module github.com/abeta-dev/go-libs "${GOLIBS_VERSION}" "${EXPECTED_GOLIBS_COMMIT}" "${EXPECTED_GOLIBS_ZIP_SHA256}" "${EXPECTED_GOLIBS_MOD_SHA256}" "${EXPECTED_GOLIBS_SUM}" "${EXPECTED_GOLIBS_GOMOD_SUM}" go-libs-v0.2.1
+verify_proxy_module github.com/abeta-dev/go-fintech-india "${FINTECH_VERSION}" "${EXPECTED_FINTECH_COMMIT}" "${EXPECTED_FINTECH_ZIP_SHA256}" "${EXPECTED_FINTECH_MOD_SHA256}" "${EXPECTED_FINTECH_SUM}" "${EXPECTED_FINTECH_GOMOD_SUM}" go-fintech-india-v0.2.3
 
 scratch_dir="$(mktemp -d)"
 trap 'rm -rf "${tmp_dir}" "${scratch_dir}"' EXIT
@@ -106,7 +106,7 @@ import (
 	"bytes"
 	"fmt"
 
-	kitexport "github.com/umesh0492/go-app-kit/export"
+	kitexport "github.com/abeta-dev/go-app-kit/export"
 )
 
 func main() {
