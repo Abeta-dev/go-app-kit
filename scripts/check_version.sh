@@ -130,6 +130,10 @@ for path in audit/ddl/001_audit_logs.sql outbox/ddl/001_outbox_events.sql outbox
   [[ -f "${path}" ]] || fail "referenced DDL is missing: ${path}"
 done
 
+if [[ -x "${SCRIPT_DIR}/check_secrets.sh" ]]; then
+  "${SCRIPT_DIR}/check_secrets.sh"
+fi
+
 "${SCRIPT_DIR}/verify_changelog_symbols.sh"
 
 # `check_coverage.sh` both enforces floors and compares every documented global
