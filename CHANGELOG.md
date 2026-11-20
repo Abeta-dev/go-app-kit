@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - audit: Added tamper-evident SHA-256 hash chaining (`ComputeHash`, `PrevHash`, `Hash`) on `Event` and `NewPGRecorder`.
+- export: Added `StreamHTTPCompressed` and `NegotiateEncoding` for RFC 9110 HTTP content negotiation with pooled Brotli and Gzip CSV response compression.
 - notifications: Added `TemplateID` field on `SMSConfig` for Indian DLT template ID injection alongside per-message `template_id` metadata override.
 - examples/invoice_service: Added `ExportInvoicesCSV` on `InvoiceService` demonstrating HTTP streaming CSV export of `InvoiceRequest` records with `StreamHTTP`.
 

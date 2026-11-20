@@ -10,6 +10,7 @@
 [![Code Quality: golangci-lint](https://img.shields.io/badge/code%20quality-golangci--lint-brightgreen?logo=go)](https://golangci-lint.run/)
 [![Go Version](https://img.shields.io/badge/Go-1.26.0-00ADD8?logo=go)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/abeta-dev/go-app-kit/badge)](https://scorecard.dev/viewer/?uri=github.com/abeta-dev/go-app-kit)
 [![Vulnerabilities](https://img.shields.io/badge/govulncheck-0%20vulns-brightgreen)](https://pkg.go.dev/golang.org/x/vuln/cmd/govulncheck)
 
 **Production-grade enterprise application and domain accelerator kit for Go.**
@@ -183,6 +184,7 @@ High-throughput, low-memory CSV streaming:
 - Prepend UTF-8 BOM (`\xEF\xBB\xBF`) for seamless Microsoft Excel rendering.
 - Configurable delimiters (`,`, `;`, `\t`), CRLF endings, and row batch flushing.
 - **`StreamHTTP[T any]`**: Helper function to stream CSV directly to HTTP response writers (including Gin `c.Writer`), writing headers (`Content-Type`, sanitized `Content-Disposition`, `X-Content-Type-Options: nosniff`, `Cache-Control`) automatically with BOM and CRLF.
+- **`StreamHTTPCompressed[T any]` & `NegotiateEncoding`**: RFC 9110 `Accept-Encoding` content negotiation (`br` and `gzip` with `q=` weights, preferring Brotli on ties) using `sync.Pool`-recycled Brotli and Gzip streaming writers and automatic `Vary: Accept-Encoding` headers.
 
 ```go
 import (
@@ -196,8 +198,9 @@ columns := []export.Column[InvoiceRow]{
     {Header: "GSTIN", Extractor: func(i InvoiceRow) string { return i.BuyerGSTIN }},
 }
 
-// 1. HTTP streaming directly to client / browser
+// 1. HTTP streaming directly to client / browser (uncompressed or Accept-Encoding br/gzip compressed)
 err := export.StreamHTTP(w, "invoices.csv", columns, invoiceList)
+err = export.StreamHTTPCompressed(w, r, "invoices.csv", columns, invoiceList)
 
 // 2. Low-level chunked CSV streamer
 streamer := export.NewCSVStreamer(responseWriter, columns, export.WithBOM(true))

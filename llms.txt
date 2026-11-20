@@ -86,8 +86,10 @@ npx skills add abeta-dev/go-app-kit
   - `NewCSVStreamer[T any](w io.Writer, columns []Column[T], opts ...Option) *CSVStreamer[T]`
   - `(*CSVStreamer[T]).WriteRow(item T) error`, `(*CSVStreamer[T]).WriteRows(items []T) error`, `(*CSVStreamer[T]).Flush() error`, `(*CSVStreamer[T]).Close() error`
   - `StreamHTTP[T any](w http.ResponseWriter, filename string, columns []Column[T], rows []T, opts ...Option) error`
+  - `StreamHTTPCompressed[T any](w http.ResponseWriter, r *http.Request, filename string, columns []Column[T], rows []T, opts ...Option) error`
+  - `NegotiateEncoding(acceptEncoding string) string`
   - `WithBOM(enable bool) Option`, `WithDelimiter(r rune) Option`, `WithCRLF(useCRLF bool) Option`, `WithFlushInterval(rows int) Option`
-- **Summary**: Constant-memory RFC 4180 CSV streaming directly to `io.Writer` or `http.ResponseWriter` with Excel UTF-8 BOM (`\xEF\xBB\xBF`), sanitized `Content-Disposition` headers, and automatic spreadsheet formula-injection defense (`=`, `+`, `-`, `@`, `\t`, `\r`).
+- **Summary**: Constant-memory RFC 4180 CSV streaming directly to `io.Writer` or `http.ResponseWriter` (with RFC 9110 `Accept-Encoding` Brotli `br` and Gzip `gzip` streaming compression via `sync.Pool`), Excel UTF-8 BOM (`\xEF\xBB\xBF`), sanitized `Content-Disposition` headers, and automatic spreadsheet formula-injection defense (`=`, `+`, `-`, `@`, `\t`, `\r`).
 
 ### 6. `examples/invoice_service` — Reference B2B GST Invoicing Service
 - **Import Path**: `github.com/abeta-dev/go-app-kit/examples/invoice_service`

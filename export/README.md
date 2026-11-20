@@ -20,6 +20,7 @@ Memory-efficient streaming tabular data exporter with Go generics, RFC 4180 comp
 3. **Microsoft Excel UTF-8 BOM Integration (`IncludeBOM`)**: Writes the UTF-8 Byte Order Mark (`\xEF\xBB\xBF`) at byte offset 0 by default. Without this header, Microsoft Excel on Windows assumes the file uses ANSI / Windows-1252 encoding and garbles international characters (e.g. `₹` becomes `â‚¹`).
 4. **Configurable Buffer Flushing (`WithFlushInterval`)**: Flushes internal `csv.Writer` buffers after every $N$ rows (default: 100), keeping client network connections alive and enabling instant browser download progress bars.
 5. **Standard RFC 4180 Conformance & Formula Sanitization**: Built directly on Go's `encoding/csv` standard library with automatic spreadsheet formula-injection escaping (`SanitizeCSVCell`, `WithFormulaSanitization`) and one-line HTTP streaming (`StreamHTTP[T]`) with sanitized `Content-Disposition` filenames and `X-Content-Type-Options: nosniff`.
+6. **Streaming Brotli (`br`) & Gzip (`gzip`) HTTP Compression (`StreamHTTPCompressed[T]`, `NegotiateEncoding`)**: Parses RFC 9110 `Accept-Encoding` quality weights (`q=`), preferring Brotli (`br`) over Gzip (`gzip`) on ties, and streams CSV output through `sync.Pool`-recycled `*brotli.Writer` or `*gzip.Writer` instances with `Vary: Accept-Encoding` and zero full-payload intermediate buffering.
 
 ---
 
