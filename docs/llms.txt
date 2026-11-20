@@ -1,0 +1,107 @@
+# go-app-kit (github.com/abeta-dev/go-app-kit@v0.5.0)
+
+> Production-grade enterprise application and domain accelerator kit for Go (Go 1.26.0, 100.0% statement coverage): PostgreSQL transactional outbox with relay worker, SHA-256 hash-chained compliance audit logging, HTML-to-PDF GST tax invoice generation, multi-channel notifications (SMTP, WhatsApp Cloud API, Indian DLT SMS, Slack, HMAC Webhooks), and RFC 4180 streaming CSV/HTTP exports.
+
+## Quick Installation
+
+```bash
+# Install the Go module
+go get github.com/abeta-dev/go-app-kit@v0.5.0
+
+# Install vendor-neutral AI Agent Skills (Claude Code, Google Antigravity, Gemini CLI, Codex, Cursor)
+npx skills add abeta-dev/go-app-kit
+```
+
+## Key Links & Resources
+
+- [Documentation Portal](https://abeta-dev.github.io/go-app-kit/): Interactive package reference, architecture topology, and PostgreSQL DDL blueprints.
+- [Go Reference (pkg.go.dev)](https://pkg.go.dev/github.com/abeta-dev/go-app-kit): Official Go package and symbol documentation.
+- [GitHub Repository](https://github.com/abeta-dev/go-app-kit): Source code, verification scripts, and release artifacts.
+- [AGENTS.md](https://github.com/abeta-dev/go-app-kit/blob/main/AGENTS.md): Root AI agent routing table and repository invariants.
+- [Umbrella Skill (`skills/go-app-kit/SKILL.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit/SKILL.md): Cross-package transactional composition and truth-gate verification loop.
+- [Reference Microservice (`examples/invoice_service`)](https://github.com/abeta-dev/go-app-kit/tree/main/examples/invoice_service): End-to-end B2B GST invoicing service combining all 5 packages with `go-fintech-india`.
+
+## Packages & API Reference
+
+### 1. `outbox` — PostgreSQL Transactional Outbox Engine
+- **Import Path**: `github.com/abeta-dev/go-app-kit/outbox`
+- **Skill**: [`skills/go-app-kit-outbox/SKILL.md`](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit-outbox/SKILL.md)
+- **PostgreSQL DDL**: `outbox/ddl/001_outbox_events.sql`, `outbox/ddl/002_outbox_concurrency_index.sql`
+- **Key Types & Functions**:
+  - `Event`, `NewEvent(aggregateType, aggregateID, eventType string, payload any) (*Event, error)`
+  - `Status` (`StatusPending`, `StatusProcessing`, `StatusPublished`, `StatusDeadLetter`)
+  - `Store`, `PGStore`, `NewPGStore(db DBOperator, opts ...StoreOption) *PGStore`, `WithLeaseDuration(d time.Duration) StoreOption`
+  - `Publisher`, `PublisherFunc`
+  - `Relay`, `RelayConfig`, `NewRelay(cfg RelayConfig) (*Relay, error)`, `(*Relay).Start(ctx context.Context) error`
+- **Summary**: Solves dual-write anomalies by inserting domain events inside the active `pgx.Tx` and polling asynchronously via `SELECT ... FOR UPDATE SKIP LOCKED`, UUID `lease_token` fencing, and full-jitter exponential backoff.
+
+### 2. `pdf` — HTML-to-PDF Document Generator & GST Invoice Templates
+- **Import Path**: `github.com/abeta-dev/go-app-kit/pdf`
+- **Skill**: [`skills/go-app-kit-pdf/SKILL.md`](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit-pdf/SKILL.md)
+- **Key Types & Functions**:
+  - `GenerateFromHTML(htmlContent string, opts ...Option) (*bytes.Buffer, error)`
+  - `GenerateFromHTMLWithContext(ctx context.Context, htmlContent string, opts ...Option) (*bytes.Buffer, error)`
+  - `GenerateFromTemplate(tmplStr string, data any, opts ...Option) (*bytes.Buffer, error)`
+  - `GenerateFromTemplateWithContext(ctx context.Context, tmplStr string, data any, opts ...Option) (*bytes.Buffer, error)`
+  - `Renderer`, `WkhtmlRenderer`, `NewWkhtmlRenderer(maxConcurrent int) *WkhtmlRenderer`
+  - `Options`, `Option`, `WithPageSize`, `WithOrientation`, `WithMargins`, `WithDPI`, `WithTitle`, `WithRenderer`
+  - `GSTInvoiceTemplate`, `ReceiptTemplate`
+- **Summary**: Compiles HTML/Go templates into in-memory PDF buffers via `wkhtmltopdf` stdin/stdout pipes with zero temporary disk files, semaphore-bounded concurrency, SSRF protection, and embedded Indian GST B2B tax invoice and payment receipt templates.
+
+### 3. `notifications` — Multi-Channel Notification Dispatcher
+- **Import Path**: `github.com/abeta-dev/go-app-kit/notifications`
+- **Skill**: [`skills/go-app-kit-notifications/SKILL.md`](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit-notifications/SKILL.md)
+- **Key Types & Functions**:
+  - `Broker`, `Config`, `DefaultConfig() Config`, `NewBroker(cfg Config) *Broker`
+  - `(*Broker).RegisterSender(s Sender)`, `(*Broker).Send(ctx context.Context, msg Message) error`, `(*Broker).SendAsync(ctx context.Context, msg Message) error`, `(*Broker).Close()`
+  - `Message`, `Attachment`, `Channel` (`ChannelEmail`, `ChannelSlack`, `ChannelSMS`, `ChannelWhatsApp`, `ChannelWebhook`), `Priority` (`PriorityLow`, `PriorityNormal`, `PriorityHigh`, `PriorityCritical`)
+  - `EmailSender`, `EmailConfig`, `NewEmailSender(cfg EmailConfig) *EmailSender`
+  - `BrevoSender`, `BrevoConfig`, `NewBrevoSender(cfg BrevoConfig) (*BrevoSender, error)`
+  - `WhatsAppSender`, `WhatsAppConfig`, `NewWhatsAppSender(cfg WhatsAppConfig) (*WhatsAppSender, error)`
+  - `SMSSender`, `SMSConfig`, `NewSMSSender(cfg SMSConfig) (*SMSSender, error)` (Indian TRAI DLT `pe_id` and `template_id`)
+  - `SlackSender`, `SlackConfig`, `NewSlackSender(cfg SlackConfig) *SlackSender`
+  - `WebhookSender`, `WebhookConfig`, `NewWebhookSender(cfg WebhookConfig) *WebhookSender`
+  - `WebhookVerifier`, `NewWebhookVerifier(secret string, maxAge time.Duration) *WebhookVerifier`, `VerifyWebhook(secret, signature, timestamp string, payload []byte) error`
+- **Summary**: Synchronous and bounded asynchronous (`go-libs/workerpool`) fan-out across SMTP Email, Brevo v3 API, Meta WhatsApp Cloud API v20+, Indian DLT SMS, Slack webhooks, and HMAC-SHA256 replay-protected HTTP webhooks.
+
+### 4. `audit` — Tamper-Evident Compliance Audit Trail & State Diffing
+- **Import Path**: `github.com/abeta-dev/go-app-kit/audit`
+- **Skill**: [`skills/go-app-kit-audit/SKILL.md`](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit-audit/SKILL.md)
+- **PostgreSQL DDL**: `audit/ddl/001_audit_logs.sql`
+- **Key Types & Functions**:
+  - `Event`, `NewEvent(ctx context.Context, action, entityType, entityID string, oldState, newState any) Event`
+  - `Actor`, `ContextWithActor(ctx context.Context, actor Actor) context.Context`, `ActorFromContext(ctx context.Context) Actor`
+  - `WithComment(ctx context.Context, comment string) context.Context`, `CommentFromContext(ctx context.Context) string`
+  - `FieldDiff`, `ComputeDiff(oldState, newState any) map[string]FieldDiff`
+  - `ComputeHash(evt Event, prevHash string) string`
+  - `Recorder`, `PGRecorder`, `Config`, `NewPGRecorder(cfg Config) (*PGRecorder, error)`
+  - `(*PGRecorder).Record(ctx context.Context, evt Event) error`, `(*PGRecorder).RecordAsync(evt Event) error`, `(*PGRecorder).Close()`
+- **Summary**: Range-partitioned PostgreSQL compliance audit logging with `trg_prevent_audit_log_modification` append-only triggers, automated field-level JSON diffing (`Old` vs `New`), context-extracted actor metadata, and deterministic SHA-256 hash chaining (`prev_hash` -> `hash`).
+
+### 5. `export` — Low-Memory Streaming CSV/HTTP Exporter
+- **Import Path**: `github.com/abeta-dev/go-app-kit/export`
+- **Skill**: [`skills/go-app-kit-export/SKILL.md`](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit-export/SKILL.md)
+- **Key Types & Functions**:
+  - `Column[T any]`, `CSVStreamer[T any]`, `Option`
+  - `NewCSVStreamer[T any](w io.Writer, columns []Column[T], opts ...Option) *CSVStreamer[T]`
+  - `(*CSVStreamer[T]).WriteRow(item T) error`, `(*CSVStreamer[T]).WriteRows(items []T) error`, `(*CSVStreamer[T]).Flush() error`, `(*CSVStreamer[T]).Close() error`
+  - `StreamHTTP[T any](w http.ResponseWriter, filename string, columns []Column[T], rows []T, opts ...Option) error`
+  - `WithBOM(enable bool) Option`, `WithDelimiter(r rune) Option`, `WithCRLF(useCRLF bool) Option`, `WithFlushInterval(rows int) Option`
+- **Summary**: Constant-memory RFC 4180 CSV streaming directly to `io.Writer` or `http.ResponseWriter` with Excel UTF-8 BOM (`\xEF\xBB\xBF`), sanitized `Content-Disposition` headers, and automatic spreadsheet formula-injection defense (`=`, `+`, `-`, `@`, `\t`, `\r`).
+
+### 6. `examples/invoice_service` — Reference B2B GST Invoicing Service
+- **Import Path**: `github.com/abeta-dev/go-app-kit/examples/invoice_service`
+- **Key Types & Functions**:
+  - `InvoiceService`, `NewInvoiceService(...) *InvoiceService`, `(*InvoiceService).IssueInvoice(ctx context.Context, req IssueInvoiceRequest) (*IssueInvoiceResponse, error)`
+- **Summary**: Demonstrates atomic composition of `go-fintech-india` (GSTIN checksum validation and exact integer paise tax calculation) with `outbox`, `audit`, `pdf`, `notifications`, and `export`.
+
+## Abeta Go Ecosystem
+
+- **[`github.com/abeta-dev/go-libs`](https://github.com/abeta-dev/go-libs)** (`v0.4.0`): Foundational microservice systems engineering (`workerpool`, `circuitbreaker`, `ratelimit`, `retry`, `cache`, `ginmw`, `httpclient`, `db`, `rbac`, `jwks`, `telemetry`, `logger`).
+  - Docs: https://abeta-dev.github.io/go-libs/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-libs
+- **[`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)** (`v0.3.0`): Zero-dependency Indian statutory compliance and exact paise financial primitives (GSTIN mod-36, PAN, Aadhaar Verhoeff D5, IFSC, VPA/UPI, exact `Money` paise math, Indian FY & AP/AR aging).
+  - Docs: https://abeta-dev.github.io/go-fintech-india/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-fintech-india
+- **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.5.0`): Enterprise application infrastructure (`outbox`, `pdf`, `notifications`, `audit`, `export`).
+  - Docs: https://abeta-dev.github.io/go-app-kit/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-app-kit
+- **[`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability)**: Production OpenTelemetry, Prometheus, Grafana, Loki, Tempo, and Kubernetes observability reference stack for Go microservices.
+  - Docs: https://abeta-dev.github.io/cloud-native-observability/ | Repo: https://github.com/abeta-dev/cloud-native-observability

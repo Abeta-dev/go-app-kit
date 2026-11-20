@@ -3,6 +3,10 @@
 > Current main-line published release: `v0.5.0`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
 [![CI](https://github.com/abeta-dev/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/abeta-dev/go-app-kit/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/abeta-dev/go-app-kit.svg)](https://pkg.go.dev/github.com/abeta-dev/go-app-kit)
+[![Coverage](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/abeta-dev/go-app-kit/main/.github/badges/coverage.json)](https://github.com/abeta-dev/go-app-kit)
+[![Docs Portal](https://img.shields.io/badge/docs-abeta--dev.github.io%2Fgo--app--kit-00ADD8?logo=read-the-docs&logoColor=white)](https://abeta-dev.github.io/go-app-kit/)
+[![llms.txt](https://img.shields.io/badge/llms.txt-AI--Ready-7C3AED)](https://abeta-dev.github.io/go-app-kit/llms.txt)
 [![Code Quality: golangci-lint](https://img.shields.io/badge/code%20quality-golangci--lint-brightgreen?logo=go)](https://golangci-lint.run/)
 [![Go Version](https://img.shields.io/badge/Go-1.26.0-00ADD8?logo=go)](https://go.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -289,6 +293,19 @@ Coverage across packages in `go-app-kit` is measured using Go's statement-level 
 | **`go-app-kit-notifications`** | [`skills/go-app-kit-notifications/SKILL.md`](skills/go-app-kit-notifications/SKILL.md) | `Broker` routing across `Email`, `Slack`, `Webhook`, `WhatsApp` (`NewWhatsAppSender`), and Indian DLT `SMS` (`NewSMSSender`) |
 | **`go-app-kit-audit`** | [`skills/go-app-kit-audit/SKILL.md`](skills/go-app-kit-audit/SKILL.md) | Partitioned PostgreSQL append-only audit trail (`Recorder`, `Event`) and JSON diffing |
 | **`go-app-kit-export`** | [`skills/go-app-kit-export/SKILL.md`](skills/go-app-kit-export/SKILL.md) | Constant-memory CSV streaming (`StreamHTTP`, `CSVStreamer`), UTF-8 BOM, and formula-injection escaping |
+
+Machine-readable LLM context index: [`llms.txt`](llms.txt) (published at [`https://abeta-dev.github.io/go-app-kit/llms.txt`](https://abeta-dev.github.io/go-app-kit/llms.txt)).
+
+---
+
+## 🌐 Abeta Go Ecosystem
+
+| Repository | Architectural Role | Documentation Portal | Go Reference (`pkg.go.dev`) |
+| :--- | :--- | :--- | :--- |
+| **[`github.com/abeta-dev/go-libs`](https://github.com/abeta-dev/go-libs)** | Low-level microservice systems engineering (`workerpool`, `circuitbreaker`, `ratelimit`, `retry`, `cache`, `ginmw`, `httpclient`, `db`, `rbac`, `jwks`, `telemetry`, `logger`) | [`abeta-dev.github.io/go-libs`](https://abeta-dev.github.io/go-libs/) | [`pkg.go.dev/github.com/abeta-dev/go-libs`](https://pkg.go.dev/github.com/abeta-dev/go-libs) |
+| **[`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)** | Zero-dependency Indian statutory compliance & exact paise financial primitives (GSTIN mod-36, PAN, Aadhaar Verhoeff $D_5$, IFSC, VPA/UPI, `Money` paise math, FY & AP/AR aging) | [`abeta-dev.github.io/go-fintech-india`](https://abeta-dev.github.io/go-fintech-india/) | [`pkg.go.dev/github.com/abeta-dev/go-fintech-india`](https://pkg.go.dev/github.com/abeta-dev/go-fintech-india) |
+| **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** | Enterprise application infrastructure (5 core packages: PostgreSQL transactional `outbox`, HTML-to-PDF `pdf`, multi-channel `notifications`, compliance `audit`, streaming CSV `export`) | [`abeta-dev.github.io/go-app-kit`](https://abeta-dev.github.io/go-app-kit/) | [`pkg.go.dev/github.com/abeta-dev/go-app-kit`](https://pkg.go.dev/github.com/abeta-dev/go-app-kit) |
+| **[`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability)** | Production OpenTelemetry, Prometheus, Grafana, Loki, Tempo, and Kubernetes observability reference stack for Go microservices | [`abeta-dev.github.io/cloud-native-observability`](https://abeta-dev.github.io/cloud-native-observability/) | [`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability) |
 
 ---
 
