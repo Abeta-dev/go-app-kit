@@ -1,0 +1,141 @@
+{
+  "version": "1.0.0",
+  "repository": "github.com/abeta-dev/go-app-kit",
+  "go_version": "1.26.0",
+  "default_owner": "@umesh0492",
+  "required_coverage_percent": 100.0,
+  "agents": [
+    {
+      "id": "go-app-kit-audit-agent",
+      "name": "Compliance Audit Trail & Hash Chaining Module Agent",
+      "handle": "@go-app-kit-audit-agent",
+      "skill": "skills/go-app-kit-audit/SKILL.md",
+      "owner": "@umesh0492",
+      "paths": [
+        "audit/"
+      ],
+      "packages": [
+        "./audit"
+      ],
+      "rules": [
+        "100.0% statement coverage across audit package (audit.go, doc.go)",
+        "Tamper-evident SHA-256 hash chaining (ComputeHash, Event.PrevHash, Event.Hash) and field-level JSON state diffing (ComputeDiff)",
+        "PostgreSQL range-partitioned schema and append-only immutability trigger preservation (audit/ddl/001_audit_logs.sql)",
+        "Zero data races under go test -race across async workerpool recording (NewPGRecorder, RecordAsync)"
+      ]
+    },
+    {
+      "id": "go-app-kit-outbox-agent",
+      "name": "Transactional Outbox & Relay Module Agent",
+      "handle": "@go-app-kit-outbox-agent",
+      "skill": "skills/go-app-kit-outbox/SKILL.md",
+      "owner": "@umesh0492",
+      "paths": [
+        "outbox/"
+      ],
+      "packages": [
+        "./outbox"
+      ],
+      "rules": [
+        "100.0% statement coverage across outbox package (event.go, store.go, relay.go, retry.go)",
+        "PostgreSQL SELECT FOR UPDATE SKIP LOCKED polling and UUID lease_token fencing against stale workers",
+        "DDL schema parity across outbox/ddl/001_outbox_events.sql and outbox/ddl/002_outbox_concurrency_index.sql",
+        "Zero data races under go test -race across concurrent Relay polling and exponential jitter backoff"
+      ]
+    },
+    {
+      "id": "go-app-kit-notifications-agent",
+      "name": "Multi-Channel Notification Broker Module Agent",
+      "handle": "@go-app-kit-notifications-agent",
+      "skill": "skills/go-app-kit-notifications/SKILL.md",
+      "owner": "@umesh0492",
+      "paths": [
+        "notifications/"
+      ],
+      "packages": [
+        "./notifications"
+      ],
+      "rules": [
+        "100.0% statement coverage across notifications package (broker, email, brevo, whatsapp, sms, slack, webhook)",
+        "Constant-time HMAC-SHA256 signature verification and replay-window enforcement in WebhookVerifier",
+        "RFC 2047 header encoding, MIME boundary hardening, and Indian DLT SMS / Meta WhatsApp Cloud API payload integrity",
+        "Zero data races under go test -race across bounded workerpool SendAsync fan-out and graceful Close"
+      ]
+    },
+    {
+      "id": "go-app-kit-pdf-agent",
+      "name": "HTML-to-PDF & GST Tax Invoice Module Agent",
+      "handle": "@go-app-kit-pdf-agent",
+      "skill": "skills/go-app-kit-pdf/SKILL.md",
+      "owner": "@umesh0492",
+      "paths": [
+        "pdf/"
+      ],
+      "packages": [
+        "./pdf"
+      ],
+      "rules": [
+        "100.0% statement coverage across pdf package (pdf.go, templates.go)",
+        "Zero temporary disk files via stdin/stdout pipes and struct-encapsulated concurrency semaphore in WkhtmlRenderer",
+        "Context cancellation enforcement and html/template auto-escaping across GSTInvoiceTemplate and ReceiptTemplate",
+        "Pluggable Renderer abstraction (WithRenderer) allowing 100% deterministic unit tests without host wkhtmltopdf"
+      ]
+    },
+    {
+      "id": "go-app-kit-export-agent",
+      "name": "Streaming CSV & HTTP Compression Module Agent",
+      "handle": "@go-app-kit-export-agent",
+      "skill": "skills/go-app-kit-export/SKILL.md",
+      "owner": "@umesh0492",
+      "paths": [
+        "export/"
+      ],
+      "packages": [
+        "./export"
+      ],
+      "rules": [
+        "100.0% statement coverage across export package (csv.go, export.go, http.go)",
+        "Spreadsheet formula-injection escaping (=, +, -, @, \\t, \\r) and Excel UTF-8 BOM support",
+        "RFC 9110 Accept-Encoding q-value negotiation (NegotiateEncoding) and pooled Brotli/Gzip streaming (StreamHTTPCompressed)",
+        "Constant-memory batched flushing (CSVStreamer[T]) and Content-Disposition header sanitization"
+      ]
+    },
+    {
+      "id": "go-app-kit-platform-governance-agent",
+      "name": "Platform Architecture, Truth Gates & Governance Module Agent",
+      "handle": "@go-app-kit-platform-governance-agent",
+      "skill": "skills/go-app-kit/SKILL.md",
+      "owner": "@umesh0492",
+      "paths": [
+        "examples/",
+        ".github/",
+        "scripts/",
+        "docs/",
+        "skills/",
+        "AGENTS.md",
+        "README.md",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "CODE_OF_CONDUCT.md",
+        "SECURITY.md",
+        "LICENSE",
+        "Makefile",
+        ".golangci.yml",
+        ".yamllint",
+        ".gitignore",
+        "llms.txt",
+        "go.mod",
+        "go.sum"
+      ],
+      "packages": [
+        "./examples/invoice_service"
+      ],
+      "rules": [
+        "100.0% statement coverage across examples/invoice_service and all 5 core packages (./scripts/check_coverage.sh)",
+        "Bash 3.2 static compatibility across all scripts/*.sh (./scripts/test_bash_compat.sh)",
+        "Version, symbol inventory, and dependency truth gates (go-libs v0.4.0, go-fintech-india v0.3.0, zero replace directives in go.mod)",
+        "SHA-pinned GitHub Actions with least-privilege permissions and Node 24 runtime enforcement"
+      ]
+    }
+  ]
+}

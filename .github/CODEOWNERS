@@ -1,0 +1,71 @@
+# ==============================================================================
+# go-app-kit — Module Code-Owner Agent System (.github/CODEOWNERS)
+#
+# Machine-readable companion config: .github/module-agents.json
+# Automated PR review runner:        scripts/module_agent_review.sh
+# CI workflow:                       .github/workflows/module-agent-review.yml
+# ==============================================================================
+
+# Default fallback owner (@go-app-kit-platform-governance-agent)
+* @umesh0492
+
+# ------------------------------------------------------------------------------
+# 1. @go-app-kit-audit-agent (skills/go-app-kit-audit/SKILL.md)
+#    Range-partitioned PostgreSQL compliance audit trail, SHA-256 hash chaining,
+#    append-only immutability triggers, and field-level JSON state diffing.
+# ------------------------------------------------------------------------------
+/audit/                 @umesh0492
+
+# ------------------------------------------------------------------------------
+# 2. @go-app-kit-outbox-agent (skills/go-app-kit-outbox/SKILL.md)
+#    PostgreSQL transactional outbox, SELECT FOR UPDATE SKIP LOCKED polling,
+#    UUID lease-token fencing, and exponential jitter backoff relay.
+# ------------------------------------------------------------------------------
+/outbox/                @umesh0492
+
+# ------------------------------------------------------------------------------
+# 3. @go-app-kit-notifications-agent (skills/go-app-kit-notifications/SKILL.md)
+#    Multi-channel notification broker (SendAsync, SMTP Email, Brevo Email,
+#    Meta WhatsApp Cloud API, Indian DLT SMS, Slack, and HMAC-SHA256 Webhooks).
+# ------------------------------------------------------------------------------
+/notifications/         @umesh0492
+
+# ------------------------------------------------------------------------------
+# 4. @go-app-kit-pdf-agent (skills/go-app-kit-pdf/SKILL.md)
+#    HTML-to-PDF compilation, bounded wkhtmltopdf concurrency semaphore,
+#    Indian GST B2B tax invoice template, and payment receipt template.
+# ------------------------------------------------------------------------------
+/pdf/                   @umesh0492
+
+# ------------------------------------------------------------------------------
+# 5. @go-app-kit-export-agent (skills/go-app-kit-export/SKILL.md)
+#    Low-memory streaming CSV exporter (CSVStreamer[T], StreamHTTP[T],
+#    StreamHTTPCompressed[T], RFC 9110 Brotli/Gzip negotiation, Excel UTF-8 BOM,
+#    and spreadsheet formula-injection defense).
+# ------------------------------------------------------------------------------
+/export/                @umesh0492
+
+# ------------------------------------------------------------------------------
+# 6. @go-app-kit-platform-governance-agent (skills/go-app-kit/SKILL.md)
+#    Cross-package composition (examples/invoice_service), CI/CD workflows,
+#    truth gates, companion skills, documentation, and dependency governance.
+# ------------------------------------------------------------------------------
+/examples/              @umesh0492
+/.github/               @umesh0492
+/scripts/               @umesh0492
+/docs/                  @umesh0492
+/skills/                @umesh0492
+/AGENTS.md              @umesh0492
+/README.md              @umesh0492
+/CHANGELOG.md           @umesh0492
+/CONTRIBUTING.md        @umesh0492
+/CODE_OF_CONDUCT.md     @umesh0492
+/SECURITY.md            @umesh0492
+/LICENSE                @umesh0492
+/Makefile               @umesh0492
+/.golangci.yml          @umesh0492
+/.yamllint              @umesh0492
+/.gitignore             @umesh0492
+/llms.txt               @umesh0492
+/go.mod                 @umesh0492
+/go.sum                 @umesh0492
