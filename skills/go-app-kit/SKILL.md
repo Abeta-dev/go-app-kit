@@ -15,7 +15,7 @@ Use this umbrella skill when integrating `github.com/abeta-dev/go-app-kit` into 
 | HTML-to-PDF compilation, `wkhtmltopdf` concurrency semaphore, GST invoice & receipt templates | `go-app-kit-pdf` | `skills/go-app-kit-pdf/SKILL.md` |
 | Multi-channel broker (`SendAsync`), SMTP, Brevo, WhatsApp, DLT SMS, Slack, HMAC-SHA256 webhooks | `go-app-kit-notifications` | `skills/go-app-kit-notifications/SKILL.md` |
 | Range-partitioned PostgreSQL audit logs, append-only triggers, JSON `ComputeDiff` | `go-app-kit-audit` | `skills/go-app-kit-audit/SKILL.md` |
-| Low-memory streaming CSV export (`CSVStreamer[T]`, `StreamHTTP[T]`), Excel UTF-8 BOM, CSV escaping | `go-app-kit-export` | `skills/go-app-kit-export/SKILL.md` |
+| Low-memory streaming CSV export (`CSVStreamer[T]`, `StreamHTTP[T]`, `StreamHTTPCompressed[T]`, `NegotiateEncoding`), Brotli/Gzip HTTP compression, Excel UTF-8 BOM, CSV escaping | `go-app-kit-export` | `skills/go-app-kit-export/SKILL.md` |
 | Indian GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, UPI, exact paise `Money` math | `go-fintech-india` | Companion module `github.com/abeta-dev/go-fintech-india` |
 
 ---
@@ -38,7 +38,7 @@ When combining `go-app-kit` packages in a business transaction (e.g., issuing an
 5. **Dispatch Multi-Channel Notification** (`go-app-kit/notifications`):
    - `err = broker.SendAsync(ctx, notifications.Message{...})`
 6. **Stream Bulk CSV Reports** (`go-app-kit/export`):
-   - `err = export.StreamHTTP(w, "invoices.csv", columns, invoices)`
+   - `err = export.StreamHTTP(w, "invoices.csv", columns, invoices)` (or `export.StreamHTTPCompressed(w, r, "invoices.csv", columns, invoices)` for RFC 9110 `br`/`gzip` negotiation)
 
 ---
 

@@ -20,6 +20,9 @@ type CSVOptions struct {
 // CSVOption modifies CSVOptions.
 type CSVOption func(*CSVOptions)
 
+// Option is an alias for CSVOption for ergonomic functional option configuration.
+type Option = CSVOption
+
 // DefaultCSVOptions returns standard settings suitable for Web downloads and Excel.
 func DefaultCSVOptions() CSVOptions {
 	return CSVOptions{

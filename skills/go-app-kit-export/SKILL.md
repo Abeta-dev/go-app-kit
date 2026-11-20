@@ -15,9 +15,9 @@ Use this skill when building CSV report downloads or streaming database query cu
 
 ---
 
-## 2. One-Line HTTP Download Endpoint (`StreamHTTP[T]`)
+## 2. One-Line HTTP Download Endpoint (`StreamHTTP[T]` & `StreamHTTPCompressed[T]`)
 
-For slices already loaded in memory, use `export.StreamHTTP` (sets `Content-Type: text/csv; charset=utf-8`, sanitized `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`, UTF-8 BOM, and CRLF line endings):
+For slices already loaded in memory, use `export.StreamHTTP` or `export.StreamHTTPCompressed` (sets `Content-Type: text/csv; charset=utf-8`, sanitized `Content-Disposition: attachment`, `X-Content-Type-Options: nosniff`, UTF-8 BOM, and CRLF line endings; `StreamHTTPCompressed` also negotiates RFC 9110 `Accept-Encoding` for `br` or `gzip` via `export.NegotiateEncoding` using pooled Brotli/Gzip writers and sets `Vary: Accept-Encoding`):
 
 ```go
 import (
@@ -34,7 +34,8 @@ var invoiceColumns = []export.Column[InvoiceRow]{
 
 func DownloadInvoicesCSV(w http.ResponseWriter, r *http.Request) {
 	rows := fetchInvoices(r.Context())
-	_ = export.StreamHTTP(w, "gst-invoices-fy26.csv", invoiceColumns, rows)
+	// Automatically streams Brotli (br), Gzip (gzip), or uncompressed CSV based on r.Header.Get("Accept-Encoding")
+	_ = export.StreamHTTPCompressed(w, r, "gst-invoices-fy26.csv", invoiceColumns, rows)
 }
 ```
 

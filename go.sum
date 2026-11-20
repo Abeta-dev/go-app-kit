@@ -12,6 +12,8 @@ github.com/abeta-dev/go-fintech-india v0.3.0 h1:wPjqqSrs1JwYw6wEtXDgdacf5NjNXnmf
 github.com/abeta-dev/go-fintech-india v0.3.0/go.mod h1:P/+KoMiiQBOXAusvtcFyV2cXhONQGt5XiL4ZspE1IPs=
 github.com/abeta-dev/go-libs v0.4.0 h1:MYmDT5Af3AqUNjGjDSis05y+4lgGD7He2ERj4L8V6fk=
 github.com/abeta-dev/go-libs v0.4.0/go.mod h1:aOZK5Z1dVVUkhrguEyV+ArNaxHIuKAJcB5FbJoYcBZY=
+github.com/andybalholm/brotli v1.3.0 h1:IdkhjSe/+34U+fP7FSR2Q6Poj1hnHUa2GoWmzXJd6qY=
+github.com/andybalholm/brotli v1.3.0/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
 github.com/cenkalti/backoff/v4 v4.3.0 h1:MyRJ/UdXutAwSAT+s3wNd7MfTIcy71VQueUuFK343L8=
 github.com/cenkalti/backoff/v4 v4.3.0/go.mod h1:Y3VNntkOUPxTVeUxJ/G5vcM//AlwfmyYozVcomhLiZE=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
