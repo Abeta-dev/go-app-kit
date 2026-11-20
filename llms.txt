@@ -1,4 +1,4 @@
-# go-app-kit (github.com/abeta-dev/go-app-kit@v0.5.0)
+# go-app-kit (github.com/abeta-dev/go-app-kit@v0.6.0)
 
 > Production-grade enterprise application and domain accelerator kit for Go (Go 1.26.0, 100.0% statement coverage): PostgreSQL transactional outbox with relay worker, SHA-256 hash-chained compliance audit logging, HTML-to-PDF GST tax invoice generation, multi-channel notifications (SMTP, WhatsApp Cloud API, Indian DLT SMS, Slack, HMAC Webhooks), and RFC 4180 streaming CSV/HTTP exports.
 
@@ -6,7 +6,7 @@
 
 ```bash
 # Install the Go module
-go get github.com/abeta-dev/go-app-kit@v0.5.0
+go get github.com/abeta-dev/go-app-kit@v0.6.0
 
 # Install vendor-neutral AI Agent Skills (Claude Code, Google Antigravity, Gemini CLI, Codex, Cursor)
 npx skills add abeta-dev/go-app-kit
@@ -103,7 +103,7 @@ npx skills add abeta-dev/go-app-kit
   - Docs: https://abeta-dev.github.io/go-libs/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-libs
 - **[`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)** (`v0.3.0`): Zero-dependency Indian statutory compliance and exact paise financial primitives (GSTIN mod-36, PAN, Aadhaar Verhoeff D5, IFSC, VPA/UPI, exact `Money` paise math, Indian FY & AP/AR aging).
   - Docs: https://abeta-dev.github.io/go-fintech-india/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-fintech-india
-- **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.5.0`): Enterprise application infrastructure (`outbox`, `pdf`, `notifications`, `audit`, `export`).
+- **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.6.0`): Enterprise application infrastructure (`outbox`, `pdf`, `notifications`, `audit`, `export`).
   - Docs: https://abeta-dev.github.io/go-app-kit/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-app-kit
 - **[`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability)**: Production OpenTelemetry, Prometheus, Grafana, Loki, Tempo, and Kubernetes observability reference stack for Go microservices.
   - Docs: https://abeta-dev.github.io/cloud-native-observability/ | Repo: https://github.com/abeta-dev/cloud-native-observability

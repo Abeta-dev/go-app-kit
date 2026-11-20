@@ -5,11 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-11-21
+
+### Added
+- export: Added `StreamHTTPCompressed` and `NegotiateEncoding` for RFC 9110 HTTP content negotiation with pooled Brotli and Gzip CSV response compression.
+
+### Changed
+- dependencies: Pinned official companion dependencies `github.com/abeta-dev/go-libs v0.4.0` and `github.com/abeta-dev/go-fintech-india v0.3.0` in `go.mod` and `scripts/check_version.sh`.
+- docs: Added `llms.txt` and `docs/llms.txt` AI discovery index and Abeta Go Ecosystem cross-repository navigation across `README.md` and `docs/index.html`.
+- security: Added SHA-pinned CodeQL (`.github/workflows/codeql.yml`) and OpenSSF Scorecard (`.github/workflows/scorecard.yml`) workflows and SHA-pinned `pages.yml`.
+- governance: Added the 6 Module Code-Owner Agents (`.github/CODEOWNERS`, `.github/module-agents.json`, `scripts/module_agent_review.sh`, `.github/workflows/module-agent-review.yml`) with automated scoped testing, 100.0% statement coverage enforcement, and live Multi-Skill (`/impeccable`, `@uncle-bob-craft`, `@effective-agent-skills`, `@security-auditor`) GitHub Actions PR review.
+
 ## [0.5.0] - 2026-11-05
 
 ### Added
 - audit: Added tamper-evident SHA-256 hash chaining (`ComputeHash`, `PrevHash`, `Hash`) on `Event` and `NewPGRecorder`.
-- export: Added `StreamHTTPCompressed` and `NegotiateEncoding` for RFC 9110 HTTP content negotiation with pooled Brotli and Gzip CSV response compression.
 - notifications: Added `TemplateID` field on `SMSConfig` for Indian DLT template ID injection alongside per-message `template_id` metadata override.
 - examples/invoice_service: Added `ExportInvoicesCSV` on `InvoiceService` demonstrating HTTP streaming CSV export of `InvoiceRequest` records with `StreamHTTP`.
 
