@@ -29,3 +29,6 @@ go.work.sum
 *.swo
 invoice_service
 bom.json
+
+# Graphify knowledge graph outputs
+graphify-out/

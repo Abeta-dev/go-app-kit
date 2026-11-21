@@ -133,7 +133,7 @@
       "rules": [
         "100.0% statement coverage across examples/invoice_service and all 5 core packages (./scripts/check_coverage.sh)",
         "Bash 3.2 static compatibility across all scripts/*.sh (./scripts/test_bash_compat.sh)",
-        "Version, symbol inventory, and dependency truth gates (go-libs v0.4.0, go-fintech-india v0.3.0, zero replace directives in go.mod)",
+        "Version, symbol inventory, and dependency truth gates (go-libs v0.5.0, go-fintech-india v0.4.0, zero replace directives in go.mod)",
         "SHA-pinned GitHub Actions with least-privilege permissions and Node 24 runtime enforcement"
       ]
     }

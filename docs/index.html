@@ -1156,6 +1156,7 @@
         <li><a href="#reference-app">Reference App</a></li>
         <li><a href="#quickstart">Code Snippets</a></li>
         <li><a href="#coverage">Coverage</a></li>
+        <li><a href="llms.txt">llms.txt</a></li>
       </ul>
       <div class="nav-actions">
         <a href="https://github.com/abeta-dev/go-app-kit" target="_blank" rel="noopener noreferrer" class="nav-btn">
@@ -1310,24 +1311,24 @@
         <div class="layer-card" style="border-color: rgba(245, 158, 11, 0.35); background: rgba(30, 41, 59, 0.7);">
           <div class="layer-header">
             <span class="layer-title">
-              <span style="color: #f59e0b;">●</span> Companion: go-fintech-india
+              <span style="color: #f59e0b;">●</span> Companion: go-fintech-india (v0.4.0)
             </span>
-            <span class="layer-pill" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">Statutory Primitives</span>
+            <span class="layer-pill" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">127 Symbols · 15 Domain Files</span>
           </div>
           <div class="layer-desc">
-            Canonical statutory validation: GSTIN mod-36, PAN, IFSC, Aadhaar Verhoeff D5, UPI VPAs, and zero-allocation integer paise Money arithmetic.
+            Canonical statutory validation (127 exported symbols across 15 domain files): GSTIN mod-36, PAN, IFSC, Aadhaar Verhoeff D5, UPI VPAs, Razorpay/Cashfree/PhonePe webhooks, and zero-allocation integer paise Money arithmetic.
           </div>
         </div>
 
         <div class="layer-card" style="border-color: rgba(16, 185, 129, 0.35); background: rgba(30, 41, 59, 0.7);">
           <div class="layer-header">
             <span class="layer-title">
-              <span style="color: #10b981;">●</span> Layer 1: go-libs
+              <span style="color: #10b981;">●</span> Layer 1: go-libs (v0.5.0)
             </span>
-            <span class="layer-pill" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">Systems Engineering</span>
+            <span class="layer-pill" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">36 Packages · Systems Engineering</span>
           </div>
           <div class="layer-desc">
-            Hardened concurrency primitives: bounded workerpool, circuit breakers, sliding window rate limiters, and SRE logging.
+            36 foundational packages for hardened concurrency and systems engineering: bounded workerpool, circuit breakers, sliding window rate limiters, Brotli/Gzip compression, and SRE logging.
           </div>
         </div>
       </div>
@@ -1549,7 +1550,7 @@
             <span style="color: #fbbf24;">import "github.com/abeta-dev/go-fintech-india"</span>
           </div>
           <p class="feat-desc">
-            Zero-dependency statutory Indian domain primitives: Verhoeff D5, GSTIN Mod-36, UPI VPAs, IFSC banking checks, and exact integer paise currency calculations.
+            Zero-dependency statutory Indian domain primitives (v0.4.0 · 127 exported symbols across 15 domain files): Verhoeff D5, GSTIN Mod-36, UPI VPAs, IFSC banking checks, and exact integer paise currency calculations.
           </p>
           <ul class="feat-highlights">
             <li><strong>Verhoeff D5 Dihedral:</strong> Official UIDAI Aadhaar algorithm with checksum verification and privacy masking.</li>
@@ -2121,9 +2122,9 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
           </tr>
           <tr>
             <td><strong><code>go-fintech-india</code></strong> <span class="badge-pill badge-cyan" style="font-size: 0.7rem; padding: 2px 6px;">Companion</span></td>
-            <td>Independent statutory foundation (GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, Money)</td>
+            <td>Independent statutory foundation (v0.4.0 · 127 exported symbols across 15 domain files: GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, Money)</td>
             <td>Zero external</td>
-            <td><span class="badge-pill badge-green">95.5%</span></td>
+            <td><span class="badge-pill badge-green">100.0%</span></td>
           </tr>
           <tr style="background: rgba(15, 23, 42, 0.8);">
             <td><strong>Overall Repository</strong></td>
@@ -2168,7 +2169,11 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
         <div class="footer-col">
           <h4>Ecosystem</h4>
           <ul>
-            <li><a href="https://github.com/abeta-dev/go-libs" target="_blank" rel="noopener noreferrer">go-libs (Foundations)</a></li>
+            <li><a href="https://github.com/abeta-dev/go-libs" target="_blank" rel="noopener noreferrer">go-libs (36 Packages · v0.5.0)</a></li>
+            <li><a href="https://github.com/abeta-dev/go-fintech-india" target="_blank" rel="noopener noreferrer">go-fintech-india (127 Symbols · v0.4.0)</a></li>
+            <li><a href="https://github.com/abeta-dev/go-app-kit" target="_blank" rel="noopener noreferrer">go-app-kit (5 Packages · v0.6.0)</a></li>
+            <li><a href="https://github.com/abeta-dev/cloud-native-observability" target="_blank" rel="noopener noreferrer">cloud-native-observability (v0.4.0)</a></li>
+            <li><a href="llms.txt">llms.txt</a></li>
             <li><a href="https://pkg.go.dev/github.com/abeta-dev/go-app-kit" target="_blank" rel="noopener noreferrer">pkg.go.dev Documentation</a></li>
             <li><a href="#reference-app">examples/invoice_service</a></li>
             <li><a href="https://github.com/abeta-dev/go-app-kit/blob/main/docs/RELEASE_BASELINE.md" target="_blank" rel="noopener noreferrer">Release Baseline</a></li>

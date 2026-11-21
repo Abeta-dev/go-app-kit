@@ -1,6 +1,6 @@
 # `go-app-kit` — Agent Instructions (`AGENTS.md`)
 
-`github.com/abeta-dev/go-app-kit` is the production enterprise application and domain accelerator kit for Go (`1.26.0`+). It provides 5 core enterprise application infrastructure packages built atop `github.com/abeta-dev/go-libs` and paired with statutory companion `github.com/abeta-dev/go-fintech-india`.
+`github.com/abeta-dev/go-app-kit` (`v0.6.0`, `Go 1.26.0`, **100.0% statement coverage**) is the production enterprise application and domain accelerator kit for Go (`1.26.0`+). It provides 5 core enterprise application infrastructure packages built atop `github.com/abeta-dev/go-libs` (`v0.5.0`, 36 foundational packages) and paired with statutory companion `github.com/abeta-dev/go-fintech-india` (`v0.4.0`, 127 exported symbols across 15 domain files).
 
 ---
 

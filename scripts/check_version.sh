@@ -75,8 +75,8 @@ fi
 if grep -qE '^[[:space:]]*replace[[:space:]]+' go.mod; then
   fail 'go.mod contains a replace directive; use a caller-owned go.work for local companion development'
 fi
-[[ "${golibs_version}" == 'v0.4.0' ]] || fail "go.mod must require github.com/abeta-dev/go-libs v0.4.0, got ${golibs_version:-none}"
-[[ "${fintech_version}" == 'v0.3.0' ]] || fail "go.mod must require github.com/abeta-dev/go-fintech-india v0.3.0, got ${fintech_version:-none}"
+[[ "${golibs_version}" == 'v0.5.0' ]] || fail "go.mod must require github.com/abeta-dev/go-libs v0.5.0, got ${golibs_version:-none}"
+[[ "${fintech_version}" == 'v0.4.0' ]] || fail "go.mod must require github.com/abeta-dev/go-fintech-india v0.4.0, got ${fintech_version:-none}"
 
 # Bash 3.2 has indexed arrays but not mapfile/readarray. Populate arrays with
 # newline-delimited paths; repository file names must not contain newlines.

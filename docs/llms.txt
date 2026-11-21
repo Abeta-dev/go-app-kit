@@ -99,11 +99,11 @@ npx skills add abeta-dev/go-app-kit
 
 ## Abeta Go Ecosystem
 
-- **[`github.com/abeta-dev/go-libs`](https://github.com/abeta-dev/go-libs)** (`v0.4.0`): Foundational microservice systems engineering (`workerpool`, `circuitbreaker`, `ratelimit`, `retry`, `cache`, `ginmw`, `httpclient`, `db`, `rbac`, `jwks`, `telemetry`, `logger`).
+- **[`github.com/abeta-dev/go-libs`](https://github.com/abeta-dev/go-libs)** (`v0.5.0`): 36 foundational microservice systems engineering packages (`workerpool`, `circuitbreaker`, `ratelimit`, `retry`, `cache`, `compress`, `ginmw`, `httpclient`, `db`, `rbac`, `jwks`, `telemetry`, `logger`).
   - Docs: https://abeta-dev.github.io/go-libs/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-libs
-- **[`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)** (`v0.3.0`): Zero-dependency Indian statutory compliance and exact paise financial primitives (GSTIN mod-36, PAN, Aadhaar Verhoeff D5, IFSC, VPA/UPI, exact `Money` paise math, Indian FY & AP/AR aging).
+- **[`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)** (`v0.4.0`): Zero-dependency Indian FinTech & statutory compliance engine (127 exported symbols across 15 domain files: GSTIN mod-36, PAN, Aadhaar Verhoeff D5, IFSC, VPA/UPI, exact `Money` paise math, Razorpay/Cashfree/PhonePe webhooks, Indian FY & AP/AR aging).
   - Docs: https://abeta-dev.github.io/go-fintech-india/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-fintech-india
-- **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.6.0`): Enterprise application infrastructure (`outbox`, `pdf`, `notifications`, `audit`, `export`).
+- **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.6.0`): Enterprise application infrastructure (5 core packages: `outbox`, `pdf`, `notifications`, `audit`, `export`).
   - Docs: https://abeta-dev.github.io/go-app-kit/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-app-kit
-- **[`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability)**: Production OpenTelemetry, Prometheus, Grafana, Loki, Tempo, and Kubernetes observability reference stack for Go microservices.
+- **[`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability)** (`v0.4.0`): Production OpenTelemetry, Prometheus, Grafana, Loki, Tempo, and Kubernetes observability reference stack for Go microservices.
   - Docs: https://abeta-dev.github.io/cloud-native-observability/ | Repo: https://github.com/abeta-dev/cloud-native-observability
