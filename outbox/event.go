@@ -17,7 +17,7 @@ const (
 	StatusPublished  Status = "PUBLISHED"
 	StatusDeadLetter Status = "DEAD_LETTER"
 
-	// Deprecated: StatusFailed is superseded by StatusDeadLetter for terminal failures.
+	// Deprecated: Since v0.1.0 (remove in >= v0.8.0). Use StatusDeadLetter instead.
 	// Transient errors remain StatusPending with exponential backoff (NextRetryAt).
 	StatusFailed Status = "FAILED"
 )

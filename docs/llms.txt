@@ -18,6 +18,7 @@ npx skills add abeta-dev/go-app-kit
 - [Go Reference (pkg.go.dev)](https://pkg.go.dev/github.com/abeta-dev/go-app-kit): Official Go package and symbol documentation.
 - [GitHub Repository](https://github.com/abeta-dev/go-app-kit): Source code, verification scripts, and release artifacts.
 - [AGENTS.md](https://github.com/abeta-dev/go-app-kit/blob/main/AGENTS.md): Root AI agent routing table and repository invariants.
+- [Versioning Policy & Deprecation Contract (`docs/VERSIONING.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/docs/VERSIONING.md): 5-package leaf-import isolation matrix (`./scripts/check_leaf_imports.sh`) and strict `N + 2` minor-release deprecation window policy (`./scripts/check_deprecation.sh`).
 - [Umbrella Skill (`skills/go-app-kit/SKILL.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit/SKILL.md): Cross-package transactional composition and truth-gate verification loop.
 - [Reference Microservice (`examples/invoice_service`)](https://github.com/abeta-dev/go-app-kit/tree/main/examples/invoice_service): End-to-end B2B GST invoicing service combining all 5 packages with `go-fintech-india`.
 
@@ -96,6 +97,16 @@ npx skills add abeta-dev/go-app-kit
 - **Key Types & Functions**:
   - `InvoiceService`, `NewInvoiceService(...) *InvoiceService`, `(*InvoiceService).IssueInvoice(ctx context.Context, req IssueInvoiceRequest) (*IssueInvoiceResponse, error)`
 - **Summary**: Demonstrates atomic composition of `go-fintech-india` (GSTIN checksum validation and exact integer paise tax calculation) with `outbox`, `audit`, `pdf`, `notifications`, and `export`.
+
+## Governance & CI Truth Gates
+
+- `./scripts/test_bash_compat.sh`: Enforces Bash 3.2 compatibility across all `scripts/*.sh`.
+- `./scripts/check_secrets.sh`: TruffleHog verified-secret scanning and deterministic credential pattern checks.
+- `./scripts/check_leaf_imports.sh`: Verifies zero cross-package sibling coupling across all 5 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`) and verifies via `go list -deps` and isolated `go.mod` sandboxes that `export`, `pdf`, and `notifications` never pull `pgx`, `gin`, or `go-fintech-india`, and `audit` and `outbox` never pull `gin` or `go-fintech-india`.
+- `./scripts/check_deprecation.sh`: Enforces the strict `N + 2` Minor-Release Deprecation Window Policy (`// Deprecated: Since vX.Y.Z (remove in >= vA.B.C). Use <Replacement> instead.`, documented in `docs/VERSIONING.md`).
+- `./scripts/check_version.sh`: Verifies version parity (`v0.6.0`), `CHANGELOG.md` symbol accuracy, package inventory, and documentation truth.
+- `./scripts/check_coverage.sh`: Enforces `100.0%` statement coverage across all 5 core packages and `examples/invoice_service`.
+- `./scripts/module_agent_review.sh`: Runs the 6 Module Code-Owner Agents and Multi-Skill quality review.
 
 ## Abeta Go Ecosystem
 

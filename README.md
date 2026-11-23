@@ -70,8 +70,8 @@ go work init ./go-app-kit ./go-libs
 
 With `go.work` in place, any changes in `go-libs` are immediately reflected in `go-app-kit` during compilation, testing, and debugging.
 
-### Standard Distribution
-`go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/abeta-dev/go-libs` and `github.com/abeta-dev/go-fintech-india` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md).
+### Standard Distribution & Versioning Contract
+`go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/abeta-dev/go-libs` and `github.com/abeta-dev/go-fintech-india` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md), and the 5-Package Leaf-Import Isolation Matrix and strict **`N + 2` Minor-Release Deprecation Window Policy** are documented in [Versioning Policy](docs/VERSIONING.md).
 
 ### Concurrency Architecture & Dependency on `go-libs/workerpool`
 `go-app-kit`'s asynchronous background execution in `notifications` (async multi-channel fan-out) and `audit` (asynchronous audit log ingestion) imports [`go-libs/workerpool`](https://github.com/abeta-dev/go-libs/tree/main/workerpool) directly. It leverages bounded concurrency, graceful draining, panic resilience, and Prometheus saturation metrics without maintaining any duplicated forks.
@@ -317,11 +317,17 @@ Machine-readable LLM context index: [`llms.txt`](llms.txt) (published at [`https
 Run the full verification suite locally:
 
 ```bash
-# Run Bash 3.2 compatibility, TruffleHog secret scan, version/symbol/doc truth gate, and 100.0% coverage gate
+# Run Bash 3.2 compatibility, TruffleHog secret scan, leaf-import isolation,
+# strict N+2 deprecation window gate, 100.0% coverage gate, and version/symbol/doc truth gate
 ./scripts/test_bash_compat.sh
 ./scripts/check_secrets.sh
+./scripts/check_leaf_imports.sh
+./scripts/check_deprecation.sh
 ./scripts/check_coverage.sh
 ./scripts/check_version.sh
+
+# Run Module Code-Owner Agent automated PR review
+./scripts/module_agent_review.sh --base origin/main --head HEAD
 
 # Run all tests with race detector
 make test-race
@@ -335,6 +341,9 @@ make lint
 # Run Go vulnerability scanner
 make vulncheck
 ```
+
+- **Leaf-Import & Dependency Isolation Gate ([`scripts/check_leaf_imports.sh`](scripts/check_leaf_imports.sh))**: Guarantees zero cross-package sibling coupling across all 5 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`) and verifies in isolated temporary `go.mod` sandboxes that importing `export`, `pdf`, or `notifications` never pulls `pgx`, `gin`, or `go-fintech-india` into a consumer's dependency graph or `go.sum`, and importing `audit` or `outbox` never pulls `gin` or `go-fintech-india`.
+- **Strict `N + 2` Minor-Release Deprecation Window Gate ([`scripts/check_deprecation.sh`](scripts/check_deprecation.sh) & [`docs/VERSIONING.md`](docs/VERSIONING.md))**: Enforces that every `// Deprecated:` annotation in non-test `.go` files follows `// Deprecated: Since vX.Y.Z (remove in >= vA.B.C). Use <Replacement> instead.` with at least a 2-minor-release deprecation window (`N + 2`), and verifies against the previous Git release tag that no deprecated symbol is removed before `CHANGELOG.md` reaches `>= vA.B.C`.
 
 ---
 

@@ -126,12 +126,20 @@ wrong_package_claims="$(grep -nE '\b[0-9]+[[:space:]]+(core[[:space:]]+)?package
 if grep -RIn '/Users/' --include='*.md' . --exclude-dir=.git; then
   fail 'documentation contains a machine-specific /Users path'
 fi
-for path in audit/ddl/001_audit_logs.sql outbox/ddl/001_outbox_events.sql outbox/ddl/002_outbox_concurrency_index.sql; do
-  [[ -f "${path}" ]] || fail "referenced DDL is missing: ${path}"
+for path in docs/VERSIONING.md audit/ddl/001_audit_logs.sql outbox/ddl/001_outbox_events.sql outbox/ddl/002_outbox_concurrency_index.sql; do
+  [[ -f "${path}" ]] || fail "referenced DDL or governance doc is missing: ${path}"
 done
 
 if [[ -x "${SCRIPT_DIR}/check_secrets.sh" ]]; then
   "${SCRIPT_DIR}/check_secrets.sh"
+fi
+
+if [[ -x "${SCRIPT_DIR}/check_leaf_imports.sh" ]]; then
+  "${SCRIPT_DIR}/check_leaf_imports.sh"
+fi
+
+if [[ -x "${SCRIPT_DIR}/check_deprecation.sh" ]]; then
+  "${SCRIPT_DIR}/check_deprecation.sh"
 fi
 
 "${SCRIPT_DIR}/verify_changelog_symbols.sh"

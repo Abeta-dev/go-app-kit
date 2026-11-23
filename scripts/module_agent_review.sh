@@ -367,10 +367,44 @@ for agent in activated_agents:
         )
 
     # ------------------------------------------------------------------
-    # 4. Domain & Truth Gates (./scripts/check_version.sh)
+    # 4. Domain & Truth Gates (check_leaf_imports.sh, check_deprecation.sh, check_version.sh)
     # ------------------------------------------------------------------
     domain_passed = True
     domain_checks = []
+
+    if os.path.isfile("scripts/check_leaf_imports.sh"):
+        rc_leaf, out_leaf = run_cached_script(
+            "check_leaf_imports", ["./scripts/check_leaf_imports.sh"]
+        )
+        if rc_leaf == 0:
+            domain_checks.append("Leaf-Import Gate")
+        else:
+            domain_passed = False
+            overall_passed = False
+            failure_diagnostics.append(
+                {
+                    "agent": agent["handle"],
+                    "category": "Leaf-Import Isolation Gate (`scripts/check_leaf_imports.sh`)",
+                    "details": out_leaf,
+                }
+            )
+
+    if os.path.isfile("scripts/check_deprecation.sh"):
+        rc_dep, out_dep = run_cached_script(
+            "check_deprecation", ["./scripts/check_deprecation.sh"]
+        )
+        if rc_dep == 0:
+            domain_checks.append("Deprecation N+2 Gate")
+        else:
+            domain_passed = False
+            overall_passed = False
+            failure_diagnostics.append(
+                {
+                    "agent": agent["handle"],
+                    "category": "Strict N+2 Deprecation Gate (`scripts/check_deprecation.sh`)",
+                    "details": out_dep,
+                }
+            )
 
     if os.path.isfile("scripts/check_version.sh"):
         rc_ver, out_ver = run_cached_script(

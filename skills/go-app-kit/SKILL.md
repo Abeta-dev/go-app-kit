@@ -53,6 +53,12 @@ Before finishing any code or documentation change inside `go-app-kit`, run this 
 # 2. Run TruffleHog + deterministic secret scanning gate across all tracked files
 ./scripts/check_secrets.sh
 
+# 2b. Run leaf-import sibling coupling & heavy dependency isolation gate
+./scripts/check_leaf_imports.sh
+
+# 2c. Run strict N+2 minor-release deprecation window gate (see docs/VERSIONING.md)
+./scripts/check_deprecation.sh
+
 # 3. Run statement coverage gate (verifies 100.0% coverage across all 5 packages + examples/invoice_service)
 ./scripts/check_coverage.sh
 
