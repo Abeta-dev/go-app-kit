@@ -46,7 +46,21 @@
 /export/                @umesh0492
 
 # ------------------------------------------------------------------------------
-# 6. @go-app-kit-platform-governance-agent (skills/go-app-kit/SKILL.md)
+# 6. @go-app-kit-storage-agent (skills/go-app-kit-storage/SKILL.md)
+#    Zero-leak object storage (Store, NewMemoryStore, ValidateKey), SHA-256
+#    content digests, max-size guards, and HMAC-SHA256 presigned GET/PUT URLs.
+# ------------------------------------------------------------------------------
+/storage/               @umesh0492
+
+# ------------------------------------------------------------------------------
+# 7. @go-app-kit-scheduler-agent (skills/go-app-kit-scheduler/SKILL.md)
+#    Distributed lease-fenced periodic job scheduler (Scheduler, NewScheduler,
+#    LeaseStore, NewMemoryLeaseStore, Register, RunOnce, Start) with panic recovery.
+# ------------------------------------------------------------------------------
+/scheduler/             @umesh0492
+
+# ------------------------------------------------------------------------------
+# 8. @go-app-kit-platform-governance-agent (skills/go-app-kit/SKILL.md)
 #    Cross-package composition (examples/invoice_service), CI/CD workflows,
 #    truth gates, companion skills, documentation, and dependency governance.
 # ------------------------------------------------------------------------------

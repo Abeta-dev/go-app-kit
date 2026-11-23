@@ -1148,7 +1148,7 @@
       <a href="#" class="brand">
         <div class="brand-logo">G</div>
         <span>go-app-kit</span>
-        <span class="brand-badge">v0.6.0</span>
+        <span class="brand-badge">v0.7.0</span>
       </a>
       <ul class="nav-links">
         <li><a href="#features">Features</a></li>
@@ -1178,19 +1178,19 @@
       </div>
       <h1>Enterprise Domain Acceleration with Uncompromising Engineering Rigor</h1>
       <p class="hero-sub">
-        High-velocity business capabilities: transactional outbox with SKIP LOCKED, multi-channel notifications, PDF tax invoices, partitioned audit trails, streaming CSV export, and companion statutory integration (<a href="https://github.com/abeta-dev/go-fintech-india" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline;">go-fintech-india</a>).
+        High-velocity business capabilities: transactional outbox with SKIP LOCKED, multi-channel notifications, PDF tax invoices, partitioned audit trails, streaming CSV export, zero-leak object storage with presigned URLs, lease-fenced periodic job scheduling, and companion statutory integration (<a href="https://github.com/abeta-dev/go-fintech-india" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline;">go-fintech-india</a>).
       </p>
 
       <!-- Terminal Install Block -->
       <div class="install-box">
         <span class="install-prompt">$</span>
-        <code class="install-code">go get github.com/abeta-dev/go-app-kit@v0.6.0</code>
-        <button class="copy-btn" onclick="copyText('go get github.com/abeta-dev/go-app-kit@v0.6.0', this)">Copy</button>
+        <code class="install-code">go get github.com/abeta-dev/go-app-kit@v0.7.0</code>
+        <button class="copy-btn" onclick="copyText('go get github.com/abeta-dev/go-app-kit@v0.7.0', this)">Copy</button>
       </div>
 
       <!-- Badges Row -->
       <div class="badges-row">
-        <img src="https://img.shields.io/badge/release-v0.6.0-38bdf8.svg?logo=go" alt="Release v0.6.0">
+        <img src="https://img.shields.io/badge/release-v0.7.0-38bdf8.svg?logo=go" alt="Release v0.7.0">
         <img src="https://img.shields.io/badge/CI-passing-10b981.svg?logo=github-actions" alt="CI: Passing">
         <img src="https://img.shields.io/badge/Go-1.26.0-00ADD8.svg?logo=go" alt="Go 1.26.0">
         <img src="https://img.shields.io/badge/govulncheck-0%20vulns-10b981.svg" alt="0 Vulns">
@@ -1214,7 +1214,7 @@
           <div class="stat-lbl">Vulnerabilities (govulncheck)</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val">5</div>
+          <div class="stat-val">7</div>
           <div class="stat-lbl">Core Enterprise Modules</div>
         </div>
         <div class="stat-card">
@@ -1299,6 +1299,20 @@
             </div>
             <div class="module-summary">Streaming CSV export with Excel UTF-8 BOM, cell formula injection escaping, and zero-allocation streaming.</div>
           </div>
+          <div class="module-item">
+            <div class="module-item-top">
+              <span class="module-name">storage</span>
+              <span class="module-cov">100.0%</span>
+            </div>
+            <div class="module-summary">Zero-leak object storage with SHA-256 content digests, key traversal defense, and HMAC-SHA256 presigned URLs.</div>
+          </div>
+          <div class="module-item">
+            <div class="module-item-top">
+              <span class="module-name">scheduler</span>
+              <span class="module-cov">100.0%</span>
+            </div>
+            <div class="module-summary">Distributed lease-fenced periodic job scheduler with panic recovery and graceful in-flight draining.</div>
+          </div>
         </div>
       </div>
 
@@ -1357,21 +1371,21 @@
     </div>
   </section>
 
-  <!-- 5 Interactive Feature Cards + Companion Spotlight -->
+  <!-- 7 Interactive Feature Cards + Companion Spotlight -->
   <section id="features" class="container" style="padding: 40px 0;">
     <div class="section-head">
       <h2>Core Business Accelerators</h2>
-      <p>Five hardened enterprise packages architected for zero data races, high concurrency, and direct statutory companion composition.</p>
+      <p>Seven hardened enterprise packages architected for zero data races, high concurrency, and direct statutory companion composition.</p>
     </div>
 
     <!-- Filter & Search Bar -->
     <div class="filter-bar">
-      <input type="text" id="featSearch" class="search-input" aria-label="Search capabilities, algorithms, and exported types" placeholder="🔍 Search capabilities, algorithms, exported types (e.g. GSTIN, SKIP LOCKED, Money, BOM, SMTP)...">
+      <input type="text" id="featSearch" class="search-input" aria-label="Search capabilities, algorithms, and exported types" placeholder="🔍 Search capabilities, algorithms, exported types (e.g. GSTIN, SKIP LOCKED, Money, BOM, PresignGet, LeaseStore)...">
       <div class="category-pills">
-        <button class="pill-btn active" onclick="filterFeat('all', this)">All (5 Modules + Companion)</button>
-        <button class="pill-btn" onclick="filterFeat('persistence', this)">Persistence & Outbox (outbox, audit)</button>
+        <button class="pill-btn active" onclick="filterFeat('all', this)">All (7 Modules + Companion)</button>
+        <button class="pill-btn" onclick="filterFeat('persistence', this)">Persistence & Outbox (outbox, audit, storage)</button>
         <button class="pill-btn" onclick="filterFeat('messaging', this)">Messaging & Documents (notifications, pdf)</button>
-        <button class="pill-btn" onclick="filterFeat('export', this)">Data Streaming (export)</button>
+        <button class="pill-btn" onclick="filterFeat('export', this)">Streaming & Scheduling (export, scheduler)</button>
         <button class="pill-btn" onclick="filterFeat('fintech', this)">Statutory Companion (go-fintech-india)</button>
       </div>
     </div>
@@ -1531,6 +1545,68 @@
         <div class="feat-action">
           <span style="font-size: 0.8rem; color: var(--text-muted);">Streaming Export</span>
           <button class="feat-btn" onclick="selectCodeTab(5)">View Code ➔</button>
+        </div>
+      </div>
+
+      <!-- 6. storage -->
+      <div class="feat-card" data-cat="persistence" data-keywords="storage object presigned url hmac sha256 digest archive invoice">
+        <div>
+          <div class="feat-header">
+            <div class="feat-title-group">
+              <div class="feat-icon">🗄️</div>
+              <div>
+                <div class="feat-name">storage</div>
+              </div>
+            </div>
+            <span class="feat-badge">100.0% Coverage</span>
+          </div>
+          <div class="feat-import">
+            <span>import "github.com/abeta-dev/go-app-kit/storage"</span>
+          </div>
+          <p class="feat-desc">
+            Zero-leak object storage and HMAC-SHA256 presigned URL engine for archiving compiled PDF tax invoices and streaming CSV reports.
+          </p>
+          <ul class="feat-highlights">
+            <li><strong>Path-Traversal Guard:</strong> <code>ValidateKey</code> rejects leading/trailing slashes, <code>..</code> traversal segments, backslashes, and null bytes.</li>
+            <li><strong>SHA-256 Content Addressing:</strong> Automatically computes <code>SHA256Hex</code> digests and enforces <code>WithMaxObjectBytes</code> limits.</li>
+            <li><strong>HMAC-SHA256 Presigned URLs:</strong> <code>PresignGet</code>, <code>PresignPut</code>, and constant-time <code>VerifyPresignedURL</code> verification.</li>
+            <li><strong>Defensive Cloning:</strong> Clones object metadata maps across <code>Put</code>, <code>Get</code>, and <code>Head</code> to prevent caller mutation.</li>
+          </ul>
+        </div>
+        <div class="feat-action">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Object Storage & Presign</span>
+          <button class="feat-btn" onclick="selectCodeTab(0)">View Code ➔</button>
+        </div>
+      </div>
+
+      <!-- 7. scheduler -->
+      <div class="feat-card" data-cat="export" data-keywords="scheduler cron lease fenced periodic job runner panic recovery">
+        <div>
+          <div class="feat-header">
+            <div class="feat-title-group">
+              <div class="feat-icon">⏱️</div>
+              <div>
+                <div class="feat-name">scheduler</div>
+              </div>
+            </div>
+            <span class="feat-badge">100.0% Coverage</span>
+          </div>
+          <div class="feat-import">
+            <span>import "github.com/abeta-dev/go-app-kit/scheduler"</span>
+          </div>
+          <p class="feat-desc">
+            Distributed lease-fenced periodic job runner for recurring billing cycles, GST aging snapshots, and PostgreSQL partition maintenance.
+          </p>
+          <ul class="feat-highlights">
+            <li><strong>Distributed Lease Fencing:</strong> <code>LeaseStore.TryAcquire</code> ensures only one replica executes a scheduled job per lease TTL window.</li>
+            <li><strong>Panic Recovery Barrier:</strong> Converts panics inside <code>JobFunc</code> into structured errors routed to <code>WithErrorHandler</code>.</li>
+            <li><strong>Graceful Shutdown:</strong> <code>Start(ctx)</code> halts tickers on context cancellation and waits for all in-flight jobs to drain.</li>
+            <li><strong>In-Memory Lease Store:</strong> Includes thread-safe <code>NewMemoryLeaseStore()</code> for single-node and deterministic test execution.</li>
+          </ul>
+        </div>
+        <div class="feat-action">
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Lease-Fenced Scheduler</span>
+          <button class="feat-btn" onclick="selectCodeTab(0)">View Code ➔</button>
         </div>
       </div>
 
@@ -2115,6 +2191,18 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
             <td><span class="badge-pill badge-green">100.0%</span></td>
           </tr>
           <tr>
+            <td><strong><code>storage</code></strong></td>
+            <td>Zero-leak object storage with SHA-256 content digests, size limits & HMAC-SHA256 presigned URLs</td>
+            <td>Zero external</td>
+            <td><span class="badge-pill badge-green">100.0%</span></td>
+          </tr>
+          <tr>
+            <td><strong><code>scheduler</code></strong></td>
+            <td>Distributed lease-fenced periodic job scheduler with panic recovery & graceful draining</td>
+            <td>Zero external</td>
+            <td><span class="badge-pill badge-green">100.0%</span></td>
+          </tr>
+          <tr>
             <td><strong><code>examples/invoice_service</code></strong></td>
             <td>Reference microservice with end-to-end integration test & exact paise math</td>
             <td>Internal integration</td>
@@ -2147,10 +2235,10 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
           <div class="brand">
             <div class="brand-logo">G</div>
             <span>go-app-kit</span>
-            <span class="brand-badge">v0.6.0</span>
+            <span class="brand-badge">v0.7.0</span>
           </div>
           <p>
-            Production-grade enterprise application and business domain accelerator kit for Go. Hardened statutory validations, transactional outbox, multi-channel alerts, and zero-disk document compilation.
+            Production-grade enterprise application and business domain accelerator kit for Go. Hardened statutory validations, transactional outbox, multi-channel alerts, zero-disk document compilation, presigned object storage, and lease-fenced job scheduling.
           </p>
         </div>
 
@@ -2162,6 +2250,8 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
             <li><a href="#quickstart" onclick="selectCodeTab(3)">pdf (GST Invoices)</a></li>
             <li><a href="#quickstart" onclick="selectCodeTab(4)">audit (Compliance)</a></li>
             <li><a href="#quickstart" onclick="selectCodeTab(5)">export (Streaming)</a></li>
+            <li><a href="#features">storage (Object & Presign)</a></li>
+            <li><a href="#features">scheduler (Lease-Fenced)</a></li>
             <li><a href="https://github.com/abeta-dev/go-fintech-india" target="_blank" rel="noopener noreferrer">go-fintech-india (Companion) ↗</a></li>
           </ul>
         </div>
@@ -2171,7 +2261,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
           <ul>
             <li><a href="https://github.com/abeta-dev/go-libs" target="_blank" rel="noopener noreferrer">go-libs (36 Packages · v0.5.0)</a></li>
             <li><a href="https://github.com/abeta-dev/go-fintech-india" target="_blank" rel="noopener noreferrer">go-fintech-india (127 Symbols · v0.4.0)</a></li>
-            <li><a href="https://github.com/abeta-dev/go-app-kit" target="_blank" rel="noopener noreferrer">go-app-kit (5 Packages · v0.6.0)</a></li>
+            <li><a href="https://github.com/abeta-dev/go-app-kit" target="_blank" rel="noopener noreferrer">go-app-kit (7 Packages · v0.7.0)</a></li>
             <li><a href="https://github.com/abeta-dev/cloud-native-observability" target="_blank" rel="noopener noreferrer">cloud-native-observability (v0.4.0)</a></li>
             <li><a href="llms.txt">llms.txt</a></li>
             <li><a href="https://pkg.go.dev/github.com/abeta-dev/go-app-kit" target="_blank" rel="noopener noreferrer">pkg.go.dev Documentation</a></li>

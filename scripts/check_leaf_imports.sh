@@ -6,16 +6,17 @@ set -euo pipefail
 #
 # Guarantees that:
 #   1. Gate 1 — Zero Cross-Package Sibling Coupling:
-#      None of the 5 core packages (audit, export, notifications, outbox, pdf)
-#      import any sibling github.com/abeta-dev/go-app-kit/* package across
-#      production, internal test, or external test files (only
+#      None of the 7 core packages (audit, export, notifications, outbox, pdf,
+#      scheduler, storage) import any sibling github.com/abeta-dev/go-app-kit/*
+#      package across production, internal test, or external test files (only
 #      examples/invoice_service composes multiple go-app-kit packages).
 #   2. Gate 2 — Heavy Dependency & Domain Isolation per Package:
 #      Verified via both `go list -deps` and isolated temporary `go.mod`
 #      consumer sandboxes:
-#        - export, pdf, notifications never pull github.com/jackc/pgx,
-#          github.com/gin-gonic/gin, or github.com/abeta-dev/go-fintech-india
-#          into a consumer's dependency graph or go.sum.
+#        - export, pdf, notifications, storage, scheduler never pull
+#          github.com/jackc/pgx, github.com/gin-gonic/gin, or
+#          github.com/abeta-dev/go-fintech-india into a consumer's dependency
+#          graph or go.sum.
 #        - audit, outbox never pull github.com/gin-gonic/gin or
 #          github.com/abeta-dev/go-fintech-india into a consumer's dependency
 #          graph or go.sum.
@@ -28,7 +29,7 @@ ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${ROOT_DIR}"
 
 readonly MODULE="github.com/abeta-dev/go-app-kit"
-CORE_PACKAGES=("audit" "export" "notifications" "outbox" "pdf")
+CORE_PACKAGES=("audit" "export" "notifications" "outbox" "pdf" "scheduler" "storage")
 
 echo "========================================================"
 echo "🍃 Verifying Leaf-Package Import & Dependency Isolation"
@@ -38,7 +39,7 @@ echo "========================================================"
 FAILED_COUNT=0
 
 # ------------------------------------------------------------------------------
-# Gate 1: Zero Cross-Package Sibling Coupling Across All 5 Core Packages
+# Gate 1: Zero Cross-Package Sibling Coupling Across All 7 Core Packages
 # ------------------------------------------------------------------------------
 echo "🔍 Gate 1: Verifying zero cross-package sibling coupling..."
 for pkg in "${CORE_PACKAGES[@]}"; do
@@ -66,7 +67,7 @@ trap 'rm -rf "${TMP_DIR}"' EXIT
 
 for pkg in "${CORE_PACKAGES[@]}"; do
   case "${pkg}" in
-    export|pdf|notifications)
+    export|pdf|notifications|storage|scheduler)
       FORBIDDEN_PATTERN='github\.com/jackc/pgx|github\.com/gin-gonic/gin|github\.com/abeta-dev/go-fintech-india'
       FORBIDDEN_DESC='pgx, gin, go-fintech-india'
       ;;

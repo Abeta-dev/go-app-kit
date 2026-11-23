@@ -1,6 +1,6 @@
 # go-app-kit
 
-> Current main-line published release: `v0.6.0`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
+> Current main-line published release: `v0.7.0`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
 [![CI](https://github.com/abeta-dev/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/abeta-dev/go-app-kit/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/abeta-dev/go-app-kit.svg)](https://pkg.go.dev/github.com/abeta-dev/go-app-kit)
@@ -15,7 +15,7 @@
 
 **Production-grade enterprise application and domain accelerator kit for Go.**
 
-While [`go-libs`](https://github.com/abeta-dev/go-libs) provides low-level, zero-dependency microservice systems engineering (resilience, concurrency pools, rate limiting, SRE golden signals), **`go-app-kit`** delivers 5 core enterprise application infrastructure packages: **transactional outbox with PostgreSQL DDL, PDF document generation with GST invoice templates, multi-channel notifications (SMTP, WhatsApp, SMS, Slack, Webhooks), partitioned compliance audit logging, and streaming data exports** (composing seamlessly with statutory companion [`go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)).
+While [`go-libs`](https://github.com/abeta-dev/go-libs) provides low-level, zero-dependency microservice systems engineering (resilience, concurrency pools, rate limiting, SRE golden signals), **`go-app-kit`** delivers 7 core enterprise application infrastructure packages: **transactional outbox with PostgreSQL DDL, PDF document generation with GST invoice templates, multi-channel notifications (SMTP, WhatsApp, SMS, Slack, Webhooks), partitioned compliance audit logging, streaming data exports, zero-leak object storage with HMAC-SHA256 presigned URLs, and distributed lease-fenced periodic job scheduling** (composing seamlessly with statutory companion [`go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)).
 
 ---
 
@@ -35,7 +35,9 @@ While [`go-libs`](https://github.com/abeta-dev/go-libs) provides low-level, zero
 │   ├── pdf/           HTML-to-PDF / GST  │  │   ├── GSTIN (mod-36), PAN, IFSC   │
 │   ├── notifications/ Multi-channel      │  │   ├── Aadhaar (Verhoeff D5)       │
 │   ├── audit/         Compliance Trails  │  │   ├── Money (exact paise math)    │
-│   └── export/        Streaming CSV/BOM  │  │   └── FY & AP/AR Aging            │
+│   ├── export/        Streaming CSV/BOM  │  │   └── FY & AP/AR Aging            │
+│   ├── storage/       Object & Presign   │  │                                   │
+│   └── scheduler/     Lease-Fenced Jobs  │  │                                   │
 └────────────────────┬────────────────────┘  └───────────────────────────────────┘
                      │ builds upon
                      ▼
@@ -57,7 +59,7 @@ While [`go-libs`](https://github.com/abeta-dev/go-libs) provides low-level, zero
 ### Standalone Import
 When consuming `go-app-kit` in your microservice:
 ```bash
-go get github.com/abeta-dev/go-app-kit@v0.6.0
+go get github.com/abeta-dev/go-app-kit@v0.7.0
 ```
 
 ### Multi-Module Local Development (`go.work`)
@@ -71,7 +73,7 @@ go work init ./go-app-kit ./go-libs
 With `go.work` in place, any changes in `go-libs` are immediately reflected in `go-app-kit` during compilation, testing, and debugging.
 
 ### Standard Distribution & Versioning Contract
-`go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/abeta-dev/go-libs` and `github.com/abeta-dev/go-fintech-india` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md), and the 5-Package Leaf-Import Isolation Matrix and strict **`N + 2` Minor-Release Deprecation Window Policy** are documented in [Versioning Policy](docs/VERSIONING.md).
+`go-app-kit` contains no local `replace` directives. Published builds resolve `github.com/abeta-dev/go-libs` and `github.com/abeta-dev/go-fintech-india` from the Go proxy. The repository's immutable release and isolated-consumer verification are documented in [Release Baseline](docs/RELEASE_BASELINE.md), and the 7-Package Leaf-Import Isolation Matrix and strict **`N + 2` Minor-Release Deprecation Window Policy** are documented in [Versioning Policy](docs/VERSIONING.md).
 
 ### Concurrency Architecture & Dependency on `go-libs/workerpool`
 `go-app-kit`'s asynchronous background execution in `notifications` (async multi-channel fan-out) and `audit` (asynchronous audit log ingestion) imports [`go-libs/workerpool`](https://github.com/abeta-dev/go-libs/tree/main/workerpool) directly. It leverages bounded concurrency, graceful draining, panic resilience, and Prometheus saturation metrics without maintaining any duplicated forks.
@@ -212,6 +214,58 @@ streamer.Flush()
 
 ---
 
+### 6. `storage` - Zero-Leak Object Storage & Presigned URL Engine
+Content-addressed artifact archiving and time-bounded HMAC-SHA256 presigned URLs for generated `pdf` invoices and `export` CSV reports:
+- **Path-Traversal Guard (`ValidateKey`)**: Rejects empty keys, leading/trailing slashes, empty segments (`//`), `.` or `..` traversal segments, Windows backslashes, and null bytes (`ErrInvalidKey`).
+- **Bounded Stream Reading (`WithMaxObjectBytes`)**: Enforces upload size limits via `io.LimitReader` (`ErrObjectTooLarge`), computes SHA-256 content digests (`ObjectMeta.SHA256Hex`), and defensively clones metadata maps.
+- **Deterministic Presigned URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`)**: Generates and verifies constant-time HMAC-SHA256 signed download and upload URLs bound to HTTP method, object key, content type, and expiration timestamp.
+
+```go
+import "github.com/abeta-dev/go-app-kit/storage"
+
+store, _ := storage.NewMemoryStore(
+    storage.WithBaseURL("https://objects.enterprise.internal"),
+    storage.WithSigningSecret([]byte("32-byte-hmac-signing-secret-key")),
+    storage.WithMaxObjectBytes(16*1024*1024),
+)
+
+meta, _ := store.Put(ctx, storage.PutInput{
+    Key:         "invoices/2026/INV-2026-001.pdf",
+    ContentType: "application/pdf",
+    Body:        bytes.NewReader(pdfBytes),
+    Metadata:    map[string]string{"gstin": "27AAPFU0939F1ZV"},
+})
+presigned, _ := store.PresignGet(ctx, meta.Key, 15*time.Minute)
+```
+
+---
+
+### 7. `scheduler` - Distributed Lease-Fenced Periodic Job Scheduler
+Singleton periodic background job runner with distributed lease fencing, panic recovery, and graceful in-flight draining:
+- **Distributed Mutual Exclusion (`LeaseStore`, `NewMemoryLeaseStore`)**: Acquires or renews a time-bounded job lease (`TryAcquire`) before each tick so horizontally scaled replicas never double-execute recurring billing or GST aging snapshots.
+- **Panic Recovery Barrier (`RunOnce`)**: Converts job panics into structured errors forwarded to `WithErrorHandler` without crashing sibling background workers.
+- **Graceful Shutdown (`Start`)**: Stops all tickers on `ctx.Done()` and waits for every in-flight job execution to complete before returning.
+
+```go
+import "github.com/abeta-dev/go-app-kit/scheduler"
+
+leaseStore := scheduler.NewMemoryLeaseStore()
+sched, _ := scheduler.NewScheduler(leaseStore, "billing-pod-1")
+
+_ = sched.Register(scheduler.JobConfig{
+    Name:       "gst-aging-snapshot",
+    Interval:   1 * time.Hour,
+    LeaseTTL:   55 * time.Minute,
+    RunOnStart: true,
+    Fn: func(ctx context.Context) error {
+        return computeAgingSnapshot(ctx)
+    },
+})
+go sched.Start(ctx)
+```
+
+---
+
 ### Companion Architecture: Indian Statutory Compliance (go-fintech-india)
 
 For pure domain statutory checks, zero-allocation paise arithmetic, and Indian banking/tax validation, developers should import [`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india) directly as a companion library:
@@ -251,7 +305,9 @@ if fintech.IsValidAadhaar("234567890128") {
 | **Cross-Service Dual-Write Safety** | `go-app-kit/outbox` | Atomically commits domain state and events in the same Postgres TX; `SKIP LOCKED` scales poller across $N$ instances. |
 | **Multi-Channel User Alerts** | `go-app-kit/notifications` | Unified broker routing to SMTP, Slack, and HMAC-signed webhooks; non-blocking delivery via `workerpool`. |
 | **Audit Logging & State Diffing** | `go-app-kit/audit` | Range-partitioned PostgreSQL table; automated JSON state diffing; asynchronous ingestion with append-only triggers. |
-| **Large Report & Data Exports** | `go-app-kit/export` | Low-memory streaming CSV writer with Excel UTF-8 BOM support. |
+| **Large Report & Data Exports** | `go-app-kit/export` | Low-memory streaming CSV writer with Excel UTF-8 BOM support and Brotli/Gzip HTTP compression. |
+| **Invoice & Report Archiving** | `go-app-kit/storage` | Zero-leak object storage with SHA-256 content digests, key traversal guards, and HMAC-SHA256 presigned URLs. |
+| **Singleton Periodic Cron Jobs** | `go-app-kit/scheduler` | Distributed lease-fenced job runner with panic recovery and graceful in-flight draining. |
 
 ---
 
@@ -279,6 +335,8 @@ Coverage across packages in `go-app-kit` is measured using Go's statement-level 
 | `outbox` | PostgreSQL transactional outbox engine with row-level locked poller & lease fencing | **100.0%** |
 | `audit` | Partitioned PostgreSQL audit logging with automated JSON diffing, hash-chaining & append-only triggers | **100.0%** |
 | `pdf` | In-memory HTML-to-PDF compilation & embedded GST invoice templates | **100.0%** |
+| `storage` | Zero-leak object storage with SHA-256 content digests, size limits & HMAC-SHA256 presigned URLs | **100.0%** |
+| `scheduler` | Distributed lease-fenced periodic job scheduler with panic recovery & graceful draining | **100.0%** |
 | `examples/invoice_service` | Reference microservice with end-to-end integration test & exact paise math | **100.0%** |
 | **Total Statement Coverage** | **Cumulative across all packages** | **100.0%** |
 
@@ -296,6 +354,8 @@ Coverage across packages in `go-app-kit` is measured using Go's statement-level 
 | **`go-app-kit-notifications`** | [`skills/go-app-kit-notifications/SKILL.md`](skills/go-app-kit-notifications/SKILL.md) | `Broker` routing across `Email`, `Slack`, `Webhook`, `WhatsApp` (`NewWhatsAppSender`), and Indian DLT `SMS` (`NewSMSSender`) |
 | **`go-app-kit-audit`** | [`skills/go-app-kit-audit/SKILL.md`](skills/go-app-kit-audit/SKILL.md) | Partitioned PostgreSQL append-only audit trail (`Recorder`, `Event`) and JSON diffing |
 | **`go-app-kit-export`** | [`skills/go-app-kit-export/SKILL.md`](skills/go-app-kit-export/SKILL.md) | Constant-memory CSV streaming (`StreamHTTP`, `CSVStreamer`), UTF-8 BOM, and formula-injection escaping |
+| **`go-app-kit-storage`** | [`skills/go-app-kit-storage/SKILL.md`](skills/go-app-kit-storage/SKILL.md) | Zero-leak object storage (`Store`, `NewMemoryStore`, `ValidateKey`), SHA-256 digests, and HMAC-SHA256 presigned URLs |
+| **`go-app-kit-scheduler`** | [`skills/go-app-kit-scheduler/SKILL.md`](skills/go-app-kit-scheduler/SKILL.md) | Distributed lease-fenced periodic job scheduler (`Scheduler`, `NewScheduler`, `LeaseStore`, `NewMemoryLeaseStore`) |
 
 Machine-readable LLM context index: [`llms.txt`](llms.txt) (published at [`https://abeta-dev.github.io/go-app-kit/llms.txt`](https://abeta-dev.github.io/go-app-kit/llms.txt)).
 
@@ -307,7 +367,7 @@ Machine-readable LLM context index: [`llms.txt`](llms.txt) (published at [`https
 | :--- | :--- | :--- | :--- |
 | **[`github.com/abeta-dev/go-libs`](https://github.com/abeta-dev/go-libs)** (`v0.5.0`) | Low-level microservice systems engineering (36 foundational packages: `workerpool`, `circuitbreaker`, `ratelimit`, `retry`, `cache`, `compress`, `ginmw`, `httpclient`, `db`, `rbac`, `jwks`, `telemetry`, `logger`) | [`abeta-dev.github.io/go-libs`](https://abeta-dev.github.io/go-libs/) | [`pkg.go.dev/github.com/abeta-dev/go-libs`](https://pkg.go.dev/github.com/abeta-dev/go-libs) |
 | **[`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)** (`v0.4.0`) | Zero-dependency Indian FinTech & statutory compliance engine (127 exported symbols across 15 domain files: GSTIN mod-36, PAN, Aadhaar Verhoeff $D_5$, IFSC, VPA/UPI, `Money` paise math, FY & AP/AR aging) | [`abeta-dev.github.io/go-fintech-india`](https://abeta-dev.github.io/go-fintech-india/) | [`pkg.go.dev/github.com/abeta-dev/go-fintech-india`](https://pkg.go.dev/github.com/abeta-dev/go-fintech-india) |
-| **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.6.0`) | Enterprise application infrastructure (5 core packages: PostgreSQL transactional `outbox`, HTML-to-PDF `pdf`, multi-channel `notifications`, compliance `audit`, streaming CSV `export`) | [`abeta-dev.github.io/go-app-kit`](https://abeta-dev.github.io/go-app-kit/) | [`pkg.go.dev/github.com/abeta-dev/go-app-kit`](https://pkg.go.dev/github.com/abeta-dev/go-app-kit) |
+| **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.7.0`) | Enterprise application infrastructure (7 core packages: PostgreSQL transactional `outbox`, HTML-to-PDF `pdf`, multi-channel `notifications`, compliance `audit`, streaming CSV `export`, presigned object `storage`, lease-fenced `scheduler`) | [`abeta-dev.github.io/go-app-kit`](https://abeta-dev.github.io/go-app-kit/) | [`pkg.go.dev/github.com/abeta-dev/go-app-kit`](https://pkg.go.dev/github.com/abeta-dev/go-app-kit) |
 | **[`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability)** (`v0.4.0`) | Production OpenTelemetry, Prometheus, Grafana, Loki, Tempo, and Kubernetes observability reference stack for Go microservices | [`abeta-dev.github.io/cloud-native-observability`](https://abeta-dev.github.io/cloud-native-observability/) | [`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability) |
 
 ---
@@ -342,7 +402,7 @@ make lint
 make vulncheck
 ```
 
-- **Leaf-Import & Dependency Isolation Gate ([`scripts/check_leaf_imports.sh`](scripts/check_leaf_imports.sh))**: Guarantees zero cross-package sibling coupling across all 5 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`) and verifies in isolated temporary `go.mod` sandboxes that importing `export`, `pdf`, or `notifications` never pulls `pgx`, `gin`, or `go-fintech-india` into a consumer's dependency graph or `go.sum`, and importing `audit` or `outbox` never pulls `gin` or `go-fintech-india`.
+- **Leaf-Import & Dependency Isolation Gate ([`scripts/check_leaf_imports.sh`](scripts/check_leaf_imports.sh))**: Guarantees zero cross-package sibling coupling across all 7 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`, `scheduler`, `storage`) and verifies in isolated temporary `go.mod` sandboxes that importing `export`, `pdf`, `notifications`, `storage`, or `scheduler` never pulls `pgx`, `gin`, or `go-fintech-india` into a consumer's dependency graph or `go.sum`, and importing `audit` or `outbox` never pulls `gin` or `go-fintech-india`.
 - **Strict `N + 2` Minor-Release Deprecation Window Gate ([`scripts/check_deprecation.sh`](scripts/check_deprecation.sh) & [`docs/VERSIONING.md`](docs/VERSIONING.md))**: Enforces that every `// Deprecated:` annotation in non-test `.go` files follows `// Deprecated: Since vX.Y.Z (remove in >= vA.B.C). Use <Replacement> instead.` with at least a 2-minor-release deprecation window (`N + 2`), and verifies against the previous Git release tag that no deprecated symbol is removed before `CHANGELOG.md` reaches `>= vA.B.C`.
 
 ---

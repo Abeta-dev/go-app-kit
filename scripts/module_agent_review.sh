@@ -718,7 +718,7 @@ lines.append(
     f"| **`/impeccable`** (`impeccable` Frontend & Docs Design Skill) | `docs/index.html` | `impeccable detect --json docs/index.html` + semantic `<main>` landmark, CSS custom tokens (`--`), and canonical URL check | {impeccable_result_cell} |"
 )
 lines.append(
-    f"| **`@uncle-bob-craft`** (SOLID & Uncle Bob Clean Code Skill) | `audit/`, `outbox/`, `notifications/`, `pdf/`, `export/` | SRP/OCP/LSP/ISP/DIP boundaries, `pooledCompressor` abstraction & `sync.Pool` `io.Discard` reset hygiene, `gofmt` + `go vet` | {uncle_bob_result_cell} |"
+    f"| **`@uncle-bob-craft`** (SOLID & Uncle Bob Clean Code Skill) | `audit/`, `outbox/`, `notifications/`, `pdf/`, `export/`, `storage/`, `scheduler/` | SRP/OCP/LSP/ISP/DIP boundaries, `pooledCompressor` abstraction & `sync.Pool` `io.Discard` reset hygiene, `gofmt` + `go vet` | {uncle_bob_result_cell} |"
 )
 lines.append(
     f"| **`@effective-agent-skills`** (Repository Agent Skills Gate) | `skills/*/SKILL.md`, `AGENTS.md` | YAML frontmatter (`name`, `description`) validation across all `{skills_count}` subskills and `AGENTS.md` routing table completeness | {skills_result_cell} |"

@@ -1,12 +1,12 @@
-# go-app-kit (github.com/abeta-dev/go-app-kit@v0.6.0)
+# go-app-kit (github.com/abeta-dev/go-app-kit@v0.7.0)
 
-> Production-grade enterprise application and domain accelerator kit for Go (Go 1.26.0, 100.0% statement coverage): PostgreSQL transactional outbox with relay worker, SHA-256 hash-chained compliance audit logging, HTML-to-PDF GST tax invoice generation, multi-channel notifications (SMTP, WhatsApp Cloud API, Indian DLT SMS, Slack, HMAC Webhooks), and RFC 4180 streaming CSV/HTTP exports.
+> Production-grade enterprise application and domain accelerator kit for Go (Go 1.26.0, 100.0% statement coverage): PostgreSQL transactional outbox with relay worker, SHA-256 hash-chained compliance audit logging, HTML-to-PDF GST tax invoice generation, multi-channel notifications (SMTP, WhatsApp Cloud API, Indian DLT SMS, Slack, HMAC Webhooks), RFC 4180 streaming CSV/HTTP exports, zero-leak object storage with HMAC-SHA256 presigned URLs, and distributed lease-fenced periodic job scheduling.
 
 ## Quick Installation
 
 ```bash
 # Install the Go module
-go get github.com/abeta-dev/go-app-kit@v0.6.0
+go get github.com/abeta-dev/go-app-kit@v0.7.0
 
 # Install vendor-neutral AI Agent Skills (Claude Code, Google Antigravity, Gemini CLI, Codex, Cursor)
 npx skills add abeta-dev/go-app-kit
@@ -18,9 +18,9 @@ npx skills add abeta-dev/go-app-kit
 - [Go Reference (pkg.go.dev)](https://pkg.go.dev/github.com/abeta-dev/go-app-kit): Official Go package and symbol documentation.
 - [GitHub Repository](https://github.com/abeta-dev/go-app-kit): Source code, verification scripts, and release artifacts.
 - [AGENTS.md](https://github.com/abeta-dev/go-app-kit/blob/main/AGENTS.md): Root AI agent routing table and repository invariants.
-- [Versioning Policy & Deprecation Contract (`docs/VERSIONING.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/docs/VERSIONING.md): 5-package leaf-import isolation matrix (`./scripts/check_leaf_imports.sh`) and strict `N + 2` minor-release deprecation window policy (`./scripts/check_deprecation.sh`).
+- [Versioning Policy & Deprecation Contract (`docs/VERSIONING.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/docs/VERSIONING.md): 7-package leaf-import isolation matrix (`./scripts/check_leaf_imports.sh`) and strict `N + 2` minor-release deprecation window policy (`./scripts/check_deprecation.sh`).
 - [Umbrella Skill (`skills/go-app-kit/SKILL.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit/SKILL.md): Cross-package transactional composition and truth-gate verification loop.
-- [Reference Microservice (`examples/invoice_service`)](https://github.com/abeta-dev/go-app-kit/tree/main/examples/invoice_service): End-to-end B2B GST invoicing service combining all 5 packages with `go-fintech-india`.
+- [Reference Microservice (`examples/invoice_service`)](https://github.com/abeta-dev/go-app-kit/tree/main/examples/invoice_service): End-to-end B2B GST invoicing service combining core packages with `go-fintech-india`.
 
 ## Packages & API Reference
 
@@ -92,7 +92,27 @@ npx skills add abeta-dev/go-app-kit
   - `WithBOM(enable bool) Option`, `WithDelimiter(r rune) Option`, `WithCRLF(useCRLF bool) Option`, `WithFlushInterval(rows int) Option`
 - **Summary**: Constant-memory RFC 4180 CSV streaming directly to `io.Writer` or `http.ResponseWriter` (with RFC 9110 `Accept-Encoding` Brotli `br` and Gzip `gzip` streaming compression via `sync.Pool`), Excel UTF-8 BOM (`\xEF\xBB\xBF`), sanitized `Content-Disposition` headers, and automatic spreadsheet formula-injection defense (`=`, `+`, `-`, `@`, `\t`, `\r`).
 
-### 6. `examples/invoice_service` — Reference B2B GST Invoicing Service
+### 6. `storage` — Zero-Leak Object Storage & HMAC-SHA256 Presigned URL Engine
+- **Import Path**: `github.com/abeta-dev/go-app-kit/storage`
+- **Skill**: [`skills/go-app-kit-storage/SKILL.md`](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit-storage/SKILL.md)
+- **Key Types & Functions**:
+  - `Store`, `MemoryStore`, `NewMemoryStore(opts ...Option) (*MemoryStore, error)`
+  - `ObjectMeta`, `PutInput`, `PresignedURL`, `Option`
+  - `WithMaxObjectBytes(limit int64) Option`, `WithBaseURL(baseURL string) Option`, `WithSigningSecret(secret []byte) Option`, `WithClock(nowFunc func() time.Time) Option`
+  - `ValidateKey(key string) error`, `(*MemoryStore).VerifyPresignedURL(rawURL, method string, now time.Time) error`
+- **Summary**: Stores compiled PDF tax invoices and streaming CSV export artifacts with strict path-traversal key validation, bounded stream size limits, SHA-256 content digests (`SHA256Hex`), defensive metadata cloning, and constant-time HMAC-SHA256 presigned `GET` and `PUT` URLs.
+
+### 7. `scheduler` — Distributed Lease-Fenced Periodic Job Scheduler
+- **Import Path**: `github.com/abeta-dev/go-app-kit/scheduler`
+- **Skill**: [`skills/go-app-kit-scheduler/SKILL.md`](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit-scheduler/SKILL.md)
+- **Key Types & Functions**:
+  - `Scheduler`, `NewScheduler(store LeaseStore, nodeID string, opts ...Option) (*Scheduler, error)`
+  - `JobConfig`, `JobFunc`, `LeaseStore`, `MemoryLeaseStore`, `NewMemoryLeaseStore() *MemoryLeaseStore`
+  - `Option`, `WithClock(nowFunc func() time.Time) Option`, `WithErrorHandler(fn func(jobName string, err error)) Option`
+  - `(*Scheduler).Register(cfg JobConfig) error`, `(*Scheduler).RunOnce(ctx context.Context, jobName string) (bool, error)`, `(*Scheduler).Start(ctx context.Context) error`
+- **Summary**: Coordinates singleton periodic background jobs across service replicas using distributed lease acquisition (`TryAcquire`, `Release`), panic recovery barriers, and graceful in-flight draining on context cancellation.
+
+### 8. `examples/invoice_service` — Reference B2B GST Invoicing Service
 - **Import Path**: `github.com/abeta-dev/go-app-kit/examples/invoice_service`
 - **Key Types & Functions**:
   - `InvoiceService`, `NewInvoiceService(...) *InvoiceService`, `(*InvoiceService).IssueInvoice(ctx context.Context, req IssueInvoiceRequest) (*IssueInvoiceResponse, error)`
@@ -102,11 +122,11 @@ npx skills add abeta-dev/go-app-kit
 
 - `./scripts/test_bash_compat.sh`: Enforces Bash 3.2 compatibility across all `scripts/*.sh`.
 - `./scripts/check_secrets.sh`: TruffleHog verified-secret scanning and deterministic credential pattern checks.
-- `./scripts/check_leaf_imports.sh`: Verifies zero cross-package sibling coupling across all 5 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`) and verifies via `go list -deps` and isolated `go.mod` sandboxes that `export`, `pdf`, and `notifications` never pull `pgx`, `gin`, or `go-fintech-india`, and `audit` and `outbox` never pull `gin` or `go-fintech-india`.
+- `./scripts/check_leaf_imports.sh`: Verifies zero cross-package sibling coupling across all 7 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`, `scheduler`, `storage`) and verifies via `go list -deps` and isolated `go.mod` sandboxes that `export`, `pdf`, `notifications`, `storage`, and `scheduler` never pull `pgx`, `gin`, or `go-fintech-india`, and `audit` and `outbox` never pull `gin` or `go-fintech-india`.
 - `./scripts/check_deprecation.sh`: Enforces the strict `N + 2` Minor-Release Deprecation Window Policy (`// Deprecated: Since vX.Y.Z (remove in >= vA.B.C). Use <Replacement> instead.`, documented in `docs/VERSIONING.md`).
-- `./scripts/check_version.sh`: Verifies version parity (`v0.6.0`), `CHANGELOG.md` symbol accuracy, package inventory, and documentation truth.
-- `./scripts/check_coverage.sh`: Enforces `100.0%` statement coverage across all 5 core packages and `examples/invoice_service`.
-- `./scripts/module_agent_review.sh`: Runs the 6 Module Code-Owner Agents and Multi-Skill quality review.
+- `./scripts/check_version.sh`: Verifies version parity (`v0.7.0`), `CHANGELOG.md` symbol accuracy, package inventory, and documentation truth.
+- `./scripts/check_coverage.sh`: Enforces `100.0%` statement coverage across all 7 core packages and `examples/invoice_service`.
+- `./scripts/module_agent_review.sh`: Runs the 8 Module Code-Owner Agents and Multi-Skill quality review.
 
 ## Abeta Go Ecosystem
 
@@ -114,7 +134,7 @@ npx skills add abeta-dev/go-app-kit
   - Docs: https://abeta-dev.github.io/go-libs/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-libs
 - **[`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)** (`v0.4.0`): Zero-dependency Indian FinTech & statutory compliance engine (127 exported symbols across 15 domain files: GSTIN mod-36, PAN, Aadhaar Verhoeff D5, IFSC, VPA/UPI, exact `Money` paise math, Razorpay/Cashfree/PhonePe webhooks, Indian FY & AP/AR aging).
   - Docs: https://abeta-dev.github.io/go-fintech-india/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-fintech-india
-- **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.6.0`): Enterprise application infrastructure (5 core packages: `outbox`, `pdf`, `notifications`, `audit`, `export`).
+- **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.7.0`): Enterprise application infrastructure (7 core packages: `outbox`, `pdf`, `notifications`, `audit`, `export`, `storage`, `scheduler`).
   - Docs: https://abeta-dev.github.io/go-app-kit/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-app-kit
 - **[`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability)** (`v0.4.0`): Production OpenTelemetry, Prometheus, Grafana, Loki, Tempo, and Kubernetes observability reference stack for Go microservices.
   - Docs: https://abeta-dev.github.io/cloud-native-observability/ | Repo: https://github.com/abeta-dev/cloud-native-observability

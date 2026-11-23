@@ -101,6 +101,44 @@
       ]
     },
     {
+      "id": "go-app-kit-storage-agent",
+      "name": "Zero-Leak Object Storage & Presigned URL Module Agent",
+      "handle": "@go-app-kit-storage-agent",
+      "skill": "skills/go-app-kit-storage/SKILL.md",
+      "owner": "@umesh0492",
+      "paths": [
+        "storage/"
+      ],
+      "packages": [
+        "./storage"
+      ],
+      "rules": [
+        "100.0% statement coverage across storage package (storage.go)",
+        "Strict object key path-traversal defense (ValidateKey rejecting .., leading/trailing slashes, backslashes, and null bytes)",
+        "Bounded stream reading via io.LimitReader (WithMaxObjectBytes), SHA-256 content digests (SHA256Hex), and defensive metadata cloning",
+        "Constant-time HMAC-SHA256 presigned GET/PUT URL generation and verification (PresignGet, PresignPut, VerifyPresignedURL)"
+      ]
+    },
+    {
+      "id": "go-app-kit-scheduler-agent",
+      "name": "Distributed Lease-Fenced Job Scheduler Module Agent",
+      "handle": "@go-app-kit-scheduler-agent",
+      "skill": "skills/go-app-kit-scheduler/SKILL.md",
+      "owner": "@umesh0492",
+      "paths": [
+        "scheduler/"
+      ],
+      "packages": [
+        "./scheduler"
+      ],
+      "rules": [
+        "100.0% statement coverage across scheduler package (scheduler.go)",
+        "Distributed mutual exclusion and lease expiration fencing via LeaseStore (TryAcquire, Release, NewMemoryLeaseStore)",
+        "Panic recovery barrier in RunOnce converting job panics into errors forwarded to WithErrorHandler",
+        "Zero data races under go test -race and graceful in-flight job draining on context cancellation in Start"
+      ]
+    },
+    {
       "id": "go-app-kit-platform-governance-agent",
       "name": "Platform Architecture, Truth Gates & Governance Module Agent",
       "handle": "@go-app-kit-platform-governance-agent",
@@ -131,7 +169,7 @@
         "./examples/invoice_service"
       ],
       "rules": [
-        "100.0% statement coverage across examples/invoice_service and all 5 core packages (./scripts/check_coverage.sh)",
+        "100.0% statement coverage across examples/invoice_service and all 7 core packages (./scripts/check_coverage.sh)",
         "Bash 3.2 static compatibility across all scripts/*.sh (./scripts/test_bash_compat.sh)",
         "Version, symbol inventory, and dependency truth gates (go-libs v0.5.0, go-fintech-india v0.4.0, zero replace directives in go.mod)",
         "SHA-pinned GitHub Actions with least-privilege permissions and Node 24 runtime enforcement"

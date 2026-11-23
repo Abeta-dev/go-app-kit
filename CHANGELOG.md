@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-04-12
+
+### Added
+- storage: Added zero-leak object storage and HMAC-SHA256 presigned URL engine (`Store`, `MemoryStore`, `NewMemoryStore`, `ObjectMeta`, `PutInput`, `PresignedURL`, `Option`, `WithMaxObjectBytes`, `WithBaseURL`, `WithSigningSecret`, `WithClock`, `ValidateKey`, `VerifyPresignedURL`, `ErrInvalidKey`, `ErrObjectNotFound`, `ErrObjectTooLarge`, `ErrEmptyContentType`, `ErrInvalidExpiry`, `ErrInvalidBaseURL`, `ErrEmptySigningSecret`).
+- scheduler: Added distributed lease-fenced periodic job scheduler with panic recovery and graceful draining (`Scheduler`, `NewScheduler`, `JobConfig`, `JobFunc`, `LeaseStore`, `MemoryLeaseStore`, `NewMemoryLeaseStore`, `Option`, `WithClock`, `WithErrorHandler`, `Register`, `RunOnce`, `Start`, `TryAcquire`, `Release`, `ErrInvalidJobName`, `ErrNilJobFunc`, `ErrInvalidInterval`, `ErrInvalidLeaseTTL`, `ErrDuplicateJob`, `ErrNilLeaseStore`, `ErrEmptyNodeID`).
+
+### Changed
+- governance: Expanded `go-app-kit` from 5 to 7 core packages (`outbox`, `pdf`, `notifications`, `audit`, `export`, `storage`, `scheduler`) and from 6 to 8 Module Code-Owner Agents (`@go-app-kit-storage-agent`, `@go-app-kit-scheduler-agent`) with dedicated Agent Skills (`skills/go-app-kit-storage/SKILL.md`, `skills/go-app-kit-scheduler/SKILL.md`) and isolated leaf-import verification (`scripts/check_leaf_imports.sh`).
+
 ## [0.6.0] - 2026-11-21
 
 ### Added

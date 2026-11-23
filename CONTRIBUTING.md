@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to `go-app-kit`!
 
-`go-app-kit` is an enterprise application accelerator kit for Go, providing 5 core business infrastructure packages: **transactional outbox with PostgreSQL DDL (`outbox`), HTML-to-PDF document generation with GST invoice templates (`pdf`), multi-channel notifications (`notifications`), partitioned tamper-evident compliance audit logging (`audit`), and streaming data exports (`export`)** (composing seamlessly with statutory companion `github.com/abeta-dev/go-fintech-india`).
+`go-app-kit` is an enterprise application accelerator kit for Go, providing 7 core business infrastructure packages: **transactional outbox with PostgreSQL DDL (`outbox`), HTML-to-PDF document generation with GST invoice templates (`pdf`), multi-channel notifications (`notifications`), partitioned tamper-evident compliance audit logging (`audit`), streaming data exports (`export`), zero-leak object storage with presigned URLs (`storage`), and distributed lease-fenced periodic job scheduling (`scheduler`)** (composing seamlessly with statutory companion `github.com/abeta-dev/go-fintech-india`).
 
 We welcome contributions ranging from bug fixes and documentation clarifications to performance optimizations and test coverage improvements.
 

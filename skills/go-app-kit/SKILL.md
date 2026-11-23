@@ -1,6 +1,6 @@
 ---
 name: go-app-kit
-description: "Compose and maintain enterprise Go application workflows using github.com/abeta-dev/go-app-kit (outbox, pdf, notifications, audit, export). Use when building transactional outboxes, GST PDF invoices, multi-channel notifications, compliance audit logs, streaming CSV exports, or running go-app-kit truth gates."
+description: "Compose and maintain enterprise Go application workflows using github.com/abeta-dev/go-app-kit (outbox, pdf, notifications, audit, export, storage, scheduler). Use when building transactional outboxes, GST PDF invoices, multi-channel notifications, compliance audit logs, streaming CSV exports, presigned object storage, lease-fenced job schedulers, or running go-app-kit truth gates."
 ---
 
 # `go-app-kit` — Enterprise Application Accelerator Skill
@@ -16,6 +16,8 @@ Use this umbrella skill when integrating `github.com/abeta-dev/go-app-kit` into 
 | Multi-channel broker (`SendAsync`), SMTP, Brevo, WhatsApp, DLT SMS, Slack, HMAC-SHA256 webhooks | `go-app-kit-notifications` | `skills/go-app-kit-notifications/SKILL.md` |
 | Range-partitioned PostgreSQL audit logs, append-only triggers, JSON `ComputeDiff` | `go-app-kit-audit` | `skills/go-app-kit-audit/SKILL.md` |
 | Low-memory streaming CSV export (`CSVStreamer[T]`, `StreamHTTP[T]`, `StreamHTTPCompressed[T]`, `NegotiateEncoding`), Brotli/Gzip HTTP compression, Excel UTF-8 BOM, CSV escaping | `go-app-kit-export` | `skills/go-app-kit-export/SKILL.md` |
+| Zero-leak object storage (`Store`, `NewMemoryStore`, `ValidateKey`), SHA-256 content digests, and HMAC-SHA256 presigned `GET`/`PUT` URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`) | `go-app-kit-storage` | `skills/go-app-kit-storage/SKILL.md` |
+| Distributed lease-fenced periodic job scheduler (`Scheduler`, `NewScheduler`, `LeaseStore`, `NewMemoryLeaseStore`, `Register`, `RunOnce`, `Start`) with panic recovery | `go-app-kit-scheduler` | `skills/go-app-kit-scheduler/SKILL.md` |
 | Indian GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, UPI, exact paise `Money` math | `go-fintech-india` | Companion module `github.com/abeta-dev/go-fintech-india` |
 
 ---
@@ -33,12 +35,15 @@ When combining `go-app-kit` packages in a business transaction (e.g., issuing an
 3. **Record Compliance Audit Trail** (`go-app-kit/audit`):
    - `auditEvt := audit.NewEvent(ctx, "INVOICE_CREATE", "Invoice", inv.ID, nil, map[string]any{"invoice_id": inv.ID})`
    - `_ = recorder.RecordAsync(auditEvt)`
-4. **Render GST Tax Invoice PDF** (`go-app-kit/pdf`):
+4. **Render GST Tax Invoice PDF & Archive with Presigned URL** (`go-app-kit/pdf` + `go-app-kit/storage`):
    - `pdfBuf, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, invoiceData, pdf.WithPageSize("A4"))`
+   - `meta, err := objectStore.Put(ctx, storage.PutInput{Key: "invoices/" + inv.ID + ".pdf", ContentType: "application/pdf", Body: pdfBuf})`
+   - `downloadURL, err := objectStore.PresignGet(ctx, meta.Key, 15*time.Minute)`
 5. **Dispatch Multi-Channel Notification** (`go-app-kit/notifications`):
    - `err = broker.SendAsync(ctx, notifications.Message{...})`
-6. **Stream Bulk CSV Reports** (`go-app-kit/export`):
+6. **Stream Bulk CSV Reports & Run Lease-Fenced Periodic Jobs** (`go-app-kit/export` + `go-app-kit/scheduler`):
    - `err = export.StreamHTTP(w, "invoices.csv", columns, invoices)` (or `export.StreamHTTPCompressed(w, r, "invoices.csv", columns, invoices)` for RFC 9110 `br`/`gzip` negotiation)
+   - `err = sched.Register(scheduler.JobConfig{Name: "gst-aging-snapshot", Interval: time.Hour, LeaseTTL: 55 * time.Minute, Fn: snapshotFn})`
 
 ---
 
@@ -59,7 +64,7 @@ Before finishing any code or documentation change inside `go-app-kit`, run this 
 # 2c. Run strict N+2 minor-release deprecation window gate (see docs/VERSIONING.md)
 ./scripts/check_deprecation.sh
 
-# 3. Run statement coverage gate (verifies 100.0% coverage across all 5 packages + examples/invoice_service)
+# 3. Run statement coverage gate (verifies 100.0% coverage across all 7 packages + examples/invoice_service)
 ./scripts/check_coverage.sh
 
 # 4. Run version, symbol inventory, package count, secret scan, and coverage truth gate
@@ -78,4 +83,4 @@ make check-release-readiness TAG=vX.Y.Z
 ### Common Failure Modes & Fixes
 - **Secret scan failure (`./scripts/check_secrets.sh`)**: Runs `trufflehog git file://. --only-verified --fail` (when installed) and deterministic regex checks for AWS keys, GitHub tokens, Slack tokens, Brevo keys (`xkeysib-` + 32+ chars), PEM private keys, and embedded database/Redis URL credentials. Never commit real credentials; use obvious short placeholders in docs/tests.
 - **`CHANGELOG.md` symbol check fails**: `./scripts/verify_changelog_symbols.sh` verifies every backticked symbol under `### Added` against non-test `.go` files. Put CI/doc/dependency changes under `### Changed` or `### Fixed`, never under `### Added`.
-- **Coverage mismatch in `README.md`**: `./scripts/check_coverage.sh` enforces `100.0%` statement coverage across all 5 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`) plus `examples/invoice_service` and compares every package row and the global total in `README.md` against `go test -coverprofile=coverage.out ./...`. If statement coverage changes by even `0.1%`, update the table in `README.md` to match the measured numbers.
+- **Coverage mismatch in `README.md`**: `./scripts/check_coverage.sh` enforces `100.0%` statement coverage across all 7 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`, `scheduler`, `storage`) plus `examples/invoice_service` and compares every package row and the global total in `README.md` against `go test -coverprofile=coverage.out ./...`. If statement coverage changes by even `0.1%`, update the table in `README.md` to match the measured numbers.
