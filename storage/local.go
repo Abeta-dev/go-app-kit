@@ -352,7 +352,7 @@ func (s *LocalStore) readMetaFile(metaPath string) (ObjectMeta, error) {
 
 func (s *LocalStore) writeAtomicStream(dstPath, tmpPattern string, maxBytes int64, body io.Reader) (sizeBytes int64, digestHex string, err error) {
 	parentDir := filepath.Dir(dstPath)
-	if err = s.fs.mkdirAll(parentDir, s.dirPerm); err != nil {
+	if err := s.fs.mkdirAll(parentDir, s.dirPerm); err != nil {
 		return 0, "", err
 	}
 
@@ -369,7 +369,7 @@ func (s *LocalStore) writeAtomicStream(dstPath, tmpPattern string, maxBytes int6
 		}
 	}()
 
-	if err = s.fs.chmodFile(tmp, s.filePerm); err != nil {
+	if err := s.fs.chmodFile(tmp, s.filePerm); err != nil {
 		return 0, "", err
 	}
 
@@ -386,13 +386,13 @@ func (s *LocalStore) writeAtomicStream(dstPath, tmpPattern string, maxBytes int6
 		sizeBytes = n
 	}
 
-	if err = s.fs.syncFile(tmp); err != nil {
+	if err := s.fs.syncFile(tmp); err != nil {
 		return 0, "", err
 	}
-	if err = s.fs.closeFile(tmp); err != nil {
+	if err := s.fs.closeFile(tmp); err != nil {
 		return 0, "", err
 	}
-	if err = s.fs.rename(tmpPath, dstPath); err != nil {
+	if err := s.fs.rename(tmpPath, dstPath); err != nil {
 		return 0, "", err
 	}
 	cleanup = false

@@ -242,8 +242,8 @@ func (r *ChromiumRenderer) resolveBinary() (string, error) {
 func (r *ChromiumRenderer) prepareTargetURL(ctx context.Context, tmpDir, styledHTML string, enableLocalFileAccess bool) (targetURL string, cleanup func(), err error) {
 	if enableLocalFileAccess {
 		inputPath := filepath.Join(tmpDir, "index.html")
-		if err = os.WriteFile(inputPath, []byte(styledHTML), 0o600); err != nil {
-			return "", nil, fmt.Errorf("pdf: failed to write html input: %w", err)
+		if writeErr := os.WriteFile(inputPath, []byte(styledHTML), 0o600); writeErr != nil {
+			return "", nil, fmt.Errorf("pdf: failed to write html input: %w", writeErr)
 		}
 		return "file://" + filepath.ToSlash(inputPath), nil, nil
 	}

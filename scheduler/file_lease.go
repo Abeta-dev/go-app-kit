@@ -194,7 +194,7 @@ func (s *FileLeaseStore) TryAcquire(ctx context.Context, jobName, nodeID string,
 }
 
 func validateFileLeaseAcquireArgs(ctx context.Context, jobName, nodeID string, ttl time.Duration) (name, holder string, err error) {
-	if err = ctx.Err(); err != nil {
+	if err := ctx.Err(); err != nil {
 		return "", "", err
 	}
 	name = strings.TrimSpace(jobName)
