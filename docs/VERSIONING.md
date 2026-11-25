@@ -1,14 +1,14 @@
 # Versioning Policy, Leaf-Import Isolation & Deprecation Contract
 
-This document defines the Semantic Versioning contract, the 7-Package Maturity & Leaf-Import Isolation Matrix, the automated **`N + 2` Minor-Release Deprecation Window Policy**, and the path to `v1.0.0` for `github.com/abeta-dev/go-app-kit` (current release: `v0.7.0`, toolchain baseline: `Go 1.26.0`).
+This document defines the Semantic Versioning contract, the 7-Package Maturity & Leaf-Import Isolation Matrix, the automated **`N + 2` Minor-Release Deprecation Window Policy**, and the path to `v1.0.0` for `github.com/abeta-dev/go-app-kit` (current release: `v0.8.0`, toolchain baseline: `Go 1.26.0`).
 
 ---
 
-## 1. Semantic Versioning Contract (`v0.7.0`)
+## 1. Semantic Versioning Contract (`v0.8.0`)
 
 `go-app-kit` adheres to [Semantic Versioning 2.0.0](https://semver.org/):
 
-- **Current Published Release**: `github.com/abeta-dev/go-app-kit@v0.7.0` (built on `github.com/abeta-dev/go-libs` `v0.5.0` and paired with statutory companion `github.com/abeta-dev/go-fintech-india` `v0.4.0`).
+- **Current Published Release**: `github.com/abeta-dev/go-app-kit@v0.8.0` (built on `github.com/abeta-dev/go-libs` `v0.5.0` and paired with statutory companion `github.com/abeta-dev/go-fintech-india` `v0.4.0`).
 - **Minor Releases (`v0.X.0`)**: Introduce new enterprise application capabilities, package enhancements, or scheduled removals of deprecated symbols whose `N + 2` minor-release deprecation window has elapsed.
 - **Patch Releases (`v0.x.Y`)**: Strictly reserved for backward-compatible bug fixes, security hardening, and performance optimizations. Zero breaking API changes or symbol removals are permitted in patch releases.
 - **Changelog Symbol Parity**: Enforced automatically on every commit by `./scripts/verify_changelog_symbols.sh` and `./scripts/check_version.sh`.
@@ -36,6 +36,8 @@ From Day 1, `go-app-kit` enforces a deterministic, machine-verified **`N + 2` Mi
 | Symbol | Package | Annotation | Deprecated Since | Earliest Removal | Replacement |
 | :--- | :--- | :--- | :---: | :---: | :--- |
 | `StatusFailed` | `outbox` | `// Deprecated: Since v0.1.0 (remove in >= v0.8.0). Use StatusDeadLetter instead.` | `v0.1.0` | `v0.8.0` | `outbox.StatusDeadLetter` |
+| `WkhtmlRenderer` | `pdf` | `// Deprecated: Since v0.8.0 (remove in >= v0.10.0). Use ChromiumRenderer or PureGoRenderer instead.` | `v0.8.0` | `v0.10.0` | `pdf.ChromiumRenderer` / `pdf.PureGoRenderer` |
+| `NewWkhtmlRenderer` | `pdf` | `// Deprecated: Since v0.8.0 (remove in >= v0.10.0). Use NewChromiumRenderer or NewPureGoRenderer instead.` | `v0.8.0` | `v0.10.0` | `pdf.NewChromiumRenderer` / `pdf.NewPureGoRenderer` |
 
 ---
 
@@ -54,9 +56,9 @@ Every core package in `go-app-kit` is designed as an independent, self-contained
 | **`export`** | **Stable** | **100.0%** | `0` | Zero `pgx`, zero `gin`, zero `go-fintech-india` | Constant-memory RFC 4180 CSV streaming (`CSVStreamer[T]`, `StreamHTTP[T]`, `StreamHTTPCompressed[T]`, `NegotiateEncoding`), Brotli/Gzip pool hygiene, Excel UTF-8 BOM, formula-injection defense. |
 | **`notifications`** | **Stable** | **100.0%** | `0` | Zero `pgx`, zero `gin`, zero `go-fintech-india` | Multi-channel broker (`Send`, `SendAsync`) across SMTP Email, Brevo v3 API, Meta WhatsApp Cloud API v20+, Indian DLT SMS, Slack, and HMAC-SHA256 replay-protected Webhooks. |
 | **`outbox`** | **Stable** | **100.0%** | `0` | Zero `gin`, zero `go-fintech-india` | PostgreSQL transactional outbox (`Store`, `NewPGStore`, `Relay`) with `SELECT FOR UPDATE SKIP LOCKED`, UUID `lease_token` fencing, and full-jitter exponential backoff. |
-| **`pdf`** | **Stable** | **100.0%** | `0` | Zero `pgx`, zero `gin`, zero `go-fintech-india` | Pluggable `Renderer` (`NewWkhtmlRenderer`), zero-temp-file stdin/stdout compilation, bounded concurrency semaphore, SSRF guard, and embedded GST Tax Invoice & Receipt templates. |
-| **`storage`** | **Stable** | **100.0%** | `0` | Zero `pgx`, zero `gin`, zero `go-fintech-india` | Zero-leak object storage (`Store`, `NewMemoryStore`, `ValidateKey`), SHA-256 content digests (`SHA256Hex`), bounded upload size limits, and HMAC-SHA256 presigned URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`). |
-| **`scheduler`** | **Stable** | **100.0%** | `0` | Zero `pgx`, zero `gin`, zero `go-fintech-india` | Distributed lease-fenced periodic job scheduler (`Scheduler`, `NewScheduler`, `LeaseStore`, `NewMemoryLeaseStore`, `Register`, `RunOnce`, `Start`) with panic recovery and graceful in-flight draining. |
+| **`pdf`** | **Stable** | **100.0%** | `0` | Zero `pgx`, zero `gin`, zero `go-fintech-india` | Pluggable `Renderer` (`NewChromiumRenderer` headless Chromium with loopback SSRF guard, `NewPureGoRenderer` zero-dep PDF 1.4, legacy `NewWkhtmlRenderer`), bounded concurrency semaphore, and embedded GST Tax Invoice & Receipt templates. |
+| **`storage`** | **Stable** | **100.0%** | `0` | Zero `pgx`, zero `gin`, zero `go-fintech-india` | Zero-leak object storage (`Store`, `NewLocalStore` atomic 0600 filesystem, `NewMemoryStore`, `ValidateKey`), SHA-256 content digests (`SHA256Hex`), bounded upload size limits, and HMAC-SHA256 presigned URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`). |
+| **`scheduler`** | **Stable** | **100.0%** | `0` | Zero `pgx`, zero `gin`, zero `go-fintech-india` | Distributed & local OS flock/PID lease-fenced periodic job scheduler (`Scheduler`, `NewScheduler`, `LeaseStore`, `NewFileLeaseStore`, `NewMemoryLeaseStore`, `Register`, `RunOnce`, `Start`) with panic recovery and graceful in-flight draining. |
 
 ---
 

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-04-15
+
+### Added
+- scheduler: Added local OS flock and PID-file lease store for single-machine cross-process mutual exclusion across desktop apps, CLI tools, and system daemons (`FileLeaseStore`, `NewFileLeaseStore`, `FileLeaseOption`, `WithFileLeaseMode`, `WithFileLeaseDirMode`, `WithFileLeasePID`, `WithProcessAliveChecker`, `LockFilePath`, `Close`, `ErrInvalidLockDir`, `ErrInvalidFileMode`).
+- storage: Added local atomic filesystem object store using sibling temp-file streaming, fsync, atomic rename, and owner-only 0600 permissions (`LocalStore`, `NewLocalStore`, `LocalOption`, `WithLocalMaxObjectBytes`, `WithLocalBaseURL`, `WithLocalSigningSecret`, `WithLocalClock`, `WithFilePerm`, `WithDirPerm`, `RootDir`, `ErrInvalidRootDir`, `ErrInvalidFileMode`).
+- pdf: Added modern headless Chromium and zero-dependency pure-Go PDF 1.4 renderers behind the existing `Renderer` interface (`ChromiumRenderer`, `NewChromiumRenderer`, `ChromiumOption`, `ChromiumCommandRunner`, `WithChromiumBinary`, `WithChromiumExtraArgs`, `WithChromiumMaxConcurrency`, `WithChromiumNoSandbox`, `WithChromiumCommandRunner`, `FindChromiumBinary`, `ErrChromiumNotFound`, `ErrInvalidPDFOutput`, `PureGoRenderer`, `NewPureGoRenderer`, `PureGoOption`, `WithPureGoFontSize`, `WithPureGoLineHeight`).
+
+### Deprecated
+- pdf: Marked `WkhtmlRenderer` and `NewWkhtmlRenderer` deprecated since `v0.8.0` (remove in `>= v0.10.0`) under the strict `N + 2` minor-release deprecation contract in favor of `NewChromiumRenderer` and `NewPureGoRenderer`.
+
+### Changed
+- docs: Synchronized `README.md`, `AGENTS.md`, `llms.txt`, `docs/llms.txt`, `docs/VERSIONING.md`, `docs/index.html`, package READMEs, `.github/module-agents.json`, and Agent Skills (`go-app-kit`, `go-app-kit-scheduler`, `go-app-kit-storage`, `go-app-kit-pdf`) for `v0.8.0` while maintaining `100.0%` statement coverage and zero new external dependencies.
+
 ## [0.7.0] - 2026-04-12
 
 ### Added

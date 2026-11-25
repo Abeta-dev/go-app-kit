@@ -6,6 +6,7 @@ Distributed, lease-fenced periodic job scheduler with panic recovery and gracefu
 
 ## When to Use
 
+- **Local Single-Machine Cross-Process Exclusion (`NewFileLeaseStore`)**: Combining POSIX advisory `flock(2)` locks with `0600` JSON PID/TTL lease files so a macOS LaunchAgent / systemd daemon and a desktop GUI or CLI process sharing one host never double-run jobs, with automatic recovery after process crashes.
 - **Singleton Cron / Periodic Jobs Across $N$ Replicas**: Ensuring only one service pod executes a recurring billing cycle, outbox dead-letter sweep, or monthly `audit_logs` PostgreSQL range-partition creation within each lease TTL window.
 - **Panic-Isolated Background Workers**: Protecting the host process from crashing if a scheduled task panics, automatically converting panics into structured errors forwarded to `WithErrorHandler`.
 - **Deterministic Unit & Integration Tests**: Testing multi-node lease contention and expiration takeover in microseconds using `NewMemoryLeaseStore()` and `WithClock`.
@@ -14,9 +15,10 @@ Distributed, lease-fenced periodic job scheduler with panic recovery and gracefu
 
 ## Key Capabilities & Guarantees
 
-1. **Distributed Lease Fencing (`LeaseStore`)**: Before every execution tick, `Scheduler` invokes `store.TryAcquire(ctx, jobName, nodeID, now, leaseTTL)`. Replicas that do not hold the active lease skip the tick cleanly with `(false, nil)`.
-2. **Panic Recovery (`executeJobSafe`)**: Every job execution is wrapped in a `recover()` barrier that converts panics into errors and notifies `WithErrorHandler` without terminating sibling jobs.
-3. **Graceful In-Flight Shutdown (`Start(ctx)`)**: Canceling `ctx` stops all job tickers immediately and waits via `sync.WaitGroup` for every in-flight job execution to complete before returning.
+1. **Local OS `flock` + PID-File Lease Store (`NewFileLeaseStore`)**: Creates traversal-safe `0600` lock files (`LockFilePath`) inside a `0700` lock directory, enforces OS kernel `LOCK_EX|LOCK_NB` mutual exclusion across processes, validates live PIDs (`kill(pid, 0)`) to recover stale locks after crashes, and cleanly releases all descriptors on `Release` / `Close`.
+2. **Distributed Lease Fencing (`LeaseStore`)**: Before every execution tick, `Scheduler` invokes `store.TryAcquire(ctx, jobName, nodeID, now, leaseTTL)`. Replicas that do not hold the active lease skip the tick cleanly with `(false, nil)`.
+3. **Panic Recovery (`executeJobSafe`)**: Every job execution is wrapped in a `recover()` barrier that converts panics into errors and notifies `WithErrorHandler` without terminating sibling jobs.
+4. **Graceful In-Flight Shutdown (`Start(ctx)`)**: Canceling `ctx` stops all job tickers immediately and waits via `sync.WaitGroup` for every in-flight job execution to complete before returning.
 
 ---
 

@@ -6,7 +6,8 @@ Zero-leak object storage abstraction and deterministic HMAC-SHA256 presigned URL
 
 ## When to Use
 
-- **Archiving Generated PDF Tax Invoices & Receipts**: Storing compiled `pdf.GenerateFromTemplate` buffers with immutable SHA-256 content digests (`SHA256Hex`), byte-size enforcement (`WithMaxObjectBytes`), and defensive metadata cloning.
+- **Durable Local Atomic Filesystem Archiving (`NewLocalStore`)**: Persisting sensitive local artifacts (desktop BFF state, offline PDFs, audit exports) using sibling temporary files, owner-only `0600` file / `0700` directory permissions, `fsync`, and atomic `os.Rename` with zero partial writes on failure.
+- **Archiving Generated PDF Tax Invoices & Receipts**: Storing compiled `pdf.GenerateFromTemplate` buffers with immutable SHA-256 content digests (`SHA256Hex`), byte-size enforcement (`WithMaxObjectBytes` / `WithLocalMaxObjectBytes`), and defensive metadata cloning.
 - **Time-Bounded Presigned Download & Upload Links**: Generating HMAC-SHA256-authenticated `GET` and `PUT` URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`) with strict TTL and MIME `Content-Type` binding.
 - **Deterministic In-Memory Integration Testing**: Testing invoice archiving and presigned download workflows without requiring external S3/MinIO containers or local filesystem temp files.
 
@@ -14,10 +15,11 @@ Zero-leak object storage abstraction and deterministic HMAC-SHA256 presigned URL
 
 ## Key Capabilities & Security Guarantees
 
-1. **Path-Traversal & Key Hygiene (`ValidateKey`)**: Rejects empty keys, leading or trailing slashes, empty path segments (`//`), `.` or `..` traversal segments, Windows backslashes, and null bytes (`ErrInvalidKey`).
-2. **Bounded Memory & Size Guard (`WithMaxObjectBytes`)**: Reads upload streams via `io.LimitReader(body, maxObjectBytes+1)` so oversized uploads fail fast with `ErrObjectTooLarge` without exhausting heap memory.
-3. **Cryptographic Content Addressing (`ObjectMeta.SHA256Hex`)**: Automatically computes the hex-encoded SHA-256 digest of every stored object and defensively clones `Metadata` maps on `Put`, `Get`, and `Head`.
-4. **Constant-Time HMAC-SHA256 Presigned URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`)**: Binds HTTP method, object key, content type, and Unix expiration timestamp into a deterministic HMAC-SHA256 signature verified with `hmac.Equal`.
+1. **Local Atomic Write Protocol (`NewLocalStore`)**: Streams payloads to a sibling `.tmp` file with `0600` permissions (`WithFilePerm`), computes SHA-256 on the fly while enforcing `WithLocalMaxObjectBytes`, calls `fsync`, and atomically renames both the object file and its `.meta/*.json` sidecar into place.
+2. **Path-Traversal & Key Hygiene (`ValidateKey`)**: Rejects empty keys, leading or trailing slashes, empty path segments (`//`), `.` or `..` traversal segments, Windows backslashes, and null bytes (`ErrInvalidKey`).
+3. **Bounded Memory & Size Guard (`WithMaxObjectBytes`)**: Reads upload streams via `io.LimitReader(body, maxObjectBytes+1)` so oversized uploads fail fast with `ErrObjectTooLarge` without exhausting heap memory.
+4. **Cryptographic Content Addressing (`ObjectMeta.SHA256Hex`)**: Automatically computes the hex-encoded SHA-256 digest of every stored object and defensively clones `Metadata` maps on `Put`, `Get`, and `Head`.
+5. **Constant-Time HMAC-SHA256 Presigned URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`)**: Binds HTTP method, object key, content type, and Unix expiration timestamp into a deterministic HMAC-SHA256 signature verified with `hmac.Equal`.
 
 ---
 

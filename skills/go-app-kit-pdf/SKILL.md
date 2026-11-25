@@ -9,8 +9,10 @@ Use this skill when generating PDF documents, GST tax invoices, or payment recei
 
 ## 1. Architecture & Renderer Abstraction
 
-- **Production Rendering**: Uses `WkhtmlRenderer` (`NewWkhtmlRenderer(maxConcurrent)`), which invokes the host `wkhtmltopdf` binary via `stdin`/`stdout` pipes with **zero temporary disk files** and a struct-encapsulated semaphore to bound concurrent subprocesses.
-- **Test / CI Rendering (Without `wkhtmltopdf` Installed)**: Use `pdf.WithRenderer(customRenderer)` to inject a mock or stub `pdf.Renderer` in unit tests and CI environments where `wkhtmltopdf` is absent.
+- **Modern Headless Chromium (`NewChromiumRenderer`)**: Uses Chrome/Chromium `--headless=new --print-to-pdf=...` with CSS `@page` injection, bounded concurrency (`WithChromiumMaxConcurrency`), container support (`WithChromiumNoSandbox(true)`), and ephemeral loopback HTTP serving when `EnableLocalFileAccess` is `false` so local `file://` SSRF is structurally blocked.
+- **Zero-Dependency Pure-Go PDF 1.4 (`NewPureGoRenderer`)**: Compiles structured HTML (headings, paragraphs, tables, lists, line breaks) into standards-compliant multi-page `%PDF-1.4` documents with zero host browser binaries and zero CGO.
+- **Legacy `WkhtmlRenderer` (`NewWkhtmlRenderer`)**: Deprecated since `v0.8.0` (remove in `>= v0.10.0`) under the strict `N + 2` deprecation contract.
+- **Test / CI Rendering**: Use `pdf.NewPureGoRenderer()` or `pdf.WithChromiumCommandRunner(...)` / `pdf.WithRenderer(stub)` for deterministic tests without host browser binaries.
 
 ---
 
@@ -52,17 +54,20 @@ func RenderGSTInvoice(ctx context.Context, sellerGSTIN, buyerGSTIN string, data 
 
 ---
 
-## 3. Bounded Concurrency & Custom Renderer Pattern
+## 3. Bounded Concurrency & Modern Renderer Selection
 
-To prevent `wkhtmltopdf` memory spikes under heavy load, instantiate a shared `WkhtmlRenderer` with a bounded concurrency limit (e.g., 4 concurrent renders per pod):
+Use `NewChromiumRenderer` (with bounded concurrency) for full CSS/Flexbox rendering, or `NewPureGoRenderer` for zero-binary environments:
 
 ```go
-renderer := pdf.NewWkhtmlRenderer(4) // max 4 concurrent wkhtmltopdf subprocesses
+renderer := pdf.NewChromiumRenderer(
+	pdf.WithChromiumMaxConcurrency(4),
+	pdf.WithChromiumNoSandbox(true), // when running in Linux containers
+)
 
 pdfBuf, err := pdf.GenerateFromTemplate(
 	pdf.ReceiptTemplate,
 	receiptData,
-	pdf.WithRenderer(renderer),
+	pdf.WithRenderer(renderer), // or pdf.WithRenderer(pdf.NewPureGoRenderer())
 	pdf.WithTitle("Payment Receipt"),
 )
 ```

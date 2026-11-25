@@ -75,10 +75,10 @@
         "./pdf"
       ],
       "rules": [
-        "100.0% statement coverage across pdf package (pdf.go, templates.go)",
-        "Zero temporary disk files via stdin/stdout pipes and struct-encapsulated concurrency semaphore in WkhtmlRenderer",
+        "100.0% statement coverage across pdf package (pdf.go, chromium.go, purego.go, templates.go)",
+        "Modern Renderer backends (ChromiumRenderer with loopback SSRF isolation and zero-dep PureGoRenderer PDF 1.4) plus N+2 deprecation window on legacy WkhtmlRenderer",
         "Context cancellation enforcement and html/template auto-escaping across GSTInvoiceTemplate and ReceiptTemplate",
-        "Pluggable Renderer abstraction (WithRenderer) allowing 100% deterministic unit tests without host wkhtmltopdf"
+        "Pluggable Renderer abstraction (WithRenderer) allowing 100% deterministic unit tests without host browser binaries"
       ]
     },
     {
@@ -113,9 +113,9 @@
         "./storage"
       ],
       "rules": [
-        "100.0% statement coverage across storage package (storage.go)",
+        "100.0% statement coverage across storage package (storage.go, local.go)",
         "Strict object key path-traversal defense (ValidateKey rejecting .., leading/trailing slashes, backslashes, and null bytes)",
-        "Bounded stream reading via io.LimitReader (WithMaxObjectBytes), SHA-256 content digests (SHA256Hex), and defensive metadata cloning",
+        "LocalStore atomic temp-file + fsync + os.Rename writes with 0600 file / 0700 dir permissions and bounded io.LimitReader size guards",
         "Constant-time HMAC-SHA256 presigned GET/PUT URL generation and verification (PresignGet, PresignPut, VerifyPresignedURL)"
       ]
     },
@@ -132,8 +132,8 @@
         "./scheduler"
       ],
       "rules": [
-        "100.0% statement coverage across scheduler package (scheduler.go)",
-        "Distributed mutual exclusion and lease expiration fencing via LeaseStore (TryAcquire, Release, NewMemoryLeaseStore)",
+        "100.0% statement coverage across scheduler package (scheduler.go, file_lease.go, flock_unix.go)",
+        "Distributed and local OS flock + 0600 PID-file mutual exclusion and lease expiration fencing via LeaseStore (NewFileLeaseStore, NewMemoryLeaseStore)",
         "Panic recovery barrier in RunOnce converting job panics into errors forwarded to WithErrorHandler",
         "Zero data races under go test -race and graceful in-flight job draining on context cancellation in Start"
       ]

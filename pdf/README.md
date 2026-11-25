@@ -14,11 +14,12 @@ In-memory HTML-to-PDF document compilation with responsive layout options, templ
 
 ## Why It Is Written Like That
 
-1. **In-Memory Pipe Processing**: Renders raw HTML strings into pure `*bytes.Buffer` in memory, eliminating disk I/O bottlenecks and temporary file cleanup edge cases in containerized environments.
+1. **Modern Pluggable Backends (`Renderer`)**: Ships two first-class replacements for archived upstream `wkhtmltopdf` behind the unified `Renderer` interface:
+   - **`NewChromiumRenderer`**: Modern headless Chrome/Chromium (`--headless=new --print-to-pdf=...`) with automatic binary discovery (`FindChromiumBinary`), CSS `@page` margin/size/orientation injection, bounded concurrency semaphore, and ephemeral loopback HTTP serving when `EnableLocalFileAccess` is `false` (blocking `file://` SSRF).
+   - **`NewPureGoRenderer`**: Zero external binary, zero CGO, pure-Go PDF 1.4 compiler supporting headings, paragraphs, tables, lists, word-wrapping, multi-page pagination, and document title metadata.
+   - **Legacy `NewWkhtmlRenderer`**: Retained for backward compatibility and deprecated since `v0.8.0` (remove in `>= v0.10.0`) under the strict `N + 2` deprecation contract.
 2. **Embedded Production Templates (`go:embed`)**: Bundles standard GST tax invoice and payment receipt templates directly into the compiled Go binary so downstream services don't need external HTML asset deployment.
-3. **Pluggable Renderer Interface (`Renderer`)**: Decouples HTML document compilation behind a clean Go interface (`Renderer`), enabling modular rendering engines (wkhtmltopdf, headless Chrome, Gotenberg) and 100% deterministic unit testing via mock renderers without requiring external C-binaries.
-4. **Graceful Fallback (`ErrNoRendererAvailable`)**: If `wkhtmltopdf` is not present on the host system and no custom `Renderer` is supplied via `WithRenderer`, compilation returns `ErrNoRendererAvailable` gracefully rather than crashing or hanging.
-5. **Functional Option Pattern**: Uses composable options (`WithPageSize`, `WithOrientation`, `WithMargins`, `WithDPI`, `WithTitle`, `WithRenderer`) with safe production defaults (A4 Portrait, 10mm margins, 300 DPI).
+3. **Functional Option Pattern**: Uses composable options (`WithPageSize`, `WithOrientation`, `WithMargins`, `WithDPI`, `WithTitle`, `WithRenderer`) with safe production defaults (A4 Portrait, 10mm margins, 300 DPI).
 
 ---
 
@@ -58,8 +59,9 @@ func main() {
         // ... see templates/gst_invoice.html for full data schema
     }
 
-    // Compile embedded GST invoice template directly into in-memory PDF buffer
+    // Compile embedded GST invoice template via headless Chromium or pure-Go PDF 1.4
     buf, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, data,
+        pdf.WithRenderer(pdf.NewPureGoRenderer()), // or pdf.NewChromiumRenderer()
         pdf.WithPageSize("A4"),
         pdf.WithOrientation("Portrait"),
         pdf.WithMargins(10, 10, 10, 10),
@@ -77,5 +79,6 @@ func main() {
 
 ## Known Limitations
 
-- **Binary Requirement**: Default rendering requires a pre-installed `wkhtmltopdf` binary in the host system `$PATH` (NOT Chromium, Google Chrome, or CDP). If missing, `pdf.ErrNoRendererAvailable` is returned.
-- **Custom Engines**: For zero C-dependency environments or browser engines, inject a custom implementation via `pdf.WithRenderer(customRenderer)`.
+- **Chromium Backend**: `NewChromiumRenderer()` requires a local Chrome or Chromium binary (`CHROMIUM_PATH`, `CHROME_PATH`, or `$PATH`); if missing, `ErrNoRendererAvailable` wrapping `ErrChromiumNotFound` is returned.
+- **Pure-Go Backend**: `NewPureGoRenderer()` requires zero external binaries and outputs valid PDF 1.4 text/table documents using standard Type1 Helvetica fonts, without executing JavaScript or CSS Flexbox layouts.
+- **Legacy `wkhtmltopdf`**: Deprecated since `v0.8.0` (remove in `>= v0.10.0`). Migrate to `NewChromiumRenderer()` or `NewPureGoRenderer()`.

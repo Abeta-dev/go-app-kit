@@ -111,12 +111,11 @@ func WithMaxObjectBytes(limit int64) Option {
 // WithBaseURL configures the base HTTP/HTTPS endpoint used when constructing presigned URLs.
 func WithBaseURL(baseURL string) Option {
 	return func(s *MemoryStore) error {
-		trimmed := strings.TrimRight(strings.TrimSpace(baseURL), "/")
-		parsed, err := url.Parse(trimmed)
-		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
-			return ErrInvalidBaseURL
+		validated, err := validateBaseURL(baseURL)
+		if err != nil {
+			return err
 		}
-		s.baseURL = trimmed
+		s.baseURL = validated
 		return nil
 	}
 }
@@ -288,6 +287,21 @@ func (s *MemoryStore) Delete(ctx context.Context, key string) error {
 
 // PresignGet generates a deterministic HMAC-SHA256 presigned GET URL for downloading an object.
 func (s *MemoryStore) PresignGet(ctx context.Context, key string, ttl time.Duration) (PresignedURL, error) {
+	return presignGet(ctx, s.baseURL, s.signingSecret, s.now, key, ttl)
+}
+
+// PresignPut generates a deterministic HMAC-SHA256 presigned PUT URL bound to key, contentType, and expiration.
+func (s *MemoryStore) PresignPut(ctx context.Context, key, contentType string, ttl time.Duration) (PresignedURL, error) {
+	return presignPut(ctx, s.baseURL, s.signingSecret, s.now, key, contentType, ttl)
+}
+
+// VerifyPresignedURL validates the base URL origin, object key, expiration timestamp,
+// and constant-time HMAC-SHA256 signature of a presigned URL.
+func (s *MemoryStore) VerifyPresignedURL(rawURL, method string, now time.Time) error {
+	return verifyPresignedURL(s.baseURL, s.signingSecret, rawURL, method, now)
+}
+
+func presignGet(ctx context.Context, baseURL string, secret []byte, nowFn func() time.Time, key string, ttl time.Duration) (PresignedURL, error) {
 	if err := ctx.Err(); err != nil {
 		return PresignedURL{}, err
 	}
@@ -298,24 +312,23 @@ func (s *MemoryStore) PresignGet(ctx context.Context, key string, ttl time.Durat
 		return PresignedURL{}, ErrInvalidExpiry
 	}
 
-	expiresAt := s.now().UTC().Add(ttl)
+	expiresAt := nowFn().UTC().Add(ttl)
 	expiresUnix := strconv.FormatInt(expiresAt.Unix(), 10)
-	sig := s.computeSignature(http.MethodGet, key, "", expiresUnix)
+	sig := computeHMACSignature(secret, http.MethodGet, key, "", expiresUnix)
 
 	q := url.Values{}
 	q.Set("expires", expiresUnix)
 	q.Set("sig", sig)
 
 	return PresignedURL{
-		URL:       fmt.Sprintf("%s/%s?%s", s.baseURL, key, q.Encode()),
+		URL:       fmt.Sprintf("%s/%s?%s", baseURL, key, q.Encode()),
 		Method:    http.MethodGet,
 		ExpiresAt: expiresAt,
 		Signature: sig,
 	}, nil
 }
 
-// PresignPut generates a deterministic HMAC-SHA256 presigned PUT URL bound to key, contentType, and expiration.
-func (s *MemoryStore) PresignPut(ctx context.Context, key, contentType string, ttl time.Duration) (PresignedURL, error) {
+func presignPut(ctx context.Context, baseURL string, secret []byte, nowFn func() time.Time, key, contentType string, ttl time.Duration) (PresignedURL, error) {
 	if err := ctx.Err(); err != nil {
 		return PresignedURL{}, err
 	}
@@ -330,9 +343,9 @@ func (s *MemoryStore) PresignPut(ctx context.Context, key, contentType string, t
 		return PresignedURL{}, ErrInvalidExpiry
 	}
 
-	expiresAt := s.now().UTC().Add(ttl)
+	expiresAt := nowFn().UTC().Add(ttl)
 	expiresUnix := strconv.FormatInt(expiresAt.Unix(), 10)
-	sig := s.computeSignature(http.MethodPut, key, trimmedCT, expiresUnix)
+	sig := computeHMACSignature(secret, http.MethodPut, key, trimmedCT, expiresUnix)
 
 	q := url.Values{}
 	q.Set("content_type", trimmedCT)
@@ -340,17 +353,15 @@ func (s *MemoryStore) PresignPut(ctx context.Context, key, contentType string, t
 	q.Set("sig", sig)
 
 	return PresignedURL{
-		URL:       fmt.Sprintf("%s/%s?%s", s.baseURL, key, q.Encode()),
+		URL:       fmt.Sprintf("%s/%s?%s", baseURL, key, q.Encode()),
 		Method:    http.MethodPut,
 		ExpiresAt: expiresAt,
 		Signature: sig,
 	}, nil
 }
 
-// VerifyPresignedURL validates the base URL origin, object key, expiration timestamp,
-// and constant-time HMAC-SHA256 signature of a presigned URL.
-func (s *MemoryStore) VerifyPresignedURL(rawURL, method string, now time.Time) error {
-	prefix := s.baseURL + "/"
+func verifyPresignedURL(baseURL string, secret []byte, rawURL, method string, now time.Time) error {
+	prefix := baseURL + "/"
 	if !strings.HasPrefix(rawURL, prefix) {
 		return ErrInvalidBaseURL
 	}
@@ -382,17 +393,26 @@ func (s *MemoryStore) VerifyPresignedURL(rawURL, method string, now time.Time) e
 		return ErrEmptyContentType
 	}
 
-	expectedSig := s.computeSignature(method, keyPart, contentType, expiresStr)
+	expectedSig := computeHMACSignature(secret, method, keyPart, contentType, expiresStr)
 	if !hmac.Equal([]byte(sig), []byte(expectedSig)) {
 		return ErrEmptySigningSecret
 	}
 	return nil
 }
 
-func (s *MemoryStore) computeSignature(method, key, contentType, expiresUnix string) string {
-	mac := hmac.New(sha256.New, s.signingSecret)
+func computeHMACSignature(secret []byte, method, key, contentType, expiresUnix string) string {
+	mac := hmac.New(sha256.New, secret)
 	_, _ = io.WriteString(mac, method+"\n"+key+"\n"+contentType+"\n"+expiresUnix)
 	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func validateBaseURL(baseURL string) (string, error) {
+	trimmed := strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	parsed, err := url.Parse(trimmed)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return "", ErrInvalidBaseURL
+	}
+	return trimmed, nil
 }
 
 func cloneMetadata(src map[string]string) map[string]string {

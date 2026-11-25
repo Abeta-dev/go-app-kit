@@ -1,6 +1,6 @@
 # `go-app-kit` — Agent Instructions (`AGENTS.md`)
 
-`github.com/abeta-dev/go-app-kit` (`v0.7.0`, `Go 1.26.0`, **100.0% statement coverage**) is the production enterprise application and domain accelerator kit for Go (`1.26.0`+). It provides 7 core enterprise application infrastructure packages built atop `github.com/abeta-dev/go-libs` (`v0.5.0`, 36 foundational packages) and paired with statutory companion `github.com/abeta-dev/go-fintech-india` (`v0.4.0`, 127 exported symbols across 15 domain files).
+`github.com/abeta-dev/go-app-kit` (`v0.8.0`, `Go 1.26.0`, **100.0% statement coverage**) is the production enterprise application and domain accelerator kit for Go (`1.26.0`+). It provides 7 core enterprise application infrastructure packages built atop `github.com/abeta-dev/go-libs` (`v0.5.0`, 36 foundational packages) and paired with statutory companion `github.com/abeta-dev/go-fintech-india` (`v0.4.0`, 127 exported symbols across 15 domain files).
 
 ---
 
@@ -12,12 +12,12 @@ When working inside or consuming `go-app-kit`, load the subskill matching the ta
 | :--- | :--- | :--- | :--- |
 | **Umbrella** | `github.com/abeta-dev/go-app-kit` | `skills/go-app-kit/SKILL.md` | Cross-package composition, `go.work` setup, truth gates (`check_version.sh`, `check_coverage.sh`, `check_secrets.sh`, `check_leaf_imports.sh`, `check_deprecation.sh`, `check_tag_readiness.sh`). |
 | **`outbox`** | `github.com/abeta-dev/go-app-kit/outbox` | `skills/go-app-kit-outbox/SKILL.md` | PostgreSQL transactional outbox (`Store`, `NewPGStore`, `Relay`, `SELECT FOR UPDATE SKIP LOCKED`, `lease_token` fencing, DDL `001` & `002`). |
-| **`pdf`** | `github.com/abeta-dev/go-app-kit/pdf` | `skills/go-app-kit-pdf/SKILL.md` | HTML-to-PDF compilation (`Renderer`, `NewWkhtmlRenderer`, `GenerateFromTemplate`, `GSTInvoiceTemplate`, `ReceiptTemplate`). |
+| **`pdf`** | `github.com/abeta-dev/go-app-kit/pdf` | `skills/go-app-kit-pdf/SKILL.md` | HTML-to-PDF compilation (`Renderer`, `NewChromiumRenderer`, `NewPureGoRenderer`, legacy `NewWkhtmlRenderer`, `GenerateFromTemplate`, `GSTInvoiceTemplate`, `ReceiptTemplate`). |
 | **`notifications`** | `github.com/abeta-dev/go-app-kit/notifications` | `skills/go-app-kit-notifications/SKILL.md` | Multi-channel notification broker (`Broker`, `SendAsync`, SMTP Email, Brevo Email (`NewBrevoSender`), WhatsApp Cloud API, Indian DLT SMS, Slack, HMAC-SHA256 Webhooks). |
 | **`audit`** | `github.com/abeta-dev/go-app-kit/audit` | `skills/go-app-kit-audit/SKILL.md` | Range-partitioned PostgreSQL compliance audit trail (`Recorder`, `NewPGRecorder`, `NewEvent`, `ComputeDiff`, `ComputeHash`, append-only trigger DDL). |
 | **`export`** | `github.com/abeta-dev/go-app-kit/export` | `skills/go-app-kit-export/SKILL.md` | Low-memory streaming CSV exporter (`CSVStreamer[T]`, `StreamHTTP[T]`, `StreamHTTPCompressed[T]`, `NegotiateEncoding`, UTF-8 BOM, formula-injection escaping `=,+,-,@`). |
-| **`storage`** | `github.com/abeta-dev/go-app-kit/storage` | `skills/go-app-kit-storage/SKILL.md` | Zero-leak object storage & presigned URL engine (`Store`, `NewMemoryStore`, `ValidateKey`, `SHA256Hex`, HMAC-SHA256 `PresignGet`, `PresignPut`, `VerifyPresignedURL`). |
-| **`scheduler`** | `github.com/abeta-dev/go-app-kit/scheduler` | `skills/go-app-kit-scheduler/SKILL.md` | Distributed lease-fenced periodic job runner (`Scheduler`, `NewScheduler`, `LeaseStore`, `NewMemoryLeaseStore`, `Register`, `RunOnce`, `Start`). |
+| **`storage`** | `github.com/abeta-dev/go-app-kit/storage` | `skills/go-app-kit-storage/SKILL.md` | Zero-leak object storage & presigned URL engine (`Store`, `NewLocalStore` atomic 0600 filesystem, `NewMemoryStore`, `ValidateKey`, `SHA256Hex`, HMAC-SHA256 `PresignGet`, `PresignPut`, `VerifyPresignedURL`). |
+| **`scheduler`** | `github.com/abeta-dev/go-app-kit/scheduler` | `skills/go-app-kit-scheduler/SKILL.md` | Distributed & local OS flock/PID lease-fenced periodic job runner (`Scheduler`, `NewScheduler`, `LeaseStore`, `NewFileLeaseStore`, `NewMemoryLeaseStore`, `Register`, `RunOnce`, `Start`). |
 
 ---
 

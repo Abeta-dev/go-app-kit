@@ -1,6 +1,6 @@
 # go-app-kit
 
-> Current main-line published release: `v0.7.0`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
+> Current main-line published release: `v0.8.0`. The lightweight `v0.3.0` tag points to an earlier commit and remains an immutable, separate artifact. See [Release Baseline](docs/RELEASE_BASELINE.md) before selecting a release or publishing a reconciliation.
 
 [![CI](https://github.com/abeta-dev/go-app-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/abeta-dev/go-app-kit/actions/workflows/ci.yml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/abeta-dev/go-app-kit.svg)](https://pkg.go.dev/github.com/abeta-dev/go-app-kit)
@@ -59,7 +59,7 @@ While [`go-libs`](https://github.com/abeta-dev/go-libs) provides low-level, zero
 ### Standalone Import
 When consuming `go-app-kit` in your microservice:
 ```bash
-go get github.com/abeta-dev/go-app-kit@v0.7.0
+go get github.com/abeta-dev/go-app-kit@v0.8.0
 ```
 
 ### Multi-Module Local Development (`go.work`)
@@ -114,8 +114,11 @@ go relay.Start(ctx)
 ---
 
 ### 2. `pdf` - HTML-to-PDF Document Generator
-In-memory compilation via `wkhtmltopdf` (requires host `wkhtmltopdf` binary, NOT Chromium or Google Chrome) with responsive page options and embedded production templates:
-- **Options**: Margins (mm), PageSize (`A4`, `Letter`), Orientation (`Portrait`, `Landscape`), DPI, and Title metadata.
+Pluggable HTML-to-PDF compilation supporting **modern headless Chromium (`NewChromiumRenderer`)**, **zero-dependency pure-Go PDF 1.4 (`NewPureGoRenderer`)**, and legacy `wkhtmltopdf` (`NewWkhtmlRenderer`, deprecated since `v0.8.0`, remove in `>= v0.10.0`) with responsive page options and embedded production templates:
+- **Modern Backends**:
+  - `NewChromiumRenderer`: Drives headless Chrome/Chromium (`--headless=new --print-to-pdf=...`) with ephemeral loopback HTTP serving when `EnableLocalFileAccess` is `false` (blocking `file://` SSRF), CSS `@page` margin/orientation injection, and bounded concurrency.
+  - `NewPureGoRenderer`: Zero external binaries, zero CGO, pure-Go PDF 1.4 compiler for headings, paragraphs, tables, lists, and multi-page pagination in scratch containers or desktop `.dmg` binaries.
+- **Options**: Margins (mm), PageSize (`A4`, `Letter`, `Legal`), Orientation (`Portrait`, `Landscape`), DPI, and Title metadata.
 - **Embedded Templates**:
   - `pdf.GSTInvoiceTemplate`: Indian GST-compliant B2B Tax Invoice with Supplier/Buyer GSTINs, HSN/SAC codes, CGST/SGST/IGST breakdown, Bank NEFT/RTGS details, and Authorized Signatory block.
   - `pdf.ReceiptTemplate`: Clean, modern payment receipt for SaaS and transaction settlements.
@@ -123,11 +126,19 @@ In-memory compilation via `wkhtmltopdf` (requires host `wkhtmltopdf` binary, NOT
 ```go
 import "github.com/abeta-dev/go-app-kit/pdf"
 
-// Compile GST Tax Invoice into in-memory PDF buffer
+// 1. Headless Chromium backend (full CSS/Flexbox, loopback SSRF isolation)
+chromium := pdf.NewChromiumRenderer(pdf.WithChromiumMaxConcurrency(4))
 pdfBuf, err := pdf.GenerateFromTemplate(pdf.GSTInvoiceTemplate, invoiceData,
+    pdf.WithRenderer(chromium),
     pdf.WithPageSize("A4"),
     pdf.WithOrientation("Portrait"),
     pdf.WithMargins(10, 10, 10, 10),
+)
+
+// 2. Zero-dependency pure-Go PDF 1.4 backend (no host browser binary required)
+pureGoBuf, err := pdf.GenerateFromTemplate(pdf.ReceiptTemplate, receiptData,
+    pdf.WithRenderer(pdf.NewPureGoRenderer()),
+    pdf.WithTitle("Payment Receipt"),
 )
 ```
 
@@ -215,18 +226,20 @@ streamer.Flush()
 ---
 
 ### 6. `storage` - Zero-Leak Object Storage & Presigned URL Engine
-Content-addressed artifact archiving and time-bounded HMAC-SHA256 presigned URLs for generated `pdf` invoices and `export` CSV reports:
+Content-addressed artifact archiving (both in-memory via `NewMemoryStore` and durable local atomic filesystem via `NewLocalStore`) and time-bounded HMAC-SHA256 presigned URLs for generated `pdf` invoices and `export` CSV reports:
+- **Local Atomic Filesystem Store (`NewLocalStore`)**: Streams payloads into sibling temporary files with strict owner-only permissions (`0600` files, `0700` directories by default), calls `fsync`, and atomically renames both the object payload and JSON metadata sidecar into place with zero partial writes on failure.
 - **Path-Traversal Guard (`ValidateKey`)**: Rejects empty keys, leading/trailing slashes, empty segments (`//`), `.` or `..` traversal segments, Windows backslashes, and null bytes (`ErrInvalidKey`).
-- **Bounded Stream Reading (`WithMaxObjectBytes`)**: Enforces upload size limits via `io.LimitReader` (`ErrObjectTooLarge`), computes SHA-256 content digests (`ObjectMeta.SHA256Hex`), and defensively clones metadata maps.
+- **Bounded Stream Reading (`WithMaxObjectBytes` / `WithLocalMaxObjectBytes`)**: Enforces upload size limits via `io.LimitReader` (`ErrObjectTooLarge`), computes SHA-256 content digests (`ObjectMeta.SHA256Hex`), and defensively clones metadata maps.
 - **Deterministic Presigned URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`)**: Generates and verifies constant-time HMAC-SHA256 signed download and upload URLs bound to HTTP method, object key, content type, and expiration timestamp.
 
 ```go
 import "github.com/abeta-dev/go-app-kit/storage"
 
-store, _ := storage.NewMemoryStore(
-    storage.WithBaseURL("https://objects.enterprise.internal"),
-    storage.WithSigningSecret([]byte("32-byte-hmac-signing-secret-key")),
-    storage.WithMaxObjectBytes(16*1024*1024),
+// Local atomic filesystem store (0600 files, temp write + fsync + atomic rename)
+store, _ := storage.NewLocalStore("/var/lib/abeta/artifacts",
+    storage.WithLocalBaseURL("https://objects.enterprise.internal"),
+    storage.WithLocalSigningSecret([]byte("32-byte-hmac-signing-secret-key")),
+    storage.WithLocalMaxObjectBytes(16*1024*1024),
 )
 
 meta, _ := store.Put(ctx, storage.PutInput{
@@ -240,8 +253,9 @@ presigned, _ := store.PresignGet(ctx, meta.Key, 15*time.Minute)
 
 ---
 
-### 7. `scheduler` - Distributed Lease-Fenced Periodic Job Scheduler
-Singleton periodic background job runner with distributed lease fencing, panic recovery, and graceful in-flight draining:
+### 7. `scheduler` - Distributed & Local Lease-Fenced Periodic Job Scheduler
+Singleton periodic background job runner with distributed and local OS `flock`/PID-file lease fencing, panic recovery, and graceful in-flight draining:
+- **Local OS `flock` + PID-File Mutual Exclusion (`NewFileLeaseStore`)**: Combines non-blocking OS advisory file locks (`flock`) with `0600` JSON PID/TTL lease metadata files for crash-safe cross-process mutual exclusion on a single machine (e.g., macOS LaunchAgent + desktop GUI app or CLI daemon).
 - **Distributed Mutual Exclusion (`LeaseStore`, `NewMemoryLeaseStore`)**: Acquires or renews a time-bounded job lease (`TryAcquire`) before each tick so horizontally scaled replicas never double-execute recurring billing or GST aging snapshots.
 - **Panic Recovery Barrier (`RunOnce`)**: Converts job panics into structured errors forwarded to `WithErrorHandler` without crashing sibling background workers.
 - **Graceful Shutdown (`Start`)**: Stops all tickers on `ctx.Done()` and waits for every in-flight job execution to complete before returning.
@@ -249,8 +263,10 @@ Singleton periodic background job runner with distributed lease fencing, panic r
 ```go
 import "github.com/abeta-dev/go-app-kit/scheduler"
 
-leaseStore := scheduler.NewMemoryLeaseStore()
-sched, _ := scheduler.NewScheduler(leaseStore, "billing-pod-1")
+// Local OS flock + PID file lease store for cross-process single-machine exclusion
+leaseStore, _ := scheduler.NewFileLeaseStore("/var/run/abeta/locks")
+defer leaseStore.Close()
+sched, _ := scheduler.NewScheduler(leaseStore, "desktop-launchagent")
 
 _ = sched.Register(scheduler.JobConfig{
     Name:       "gst-aging-snapshot",
@@ -350,12 +366,12 @@ Coverage across packages in `go-app-kit` is measured using Go's statement-level 
 | :--- | :--- | :--- |
 | **`go-app-kit` (Umbrella)** | [`skills/go-app-kit/SKILL.md`](skills/go-app-kit/SKILL.md) | Package selection, cross-package transactional wiring, and truth gates |
 | **`go-app-kit-outbox`** | [`skills/go-app-kit-outbox/SKILL.md`](skills/go-app-kit-outbox/SKILL.md) | PostgreSQL `SELECT FOR UPDATE SKIP LOCKED`, lease fencing, relay worker, dead-letter handling |
-| **`go-app-kit-pdf`** | [`skills/go-app-kit-pdf/SKILL.md`](skills/go-app-kit-pdf/SKILL.md) | Pluggable `Renderer` (`NewWkhtmlRenderer`), SSRF defense, GST invoice templates |
+| **`go-app-kit-pdf`** | [`skills/go-app-kit-pdf/SKILL.md`](skills/go-app-kit-pdf/SKILL.md) | Pluggable `Renderer` (`NewChromiumRenderer`, `NewPureGoRenderer`, legacy `NewWkhtmlRenderer`), SSRF defense, GST invoice templates |
 | **`go-app-kit-notifications`** | [`skills/go-app-kit-notifications/SKILL.md`](skills/go-app-kit-notifications/SKILL.md) | `Broker` routing across `Email`, `Slack`, `Webhook`, `WhatsApp` (`NewWhatsAppSender`), and Indian DLT `SMS` (`NewSMSSender`) |
 | **`go-app-kit-audit`** | [`skills/go-app-kit-audit/SKILL.md`](skills/go-app-kit-audit/SKILL.md) | Partitioned PostgreSQL append-only audit trail (`Recorder`, `Event`) and JSON diffing |
 | **`go-app-kit-export`** | [`skills/go-app-kit-export/SKILL.md`](skills/go-app-kit-export/SKILL.md) | Constant-memory CSV streaming (`StreamHTTP`, `CSVStreamer`), UTF-8 BOM, and formula-injection escaping |
-| **`go-app-kit-storage`** | [`skills/go-app-kit-storage/SKILL.md`](skills/go-app-kit-storage/SKILL.md) | Zero-leak object storage (`Store`, `NewMemoryStore`, `ValidateKey`), SHA-256 digests, and HMAC-SHA256 presigned URLs |
-| **`go-app-kit-scheduler`** | [`skills/go-app-kit-scheduler/SKILL.md`](skills/go-app-kit-scheduler/SKILL.md) | Distributed lease-fenced periodic job scheduler (`Scheduler`, `NewScheduler`, `LeaseStore`, `NewMemoryLeaseStore`) |
+| **`go-app-kit-storage`** | [`skills/go-app-kit-storage/SKILL.md`](skills/go-app-kit-storage/SKILL.md) | Zero-leak object storage (`Store`, `NewLocalStore` atomic 0600 filesystem, `NewMemoryStore`, `ValidateKey`), SHA-256 digests, and HMAC-SHA256 presigned URLs |
+| **`go-app-kit-scheduler`** | [`skills/go-app-kit-scheduler/SKILL.md`](skills/go-app-kit-scheduler/SKILL.md) | Lease-fenced periodic job scheduler (`Scheduler`, `NewScheduler`, `LeaseStore`, `NewFileLeaseStore` OS flock/PID, `NewMemoryLeaseStore`) |
 
 Machine-readable LLM context index: [`llms.txt`](llms.txt) (published at [`https://abeta-dev.github.io/go-app-kit/llms.txt`](https://abeta-dev.github.io/go-app-kit/llms.txt)).
 
@@ -367,7 +383,7 @@ Machine-readable LLM context index: [`llms.txt`](llms.txt) (published at [`https
 | :--- | :--- | :--- | :--- |
 | **[`github.com/abeta-dev/go-libs`](https://github.com/abeta-dev/go-libs)** (`v0.5.0`) | Low-level microservice systems engineering (36 foundational packages: `workerpool`, `circuitbreaker`, `ratelimit`, `retry`, `cache`, `compress`, `ginmw`, `httpclient`, `db`, `rbac`, `jwks`, `telemetry`, `logger`) | [`abeta-dev.github.io/go-libs`](https://abeta-dev.github.io/go-libs/) | [`pkg.go.dev/github.com/abeta-dev/go-libs`](https://pkg.go.dev/github.com/abeta-dev/go-libs) |
 | **[`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)** (`v0.4.0`) | Zero-dependency Indian FinTech & statutory compliance engine (127 exported symbols across 15 domain files: GSTIN mod-36, PAN, Aadhaar Verhoeff $D_5$, IFSC, VPA/UPI, `Money` paise math, FY & AP/AR aging) | [`abeta-dev.github.io/go-fintech-india`](https://abeta-dev.github.io/go-fintech-india/) | [`pkg.go.dev/github.com/abeta-dev/go-fintech-india`](https://pkg.go.dev/github.com/abeta-dev/go-fintech-india) |
-| **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.7.0`) | Enterprise application infrastructure (7 core packages: PostgreSQL transactional `outbox`, HTML-to-PDF `pdf`, multi-channel `notifications`, compliance `audit`, streaming CSV `export`, presigned object `storage`, lease-fenced `scheduler`) | [`abeta-dev.github.io/go-app-kit`](https://abeta-dev.github.io/go-app-kit/) | [`pkg.go.dev/github.com/abeta-dev/go-app-kit`](https://pkg.go.dev/github.com/abeta-dev/go-app-kit) |
+| **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.8.0`) | Enterprise application infrastructure (7 core packages: PostgreSQL transactional `outbox`, Chromium/pure-Go `pdf`, multi-channel `notifications`, compliance `audit`, streaming CSV `export`, local atomic/presigned `storage`, OS flock/distributed `scheduler`) | [`abeta-dev.github.io/go-app-kit`](https://abeta-dev.github.io/go-app-kit/) | [`pkg.go.dev/github.com/abeta-dev/go-app-kit`](https://pkg.go.dev/github.com/abeta-dev/go-app-kit) |
 | **[`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability)** (`v0.4.0`) | Production OpenTelemetry, Prometheus, Grafana, Loki, Tempo, and Kubernetes observability reference stack for Go microservices | [`abeta-dev.github.io/cloud-native-observability`](https://abeta-dev.github.io/cloud-native-observability/) | [`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability) |
 
 ---
@@ -409,7 +425,7 @@ make vulncheck
 
 ## Known Limitations
 
-- **PDF Generation**: Requires a pre-installed `wkhtmltopdf` binary on the host system (NOT Chromium or Google Chrome). In test environments or CI runners without `wkhtmltopdf`, the pluggable `pdf.Generator` interface can be mocked.
+- **PDF Generation**: For full CSS/Flexbox rendering, pass `pdf.NewChromiumRenderer()` (requires Chrome/Chromium binary in `$PATH` or `CHROMIUM_PATH`). For zero-binary environments, pass `pdf.NewPureGoRenderer()`. Legacy `NewWkhtmlRenderer` is deprecated since `v0.8.0` (remove in `>= v0.10.0`).
 - **Outbox Storage**: Requires PostgreSQL 12+ for `FOR UPDATE SKIP LOCKED` concurrency support.
 - **Email Sending**: Uses standard Go `net/smtp` without connection pooling.
 

@@ -21,14 +21,25 @@ vendor/
 go.work
 go.work.sum
 
-# OS and Editor files
+# OS, Editor & cloud-sync conflict files
 .DS_Store
+.DS_Store?
+._*
+Thumbs.db
 .idea/
 .vscode/
 *.swp
 *.swo
+*~
+*.bak
+*.orig
+*.tmp
+* [0-9]
+* [0-9].*
+*_2.*
 invoice_service
 bom.json
+release-manifest.json
 
 # Graphify knowledge graph outputs
 graphify-out/
