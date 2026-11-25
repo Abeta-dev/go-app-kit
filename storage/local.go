@@ -350,9 +350,9 @@ func (s *LocalStore) readMetaFile(metaPath string) (ObjectMeta, error) {
 	return meta, nil
 }
 
-func (s *LocalStore) writeAtomicStream(dstPath, tmpPattern string, maxBytes int64, body io.Reader) (int64, string, error) {
+func (s *LocalStore) writeAtomicStream(dstPath, tmpPattern string, maxBytes int64, body io.Reader) (sizeBytes int64, digestHex string, err error) {
 	parentDir := filepath.Dir(dstPath)
-	if err := s.fs.mkdirAll(parentDir, s.dirPerm); err != nil {
+	if err = s.fs.mkdirAll(parentDir, s.dirPerm); err != nil {
 		return 0, "", err
 	}
 
@@ -369,12 +369,11 @@ func (s *LocalStore) writeAtomicStream(dstPath, tmpPattern string, maxBytes int6
 		}
 	}()
 
-	if err := s.fs.chmodFile(tmp, s.filePerm); err != nil {
+	if err = s.fs.chmodFile(tmp, s.filePerm); err != nil {
 		return 0, "", err
 	}
 
 	hasher := sha256.New()
-	var written int64
 	if body != nil {
 		limited := io.LimitReader(body, maxBytes+1)
 		n, copyErr := io.Copy(io.MultiWriter(tmp, hasher), limited)
@@ -384,18 +383,18 @@ func (s *LocalStore) writeAtomicStream(dstPath, tmpPattern string, maxBytes int6
 		if n > maxBytes {
 			return 0, "", ErrObjectTooLarge
 		}
-		written = n
+		sizeBytes = n
 	}
 
-	if err := s.fs.syncFile(tmp); err != nil {
+	if err = s.fs.syncFile(tmp); err != nil {
 		return 0, "", err
 	}
-	if err := s.fs.closeFile(tmp); err != nil {
+	if err = s.fs.closeFile(tmp); err != nil {
 		return 0, "", err
 	}
-	if err := s.fs.rename(tmpPath, dstPath); err != nil {
+	if err = s.fs.rename(tmpPath, dstPath); err != nil {
 		return 0, "", err
 	}
 	cleanup = false
-	return written, hex.EncodeToString(hasher.Sum(nil)), nil
+	return sizeBytes, hex.EncodeToString(hasher.Sum(nil)), nil
 }

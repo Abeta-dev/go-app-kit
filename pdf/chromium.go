@@ -88,7 +88,7 @@ type ChromiumRenderer struct {
 	runner         ChromiumCommandRunner
 	findBinary     func() (string, error)
 	mkdirTemp      func(string, string) (string, error)
-	listenLoopback func() (net.Listener, error)
+	listenLoopback func(ctx context.Context) (net.Listener, error)
 }
 
 // NewChromiumRenderer constructs a ChromiumRenderer with an encapsulated concurrency semaphore.
@@ -98,7 +98,10 @@ func NewChromiumRenderer(opts ...ChromiumOption) *ChromiumRenderer {
 		runner:         defaultChromiumRunner,
 		findBinary:     FindChromiumBinary,
 		mkdirTemp:      os.MkdirTemp,
-		listenLoopback: func() (net.Listener, error) { return net.Listen("tcp", "127.0.0.1:0") },
+		listenLoopback: func(ctx context.Context) (net.Listener, error) {
+			var lc net.ListenConfig
+			return lc.Listen(ctx, "tcp", "127.0.0.1:0")
+		},
 	}
 	for _, opt := range opts {
 		if opt != nil {
@@ -156,7 +159,7 @@ func findChromiumBinaryWith(
 }
 
 func defaultChromiumRunner(ctx context.Context, binary string, args []string) ([]byte, error) {
-	cmd := exec.CommandContext(ctx, binary, args...)
+	cmd := exec.CommandContext(ctx, binary, args...) //nolint:gosec // G204: binary is resolved via FindChromiumBinary or explicit WithChromiumBinary
 	return cmd.CombinedOutput()
 }
 
@@ -182,13 +185,9 @@ func (r *ChromiumRenderer) Render(rawHTML string, opts Options) ([]byte, error) 
 		return nil, ctx.Err()
 	}
 
-	binary := r.binaryPath
-	if binary == "" {
-		found, err := r.findBinary()
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", ErrNoRendererAvailable, err)
-		}
-		binary = found
+	binary, err := r.resolveBinary()
+	if err != nil {
+		return nil, err
 	}
 
 	tmpDir, err := r.mkdirTemp("", "go-app-kit-pdf-*")
@@ -198,26 +197,64 @@ func (r *ChromiumRenderer) Render(rawHTML string, opts Options) ([]byte, error) 
 	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	styledHTML := injectChromiumPageCSS(rawHTML, opts)
-	outPath := filepath.Join(tmpDir, "output.pdf")
-
-	var targetURL string
-	var cleanupServer func()
-	if opts.EnableLocalFileAccess {
-		inputPath := filepath.Join(tmpDir, "index.html")
-		if err := os.WriteFile(inputPath, []byte(styledHTML), 0o600); err != nil {
-			return nil, fmt.Errorf("pdf: failed to write html input: %w", err)
-		}
-		targetURL = "file://" + filepath.ToSlash(inputPath)
-	} else {
-		urlStr, stop, err := startEphemeralHTMLServer(r.listenLoopback, styledHTML)
-		if err != nil {
-			return nil, fmt.Errorf("pdf: failed to start loopback html server: %w", err)
-		}
-		targetURL = urlStr
-		cleanupServer = stop
+	targetURL, cleanupServer, err := r.prepareTargetURL(ctx, tmpDir, styledHTML, opts.EnableLocalFileAccess)
+	if err != nil {
+		return nil, err
+	}
+	if cleanupServer != nil {
 		defer cleanupServer()
 	}
 
+	outPath := filepath.Join(tmpDir, "output.pdf")
+	args := r.buildChromiumArgs(outPath, targetURL, opts.EnableLocalFileAccess)
+	return r.runAndReadPDF(ctx, binary, args, outPath)
+}
+
+func (r *ChromiumRenderer) runAndReadPDF(ctx context.Context, binary string, args []string, outPath string) ([]byte, error) {
+	if out, err := r.runner(ctx, binary, args); err != nil {
+		if trimmedOut := strings.TrimSpace(string(out)); trimmedOut != "" {
+			return nil, fmt.Errorf("pdf: chromium render failed: %w: %s", err, trimmedOut)
+		}
+		return nil, fmt.Errorf("pdf: chromium render failed: %w", err)
+	}
+
+	pdfBytes, err := os.ReadFile(outPath) //nolint:gosec // G304: outPath is created inside an isolated package-owned temp directory
+	if err != nil {
+		return nil, fmt.Errorf("pdf: failed to read chromium output: %w", err)
+	}
+	if !bytes.HasPrefix(pdfBytes, []byte("%PDF-")) {
+		return nil, ErrInvalidPDFOutput
+	}
+	return pdfBytes, nil
+}
+
+func (r *ChromiumRenderer) resolveBinary() (string, error) {
+	if r.binaryPath != "" {
+		return r.binaryPath, nil
+	}
+	found, err := r.findBinary()
+	if err != nil {
+		return "", fmt.Errorf("%w: %w", ErrNoRendererAvailable, err)
+	}
+	return found, nil
+}
+
+func (r *ChromiumRenderer) prepareTargetURL(ctx context.Context, tmpDir, styledHTML string, enableLocalFileAccess bool) (targetURL string, cleanup func(), err error) {
+	if enableLocalFileAccess {
+		inputPath := filepath.Join(tmpDir, "index.html")
+		if err = os.WriteFile(inputPath, []byte(styledHTML), 0o600); err != nil {
+			return "", nil, fmt.Errorf("pdf: failed to write html input: %w", err)
+		}
+		return "file://" + filepath.ToSlash(inputPath), nil, nil
+	}
+	targetURL, cleanup, err = startEphemeralHTMLServer(ctx, r.listenLoopback, styledHTML)
+	if err != nil {
+		return "", nil, fmt.Errorf("pdf: failed to start loopback html server: %w", err)
+	}
+	return targetURL, cleanup, nil
+}
+
+func (r *ChromiumRenderer) buildChromiumArgs(outPath, targetURL string, enableLocalFileAccess bool) []string {
 	args := []string{
 		"--headless=new",
 		"--disable-gpu",
@@ -231,32 +268,15 @@ func (r *ChromiumRenderer) Render(rawHTML string, opts Options) ([]byte, error) 
 	if r.noSandbox {
 		args = append(args, "--no-sandbox")
 	}
-	if opts.EnableLocalFileAccess {
+	if enableLocalFileAccess {
 		args = append(args, "--allow-file-access-from-files")
 	}
 	args = append(args, r.extraArgs...)
-	args = append(args, "--print-to-pdf="+outPath, targetURL)
-
-	if out, err := r.runner(ctx, binary, args); err != nil {
-		trimmedOut := strings.TrimSpace(string(out))
-		if trimmedOut != "" {
-			return nil, fmt.Errorf("pdf: chromium render failed: %w: %s", err, trimmedOut)
-		}
-		return nil, fmt.Errorf("pdf: chromium render failed: %w", err)
-	}
-
-	pdfBytes, err := os.ReadFile(outPath)
-	if err != nil {
-		return nil, fmt.Errorf("pdf: failed to read chromium output: %w", err)
-	}
-	if !bytes.HasPrefix(pdfBytes, []byte("%PDF-")) {
-		return nil, ErrInvalidPDFOutput
-	}
-	return pdfBytes, nil
+	return append(args, "--print-to-pdf="+outPath, targetURL)
 }
 
-func startEphemeralHTMLServer(listen func() (net.Listener, error), payload string) (string, func(), error) {
-	ln, err := listen()
+func startEphemeralHTMLServer(ctx context.Context, listen func(context.Context) (net.Listener, error), payload string) (targetURL string, stop func(), err error) {
+	ln, err := listen(ctx)
 	if err != nil {
 		return "", nil, err
 	}
@@ -281,7 +301,7 @@ func startEphemeralHTMLServer(listen func() (net.Listener, error), payload strin
 		_ = srv.Serve(ln)
 	}()
 
-	stop := func() {
+	stop = func() {
 		_ = srv.Close()
 		_ = ln.Close()
 	}

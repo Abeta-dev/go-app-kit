@@ -169,19 +169,9 @@ func (s *FileLeaseStore) LockFilePath(jobName string) string {
 // TryAcquire acquires or renews the OS advisory flock and PID/TTL lease record for jobName.
 // Returns (false, nil) when another process holds the OS flock or another live node holds an unexpired lease.
 func (s *FileLeaseStore) TryAcquire(ctx context.Context, jobName, nodeID string, now time.Time, ttl time.Duration) (bool, error) {
-	if err := ctx.Err(); err != nil {
+	name, holder, err := validateFileLeaseAcquireArgs(ctx, jobName, nodeID, ttl)
+	if err != nil {
 		return false, err
-	}
-	name := strings.TrimSpace(jobName)
-	if name == "" {
-		return false, ErrInvalidJobName
-	}
-	holder := strings.TrimSpace(nodeID)
-	if holder == "" {
-		return false, ErrEmptyNodeID
-	}
-	if ttl <= 0 {
-		return false, ErrInvalidLeaseTTL
 	}
 
 	s.mu.Lock()
@@ -197,16 +187,46 @@ func (s *FileLeaseStore) TryAcquire(ctx context.Context, jobName, nodeID string,
 	}
 
 	if existing, ok := s.held[name]; ok {
-		if existing.record.NodeID != holder && nowUTC.Before(existing.record.ExpiresAt) && s.isProcessAlive(existing.record.PID) {
-			return false, nil
-		}
-		if err := s.writeLeaseRecord(existing.file, nextRecord); err != nil {
-			return false, err
-		}
-		existing.record = nextRecord
-		return true, nil
+		return s.tryAcquireHeld(existing, nextRecord)
 	}
 
+	return s.tryAcquireNew(name, nextRecord)
+}
+
+func validateFileLeaseAcquireArgs(ctx context.Context, jobName, nodeID string, ttl time.Duration) (name, holder string, err error) {
+	if err = ctx.Err(); err != nil {
+		return "", "", err
+	}
+	name = strings.TrimSpace(jobName)
+	if name == "" {
+		return "", "", ErrInvalidJobName
+	}
+	holder = strings.TrimSpace(nodeID)
+	if holder == "" {
+		return "", "", ErrEmptyNodeID
+	}
+	if ttl <= 0 {
+		return "", "", ErrInvalidLeaseTTL
+	}
+	return name, holder, nil
+}
+
+func (s *FileLeaseStore) isLiveOtherHolder(rec fileLeaseRecord, holder string, nowUTC time.Time) bool {
+	return rec.NodeID != holder && nowUTC.Before(rec.ExpiresAt) && s.isProcessAlive(rec.PID)
+}
+
+func (s *FileLeaseStore) tryAcquireHeld(existing *heldFileLease, nextRecord fileLeaseRecord) (bool, error) {
+	if s.isLiveOtherHolder(existing.record, nextRecord.NodeID, nextRecord.AcquiredAt) {
+		return false, nil
+	}
+	if err := s.writeLeaseRecord(existing.file, nextRecord); err != nil {
+		return false, err
+	}
+	existing.record = nextRecord
+	return true, nil
+}
+
+func (s *FileLeaseStore) tryAcquireNew(name string, nextRecord fileLeaseRecord) (bool, error) {
 	lockPath := s.LockFilePath(name)
 	file, err := s.ops.openFile(lockPath, os.O_CREATE|os.O_RDWR, s.filePerm)
 	if err != nil {
@@ -227,12 +247,10 @@ func (s *FileLeaseStore) TryAcquire(ctx context.Context, jobName, nodeID string,
 		return false, nil
 	}
 
-	if existingRec, ok := s.readLeaseRecord(file); ok {
-		if existingRec.NodeID != holder && nowUTC.Before(existingRec.ExpiresAt) && s.isProcessAlive(existingRec.PID) {
-			_ = s.ops.unlock(file)
-			_ = s.ops.close(file)
-			return false, nil
-		}
+	if existingRec, ok := s.readLeaseRecord(file); ok && s.isLiveOtherHolder(existingRec, nextRecord.NodeID, nextRecord.AcquiredAt) {
+		_ = s.ops.unlock(file)
+		_ = s.ops.close(file)
+		return false, nil
 	}
 
 	if err := s.writeLeaseRecord(file, nextRecord); err != nil {

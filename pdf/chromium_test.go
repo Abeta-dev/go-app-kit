@@ -226,7 +226,7 @@ func TestChromiumRenderer_ConcurrencyAndErrorPaths(t *testing.T) {
 
 	// Loopback listener error
 	rListenErr := NewChromiumRenderer(WithChromiumBinary("/usr/bin/chromium"))
-	rListenErr.listenLoopback = func() (net.Listener, error) { return nil, simErr }
+	rListenErr.listenLoopback = func(context.Context) (net.Listener, error) { return nil, simErr }
 	if _, err := rListenErr.Render("<p>x</p>", DefaultOptions()); !errors.Is(err, simErr) {
 		t.Fatalf("expected listenLoopback simErr, got %v", err)
 	}

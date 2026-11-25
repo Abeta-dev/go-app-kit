@@ -142,106 +142,120 @@ func resolvePageDimensions(pageSize, orientation string) (width, height float64)
 	return width, height
 }
 
-func parseHTMLToBlocks(rawHTML string) []pdfTextBlock {
-	cleaned := stripIgnoredHTMLSections(rawHTML)
+type htmlBlockParser struct {
+	blocks   []pdfTextBlock
+	current  strings.Builder
+	bold     bool
+	scale    float64
+	inRow    bool
+	rowCells int
+}
 
-	var blocks []pdfTextBlock
-	var current strings.Builder
-	bold := false
-	scale := 1.0
-	inRow := false
-	rowCells := 0
+func (p *htmlBlockParser) flush(spaceAfter float64) {
+	text := normalizeWhitespace(html.UnescapeString(p.current.String()))
+	p.current.Reset()
+	if text == "" {
+		return
+	}
+	p.blocks = append(p.blocks, pdfTextBlock{
+		text:       text,
+		bold:       p.bold,
+		scale:      p.scale,
+		spaceAfter: spaceAfter,
+	})
+}
 
-	flush := func(spaceAfter float64) {
-		text := normalizeWhitespace(html.UnescapeString(current.String()))
-		current.Reset()
-		if text == "" {
-			return
+func (p *htmlBlockParser) handleTag(rawTag string) {
+	isClosing := strings.HasPrefix(rawTag, "/")
+	if isClosing {
+		rawTag = strings.TrimSpace(rawTag[1:])
+	}
+	tagName := strings.ToLower(extractTagName(rawTag))
+
+	switch tagName {
+	case "h1", "h2", "h3", "h4", "h5", "h6":
+		p.handleHeading(tagName, isClosing)
+	case "tr", "td", "th":
+		p.handleTableTag(tagName, isClosing)
+	case "li":
+		p.flush(2)
+		if !isClosing {
+			p.current.WriteString("- ")
 		}
-		blocks = append(blocks, pdfTextBlock{
-			text:       text,
-			bold:       bold,
-			scale:      scale,
-			spaceAfter: spaceAfter,
+	case "p", "div", "section", "article", "header", "footer", "blockquote", "table":
+		p.flush(4)
+	case "br":
+		p.flush(0)
+	case "hr":
+		p.flush(2)
+		p.blocks = append(p.blocks, pdfTextBlock{
+			text:       strings.Repeat("-", 60),
+			scale:      0.9,
+			spaceAfter: 4,
 		})
 	}
+}
+
+func (p *htmlBlockParser) handleHeading(tagName string, isClosing bool) {
+	if isClosing {
+		p.flush(6)
+		p.bold = false
+		p.scale = 1.0
+		return
+	}
+	p.flush(4)
+	p.bold = true
+	p.scale = headingScale(tagName)
+}
+
+func (p *htmlBlockParser) handleTableTag(tagName string, isClosing bool) {
+	if tagName == "tr" {
+		if isClosing {
+			p.flush(3)
+			p.inRow = false
+			p.rowCells = 0
+			return
+		}
+		p.flush(2)
+		p.inRow = true
+		p.rowCells = 0
+		return
+	}
+	if !isClosing && p.inRow {
+		if p.rowCells > 0 {
+			p.current.WriteString(" | ")
+		}
+		p.rowCells++
+	}
+}
+
+func parseHTMLToBlocks(rawHTML string) []pdfTextBlock {
+	cleaned := stripIgnoredHTMLSections(rawHTML)
+	p := htmlBlockParser{scale: 1.0}
 
 	for i := 0; i < len(cleaned); {
 		if cleaned[i] != '<' {
 			nextTag := strings.IndexByte(cleaned[i:], '<')
 			if nextTag < 0 {
-				current.WriteString(cleaned[i:])
+				p.current.WriteString(cleaned[i:])
 				break
 			}
-			current.WriteString(cleaned[i : i+nextTag])
+			p.current.WriteString(cleaned[i : i+nextTag])
 			i += nextTag
 			continue
 		}
 
 		closeIdx := strings.IndexByte(cleaned[i:], '>')
 		if closeIdx < 0 {
-			current.WriteString(cleaned[i:])
+			p.current.WriteString(cleaned[i:])
 			break
 		}
 		rawTag := strings.TrimSpace(cleaned[i+1 : i+closeIdx])
 		i += closeIdx + 1
-
-		isClosing := strings.HasPrefix(rawTag, "/")
-		if isClosing {
-			rawTag = strings.TrimSpace(rawTag[1:])
-		}
-		tagName := strings.ToLower(extractTagName(rawTag))
-
-		switch tagName {
-		case "h1", "h2", "h3", "h4", "h5", "h6":
-			if !isClosing {
-				flush(4)
-				bold = true
-				scale = headingScale(tagName)
-			} else {
-				flush(6)
-				bold = false
-				scale = 1.0
-			}
-		case "tr":
-			if !isClosing {
-				flush(2)
-				inRow = true
-				rowCells = 0
-			} else {
-				flush(3)
-				inRow = false
-				rowCells = 0
-			}
-		case "td", "th":
-			if !isClosing && inRow {
-				if rowCells > 0 {
-					current.WriteString(" | ")
-				}
-				rowCells++
-			}
-		case "li":
-			if !isClosing {
-				flush(2)
-				current.WriteString("- ")
-			} else {
-				flush(2)
-			}
-		case "p", "div", "section", "article", "header", "footer", "blockquote", "table":
-			flush(4)
-		case "br":
-			flush(0)
-		case "hr":
-			flush(2)
-			blocks = append(blocks, pdfTextBlock{
-				text:       strings.Repeat("-", 60),
-				scale:      0.9,
-				spaceAfter: 4,
-			})
-		}
+		p.handleTag(rawTag)
 	}
-	flush(0)
-	return blocks
+	p.flush(0)
+	return p.blocks
 }
 
 func stripIgnoredHTMLSections(raw string) string {
@@ -327,12 +341,13 @@ func wrapPDFText(text string, maxWidthPt, fontSizePt float64) []string {
 			word = word[maxChars:]
 		}
 
-		if cur.Len() == 0 {
+		switch {
+		case cur.Len() == 0:
 			cur.WriteString(word)
-		} else if cur.Len()+1+len(word) <= maxChars {
+		case cur.Len()+1+len(word) <= maxChars:
 			cur.WriteByte(' ')
 			cur.WriteString(word)
-		} else {
+		default:
 			lines = append(lines, cur.String())
 			cur.Reset()
 			cur.WriteString(word)
