@@ -1148,7 +1148,7 @@
       <a href="#" class="brand">
         <div class="brand-logo">G</div>
         <span>go-app-kit</span>
-        <span class="brand-badge">v0.7.0</span>
+        <span class="brand-badge">v0.8.0</span>
       </a>
       <ul class="nav-links">
         <li><a href="#features">Features</a></li>
@@ -1184,13 +1184,13 @@
       <!-- Terminal Install Block -->
       <div class="install-box">
         <span class="install-prompt">$</span>
-        <code class="install-code">go get github.com/abeta-dev/go-app-kit@v0.7.0</code>
-        <button class="copy-btn" onclick="copyText('go get github.com/abeta-dev/go-app-kit@v0.7.0', this)">Copy</button>
+        <code class="install-code">go get github.com/abeta-dev/go-app-kit@v0.8.0</code>
+        <button class="copy-btn" onclick="copyText('go get github.com/abeta-dev/go-app-kit@v0.8.0', this)">Copy</button>
       </div>
 
       <!-- Badges Row -->
       <div class="badges-row">
-        <img src="https://img.shields.io/badge/release-v0.7.0-38bdf8.svg?logo=go" alt="Release v0.7.0">
+        <img src="https://img.shields.io/badge/release-v0.8.0-38bdf8.svg?logo=go" alt="Release v0.8.0">
         <img src="https://img.shields.io/badge/CI-passing-10b981.svg?logo=github-actions" alt="CI: Passing">
         <img src="https://img.shields.io/badge/Go-1.26.0-00ADD8.svg?logo=go" alt="Go 1.26.0">
         <img src="https://img.shields.io/badge/govulncheck-0%20vulns-10b981.svg" alt="0 Vulns">
@@ -1276,7 +1276,7 @@
               <span class="module-name">pdf</span>
               <span class="module-cov">100.0%</span>
             </div>
-            <div class="module-summary">HTML-to-PDF in-memory compiler with pluggable Renderer and embedded GST Tax Invoice template.</div>
+            <div class="module-summary">HTML-to-PDF compiler with headless Chromium (loopback SSRF guard), zero-dep pure-Go PDF 1.4, and embedded GST Tax Invoice templates.</div>
           </div>
           <div class="module-item">
             <div class="module-item-top">
@@ -1304,14 +1304,14 @@
               <span class="module-name">storage</span>
               <span class="module-cov">100.0%</span>
             </div>
-            <div class="module-summary">Zero-leak object storage with SHA-256 content digests, key traversal defense, and HMAC-SHA256 presigned URLs.</div>
+            <div class="module-summary">In-memory &amp; local atomic 0600 filesystem object storage (temp + fsync + rename) with SHA-256 digests and HMAC-SHA256 presigned URLs.</div>
           </div>
           <div class="module-item">
             <div class="module-item-top">
               <span class="module-name">scheduler</span>
               <span class="module-cov">100.0%</span>
             </div>
-            <div class="module-summary">Distributed lease-fenced periodic job scheduler with panic recovery and graceful in-flight draining.</div>
+            <div class="module-summary">Distributed &amp; local OS flock/PID-file lease-fenced periodic job scheduler with panic recovery and graceful draining.</div>
           </div>
         </div>
       </div>
@@ -1443,10 +1443,10 @@
             Zero-disk in-memory HTML-to-PDF compilation engine with bundled statutory GST tax invoice and payment receipt templates.
           </p>
           <ul class="feat-highlights">
-            <li><strong>Zero Disk I/O:</strong> Produces an in-memory <code>*bytes.Buffer</code>, eliminating temporary file leaks in containerized workloads.</li>
+            <li><strong>Headless Chromium Backend:</strong> <code>NewChromiumRenderer</code> drives modern <code>--headless=new --print-to-pdf</code> with loopback HTTP SSRF isolation and CSS <code>@page</code> injection.</li>
+            <li><strong>Zero-Dep Pure-Go PDF 1.4:</strong> <code>NewPureGoRenderer</code> compiles structured HTML (headings, tables, lists) into multi-page PDFs with zero host browser binaries.</li>
             <li><strong>Embedded GST Invoice:</strong> Compliant with Indian GST rules: Supplier/Buyer GSTINs, HSN/SAC codes, CGST/SGST/IGST breakdown.</li>
-            <li><strong>Bounded Subprocess Concurrency:</strong> Instance semaphores prevent subprocess exhaustion under high traffic.</li>
-            <li><strong>Pluggable Renderer:</strong> Decoupled <code>Renderer</code> interface allows mocking in unit tests or alternate render backends.</li>
+            <li><strong>Bounded Subprocess Concurrency:</strong> Instance semaphores prevent resource exhaustion; legacy <code>WkhtmlRenderer</code> deprecated under N+2 contract (remove in <code>&gt;= v0.10.0</code>).</li>
           </ul>
         </div>
         <div class="feat-action">
@@ -1567,10 +1567,10 @@
             Zero-leak object storage and HMAC-SHA256 presigned URL engine for archiving compiled PDF tax invoices and streaming CSV reports.
           </p>
           <ul class="feat-highlights">
+            <li><strong>Local Atomic Filesystem Store:</strong> <code>NewLocalStore</code> streams into sibling temp files with <code>0600</code> permissions, calls <code>fsync</code>, and atomically renames payload + metadata sidecar.</li>
             <li><strong>Path-Traversal Guard:</strong> <code>ValidateKey</code> rejects leading/trailing slashes, <code>..</code> traversal segments, backslashes, and null bytes.</li>
-            <li><strong>SHA-256 Content Addressing:</strong> Automatically computes <code>SHA256Hex</code> digests and enforces <code>WithMaxObjectBytes</code> limits.</li>
-            <li><strong>HMAC-SHA256 Presigned URLs:</strong> <code>PresignGet</code>, <code>PresignPut</code>, and constant-time <code>VerifyPresignedURL</code> verification.</li>
-            <li><strong>Defensive Cloning:</strong> Clones object metadata maps across <code>Put</code>, <code>Get</code>, and <code>Head</code> to prevent caller mutation.</li>
+            <li><strong>SHA-256 Content Addressing:</strong> Automatically computes <code>SHA256Hex</code> digests and enforces <code>WithMaxObjectBytes</code> / <code>WithLocalMaxObjectBytes</code> limits.</li>
+            <li><strong>HMAC-SHA256 Presigned URLs:</strong> <code>PresignGet</code>, <code>PresignPut</code>, and constant-time <code>VerifyPresignedURL</code> verification across both memory and local disk stores.</li>
           </ul>
         </div>
         <div class="feat-action">
@@ -1598,10 +1598,10 @@
             Distributed lease-fenced periodic job runner for recurring billing cycles, GST aging snapshots, and PostgreSQL partition maintenance.
           </p>
           <ul class="feat-highlights">
+            <li><strong>Local OS <code>flock</code> + PID Store:</strong> <code>NewFileLeaseStore</code> provides crash-safe single-machine cross-process exclusion (LaunchAgent + desktop GUI/CLI) with <code>0600</code> lock files.</li>
             <li><strong>Distributed Lease Fencing:</strong> <code>LeaseStore.TryAcquire</code> ensures only one replica executes a scheduled job per lease TTL window.</li>
             <li><strong>Panic Recovery Barrier:</strong> Converts panics inside <code>JobFunc</code> into structured errors routed to <code>WithErrorHandler</code>.</li>
             <li><strong>Graceful Shutdown:</strong> <code>Start(ctx)</code> halts tickers on context cancellation and waits for all in-flight jobs to drain.</li>
-            <li><strong>In-Memory Lease Store:</strong> Includes thread-safe <code>NewMemoryLeaseStore()</code> for single-node and deterministic test execution.</li>
           </ul>
         </div>
         <div class="feat-action">
@@ -2186,19 +2186,19 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
           </tr>
           <tr>
             <td><strong><code>pdf</code></strong></td>
-            <td>In-memory HTML-to-PDF compilation & embedded GST invoice templates</td>
-            <td>Pluggable / wkhtmltopdf</td>
+            <td>HTML-to-PDF compilation (headless Chromium, zero-dep pure-Go PDF 1.4, legacy wkhtmltopdf) &amp; embedded GST templates</td>
+            <td>Pluggable / Pure Go / Chromium</td>
             <td><span class="badge-pill badge-green">100.0%</span></td>
           </tr>
           <tr>
             <td><strong><code>storage</code></strong></td>
-            <td>Zero-leak object storage with SHA-256 content digests, size limits & HMAC-SHA256 presigned URLs</td>
+            <td>In-memory &amp; local atomic 0600 filesystem object storage with SHA-256 digests, size limits &amp; HMAC-SHA256 presigned URLs</td>
             <td>Zero external</td>
             <td><span class="badge-pill badge-green">100.0%</span></td>
           </tr>
           <tr>
             <td><strong><code>scheduler</code></strong></td>
-            <td>Distributed lease-fenced periodic job scheduler with panic recovery & graceful draining</td>
+            <td>Distributed &amp; local OS flock/PID lease-fenced periodic job scheduler with panic recovery &amp; graceful draining</td>
             <td>Zero external</td>
             <td><span class="badge-pill badge-green">100.0%</span></td>
           </tr>
@@ -2235,7 +2235,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
           <div class="brand">
             <div class="brand-logo">G</div>
             <span>go-app-kit</span>
-            <span class="brand-badge">v0.7.0</span>
+            <span class="brand-badge">v0.8.0</span>
           </div>
           <p>
             Production-grade enterprise application and business domain accelerator kit for Go. Hardened statutory validations, transactional outbox, multi-channel alerts, zero-disk document compilation, presigned object storage, and lease-fenced job scheduling.
@@ -2261,7 +2261,7 @@ func (s *InvoiceService) ProcessInvoice(ctx context.Context, req InvoiceRequest)
           <ul>
             <li><a href="https://github.com/abeta-dev/go-libs" target="_blank" rel="noopener noreferrer">go-libs (36 Packages · v0.5.0)</a></li>
             <li><a href="https://github.com/abeta-dev/go-fintech-india" target="_blank" rel="noopener noreferrer">go-fintech-india (127 Symbols · v0.4.0)</a></li>
-            <li><a href="https://github.com/abeta-dev/go-app-kit" target="_blank" rel="noopener noreferrer">go-app-kit (7 Packages · v0.7.0)</a></li>
+            <li><a href="https://github.com/abeta-dev/go-app-kit" target="_blank" rel="noopener noreferrer">go-app-kit (7 Packages · v0.8.0)</a></li>
             <li><a href="https://github.com/abeta-dev/cloud-native-observability" target="_blank" rel="noopener noreferrer">cloud-native-observability (v0.4.0)</a></li>
             <li><a href="llms.txt">llms.txt</a></li>
             <li><a href="https://pkg.go.dev/github.com/abeta-dev/go-app-kit" target="_blank" rel="noopener noreferrer">pkg.go.dev Documentation</a></li>

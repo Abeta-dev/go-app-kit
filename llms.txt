@@ -1,12 +1,12 @@
-# go-app-kit (github.com/abeta-dev/go-app-kit@v0.7.0)
+# go-app-kit (github.com/abeta-dev/go-app-kit@v0.8.0)
 
-> Production-grade enterprise application and domain accelerator kit for Go (Go 1.26.0, 100.0% statement coverage): PostgreSQL transactional outbox with relay worker, SHA-256 hash-chained compliance audit logging, HTML-to-PDF GST tax invoice generation, multi-channel notifications (SMTP, WhatsApp Cloud API, Indian DLT SMS, Slack, HMAC Webhooks), RFC 4180 streaming CSV/HTTP exports, zero-leak object storage with HMAC-SHA256 presigned URLs, and distributed lease-fenced periodic job scheduling.
+> Production-grade enterprise application and domain accelerator kit for Go (Go 1.26.0, 100.0% statement coverage): PostgreSQL transactional outbox with relay worker, SHA-256 hash-chained compliance audit logging, HTML-to-PDF GST tax invoice generation (headless Chromium + zero-dep pure-Go PDF 1.4), multi-channel notifications (SMTP, WhatsApp Cloud API, Indian DLT SMS, Slack, HMAC Webhooks), RFC 4180 streaming CSV/HTTP exports, zero-leak in-memory & local atomic 0600 filesystem object storage with HMAC-SHA256 presigned URLs, and distributed + local OS flock/PID lease-fenced periodic job scheduling.
 
 ## Quick Installation
 
 ```bash
 # Install the Go module
-go get github.com/abeta-dev/go-app-kit@v0.7.0
+go get github.com/abeta-dev/go-app-kit@v0.8.0
 
 # Install vendor-neutral AI Agent Skills (Claude Code, Google Antigravity, Gemini CLI, Codex, Cursor)
 npx skills add abeta-dev/go-app-kit
@@ -40,14 +40,16 @@ npx skills add abeta-dev/go-app-kit
 - **Import Path**: `github.com/abeta-dev/go-app-kit/pdf`
 - **Skill**: [`skills/go-app-kit-pdf/SKILL.md`](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit-pdf/SKILL.md)
 - **Key Types & Functions**:
-  - `GenerateFromHTML(htmlContent string, opts ...Option) (*bytes.Buffer, error)`
-  - `GenerateFromHTMLWithContext(ctx context.Context, htmlContent string, opts ...Option) (*bytes.Buffer, error)`
+  - `Generate(html string, opts ...Option) (*bytes.Buffer, error)`
+  - `GenerateWithContext(ctx context.Context, html string, opts ...Option) (*bytes.Buffer, error)`
   - `GenerateFromTemplate(tmplStr string, data any, opts ...Option) (*bytes.Buffer, error)`
   - `GenerateFromTemplateWithContext(ctx context.Context, tmplStr string, data any, opts ...Option) (*bytes.Buffer, error)`
-  - `Renderer`, `WkhtmlRenderer`, `NewWkhtmlRenderer(maxConcurrent int) *WkhtmlRenderer`
+  - `Renderer`, `ChromiumRenderer`, `NewChromiumRenderer(opts ...ChromiumOption) *ChromiumRenderer`, `FindChromiumBinary() (string, error)`
+  - `PureGoRenderer`, `NewPureGoRenderer(opts ...PureGoOption) *PureGoRenderer` (zero external binaries, PDF 1.4)
+  - `WkhtmlRenderer`, `NewWkhtmlRenderer(maxConcurrent ...int) *WkhtmlRenderer` *(Deprecated since `v0.8.0`, remove in `>= v0.10.0`)*
   - `Options`, `Option`, `WithPageSize`, `WithOrientation`, `WithMargins`, `WithDPI`, `WithTitle`, `WithRenderer`
   - `GSTInvoiceTemplate`, `ReceiptTemplate`
-- **Summary**: Compiles HTML/Go templates into in-memory PDF buffers via `wkhtmltopdf` stdin/stdout pipes with zero temporary disk files, semaphore-bounded concurrency, SSRF protection, and embedded Indian GST B2B tax invoice and payment receipt templates.
+- **Summary**: Compiles HTML/Go templates into PDF buffers via modern headless Chromium (ephemeral loopback HTTP SSRF isolation, CSS `@page` rules, bounded concurrency) or zero-dependency pure-Go PDF 1.4, alongside embedded Indian GST B2B tax invoice and payment receipt templates.
 
 ### 3. `notifications` — Multi-Channel Notification Dispatcher
 - **Import Path**: `github.com/abeta-dev/go-app-kit/notifications`
@@ -96,21 +98,22 @@ npx skills add abeta-dev/go-app-kit
 - **Import Path**: `github.com/abeta-dev/go-app-kit/storage`
 - **Skill**: [`skills/go-app-kit-storage/SKILL.md`](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit-storage/SKILL.md)
 - **Key Types & Functions**:
-  - `Store`, `MemoryStore`, `NewMemoryStore(opts ...Option) (*MemoryStore, error)`
+  - `Store`, `LocalStore`, `NewLocalStore(rootDir string, opts ...LocalOption) (*LocalStore, error)`, `LocalOption`, `WithFilePerm`, `WithDirPerm`, `WithLocalMaxObjectBytes`, `WithLocalBaseURL`, `WithLocalSigningSecret`, `WithLocalClock`
+  - `MemoryStore`, `NewMemoryStore(opts ...Option) (*MemoryStore, error)`
   - `ObjectMeta`, `PutInput`, `PresignedURL`, `Option`
   - `WithMaxObjectBytes(limit int64) Option`, `WithBaseURL(baseURL string) Option`, `WithSigningSecret(secret []byte) Option`, `WithClock(nowFunc func() time.Time) Option`
-  - `ValidateKey(key string) error`, `(*MemoryStore).VerifyPresignedURL(rawURL, method string, now time.Time) error`
-- **Summary**: Stores compiled PDF tax invoices and streaming CSV export artifacts with strict path-traversal key validation, bounded stream size limits, SHA-256 content digests (`SHA256Hex`), defensive metadata cloning, and constant-time HMAC-SHA256 presigned `GET` and `PUT` URLs.
+  - `ValidateKey(key string) error`, `(*LocalStore).VerifyPresignedURL`, `(*MemoryStore).VerifyPresignedURL`
+- **Summary**: Stores compiled PDF tax invoices and streaming CSV export artifacts in memory or on an atomic local filesystem (`0600` temp write + `fsync` + atomic rename) with strict path-traversal key validation, bounded stream size limits, SHA-256 content digests (`SHA256Hex`), defensive metadata cloning, and constant-time HMAC-SHA256 presigned `GET` and `PUT` URLs.
 
-### 7. `scheduler` — Distributed Lease-Fenced Periodic Job Scheduler
+### 7. `scheduler` — Distributed & Local OS `flock` Lease-Fenced Periodic Job Scheduler
 - **Import Path**: `github.com/abeta-dev/go-app-kit/scheduler`
 - **Skill**: [`skills/go-app-kit-scheduler/SKILL.md`](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit-scheduler/SKILL.md)
 - **Key Types & Functions**:
   - `Scheduler`, `NewScheduler(store LeaseStore, nodeID string, opts ...Option) (*Scheduler, error)`
-  - `JobConfig`, `JobFunc`, `LeaseStore`, `MemoryLeaseStore`, `NewMemoryLeaseStore() *MemoryLeaseStore`
+  - `JobConfig`, `JobFunc`, `LeaseStore`, `FileLeaseStore`, `NewFileLeaseStore(dir string, opts ...FileLeaseOption) (*FileLeaseStore, error)`, `WithFileLeaseMode`, `WithFileLeaseDirMode`, `WithFileLeasePID`, `WithProcessAliveChecker`, `MemoryLeaseStore`, `NewMemoryLeaseStore() *MemoryLeaseStore`
   - `Option`, `WithClock(nowFunc func() time.Time) Option`, `WithErrorHandler(fn func(jobName string, err error)) Option`
   - `(*Scheduler).Register(cfg JobConfig) error`, `(*Scheduler).RunOnce(ctx context.Context, jobName string) (bool, error)`, `(*Scheduler).Start(ctx context.Context) error`
-- **Summary**: Coordinates singleton periodic background jobs across service replicas using distributed lease acquisition (`TryAcquire`, `Release`), panic recovery barriers, and graceful in-flight draining on context cancellation.
+- **Summary**: Coordinates singleton periodic background jobs across service replicas or single-machine OS processes (LaunchAgent + GUI/CLI via OS `flock` + `0600` PID/TTL lock files) using lease acquisition (`TryAcquire`, `Release`), panic recovery barriers, and graceful in-flight draining on context cancellation.
 
 ### 8. `examples/invoice_service` — Reference B2B GST Invoicing Service
 - **Import Path**: `github.com/abeta-dev/go-app-kit/examples/invoice_service`
@@ -124,7 +127,7 @@ npx skills add abeta-dev/go-app-kit
 - `./scripts/check_secrets.sh`: TruffleHog verified-secret scanning and deterministic credential pattern checks.
 - `./scripts/check_leaf_imports.sh`: Verifies zero cross-package sibling coupling across all 7 core packages (`audit`, `export`, `notifications`, `outbox`, `pdf`, `scheduler`, `storage`) and verifies via `go list -deps` and isolated `go.mod` sandboxes that `export`, `pdf`, `notifications`, `storage`, and `scheduler` never pull `pgx`, `gin`, or `go-fintech-india`, and `audit` and `outbox` never pull `gin` or `go-fintech-india`.
 - `./scripts/check_deprecation.sh`: Enforces the strict `N + 2` Minor-Release Deprecation Window Policy (`// Deprecated: Since vX.Y.Z (remove in >= vA.B.C). Use <Replacement> instead.`, documented in `docs/VERSIONING.md`).
-- `./scripts/check_version.sh`: Verifies version parity (`v0.7.0`), `CHANGELOG.md` symbol accuracy, package inventory, and documentation truth.
+- `./scripts/check_version.sh`: Verifies version parity (`v0.8.0`), `CHANGELOG.md` symbol accuracy, package inventory, and documentation truth.
 - `./scripts/check_coverage.sh`: Enforces `100.0%` statement coverage across all 7 core packages and `examples/invoice_service`.
 - `./scripts/module_agent_review.sh`: Runs the 8 Module Code-Owner Agents and Multi-Skill quality review.
 
@@ -134,7 +137,7 @@ npx skills add abeta-dev/go-app-kit
   - Docs: https://abeta-dev.github.io/go-libs/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-libs
 - **[`github.com/abeta-dev/go-fintech-india`](https://github.com/abeta-dev/go-fintech-india)** (`v0.4.0`): Zero-dependency Indian FinTech & statutory compliance engine (127 exported symbols across 15 domain files: GSTIN mod-36, PAN, Aadhaar Verhoeff D5, IFSC, VPA/UPI, exact `Money` paise math, Razorpay/Cashfree/PhonePe webhooks, Indian FY & AP/AR aging).
   - Docs: https://abeta-dev.github.io/go-fintech-india/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-fintech-india
-- **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.7.0`): Enterprise application infrastructure (7 core packages: `outbox`, `pdf`, `notifications`, `audit`, `export`, `storage`, `scheduler`).
+- **[`github.com/abeta-dev/go-app-kit`](https://github.com/abeta-dev/go-app-kit)** (`v0.8.0`): Enterprise application infrastructure (7 core packages: `outbox`, `pdf`, `notifications`, `audit`, `export`, `storage`, `scheduler`).
   - Docs: https://abeta-dev.github.io/go-app-kit/ | Reference: https://pkg.go.dev/github.com/abeta-dev/go-app-kit
 - **[`github.com/abeta-dev/cloud-native-observability`](https://github.com/abeta-dev/cloud-native-observability)** (`v0.4.0`): Production OpenTelemetry, Prometheus, Grafana, Loki, Tempo, and Kubernetes observability reference stack for Go microservices.
   - Docs: https://abeta-dev.github.io/cloud-native-observability/ | Repo: https://github.com/abeta-dev/cloud-native-observability

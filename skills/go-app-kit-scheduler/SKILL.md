@@ -9,6 +9,7 @@ Use this skill when scheduling singleton periodic background jobs across horizon
 
 ## 1. Concurrency & Reliability Guarantees
 
+- **Local OS `flock` + PID-File Lease Store (`NewFileLeaseStore`)**: Combines non-blocking POSIX advisory `flock(2)` locks with `0600` JSON PID/TTL lease files for single-machine cross-process mutual exclusion (desktop GUI + LaunchAgent/systemd daemon) with automatic crash/stale-PID recovery. Always `defer store.Close()` to release open lock file descriptors.
 - **Distributed Lease Fencing (`LeaseStore`)**: Calls `TryAcquire(ctx, jobName, nodeID, now, leaseTTL)` before every job tick. If another replica holds an active lease, `RunOnce` returns `(false, nil)` without duplicate execution.
 - **Panic Recovery Barrier**: Wraps every `JobFunc` invocation in a `recover()` guard that converts panics into structured errors and forwards them to `WithErrorHandler`.
 - **Graceful In-Flight Draining (`Start(ctx)`)**: Stops all periodic tickers on context cancellation and waits via `sync.WaitGroup` for all in-flight jobs to complete before returning.
@@ -26,8 +27,14 @@ import (
 	"github.com/abeta-dev/go-app-kit/scheduler"
 )
 
-func RunMaintenanceScheduler(ctx context.Context, nodeID string) error {
-	store := scheduler.NewMemoryLeaseStore()
+func RunMaintenanceScheduler(ctx context.Context, lockDir, nodeID string) error {
+	// Use NewFileLeaseStore for single-machine cross-process exclusion (LaunchAgent + GUI)
+	// or NewMemoryLeaseStore() for single-process/unit tests.
+	store, err := scheduler.NewFileLeaseStore(lockDir)
+	if err != nil {
+		return err
+	}
+	defer store.Close()
 
 	sched, err := scheduler.NewScheduler(
 		store,

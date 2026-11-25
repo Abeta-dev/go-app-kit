@@ -9,8 +9,9 @@ Use this skill when archiving compiled `pdf` documents, storing `export` CSV rep
 
 ## 1. Security & Memory Guarantees
 
+- **Local Atomic Filesystem Store (`NewLocalStore`)**: Streams payloads into sibling temporary files with `0600` permissions (`WithFilePerm`), computes SHA-256 digests on the fly while enforcing `WithLocalMaxObjectBytes`, calls `fsync`, and atomically renames both the object payload and JSON metadata sidecar into place with zero partial writes on failure.
 - **Strict Key Traversal Guard (`ValidateKey`)**: Rejects empty keys, leading or trailing slashes, empty path segments (`//`), `.` or `..` path traversal segments, Windows backslashes, and null bytes (`ErrInvalidKey`).
-- **Bounded Memory Stream Reading (`WithMaxObjectBytes`)**: Enforces size limits via `io.LimitReader(body, maxObjectBytes+1)` and returns `ErrObjectTooLarge` without unbounded heap allocations.
+- **Bounded Memory Stream Reading (`WithMaxObjectBytes` / `WithLocalMaxObjectBytes`)**: Enforces size limits via `io.LimitReader(body, maxObjectBytes+1)` and returns `ErrObjectTooLarge` without unbounded heap allocations.
 - **SHA-256 Content Digest & Defensive Cloning**: Computes `ObjectMeta.SHA256Hex` on `Put` and defensively clones `Metadata` maps on `Put`, `Get`, and `Head`.
 - **Constant-Time HMAC-SHA256 Presigned URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`)**: Signs HTTP method, object key, content type (for `PUT`), and Unix expiration timestamp, verifying signatures with `hmac.Equal`.
 
@@ -28,11 +29,13 @@ import (
 	"github.com/abeta-dev/go-app-kit/storage"
 )
 
-func ArchiveAndPresignInvoice(ctx context.Context, pdfBytes []byte) (storage.ObjectMeta, storage.PresignedURL, error) {
-	store, err := storage.NewMemoryStore(
-		storage.WithBaseURL("https://objects.enterprise.internal"),
-		storage.WithSigningSecret([]byte("replace-with-32-byte-signing-secret")),
-		storage.WithMaxObjectBytes(16*1024*1024), // 16 MiB
+func ArchiveAndPresignInvoice(ctx context.Context, rootDir string, pdfBytes []byte) (storage.ObjectMeta, storage.PresignedURL, error) {
+	// Use NewLocalStore for durable atomic 0600 local disk storage, or NewMemoryStore for in-memory tests.
+	store, err := storage.NewLocalStore(
+		rootDir,
+		storage.WithLocalBaseURL("https://objects.enterprise.internal"),
+		storage.WithLocalSigningSecret([]byte("replace-with-32-byte-signing-secret")),
+		storage.WithLocalMaxObjectBytes(16*1024*1024), // 16 MiB
 	)
 	if err != nil {
 		return storage.ObjectMeta{}, storage.PresignedURL{}, err

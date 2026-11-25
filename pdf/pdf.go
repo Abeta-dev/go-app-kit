@@ -1,4 +1,5 @@
-// Package pdf provides in-memory HTML-to-PDF compilation via wkhtmltopdf
+// Package pdf provides in-memory HTML-to-PDF compilation via pluggable Renderers
+// (headless Chromium, zero-dependency pure-Go PDF 1.4, and legacy wkhtmltopdf)
 // with production-ready options, template helpers, and document templates.
 package pdf
 
@@ -27,8 +28,10 @@ type Renderer interface {
 // DefaultMaxConcurrency is the default upper bound for simultaneous wkhtmltopdf subprocesses.
 const DefaultMaxConcurrency = 10
 
-// WkhtmlRenderer is the default Renderer implementation backed by wkhtmltopdf.
+// WkhtmlRenderer is the legacy Renderer implementation backed by wkhtmltopdf.
 // Concurrency is bounded per renderer instance via an encapsulated semaphore channel.
+//
+// Deprecated: Since v0.8.0 (remove in >= v0.10.0). Use ChromiumRenderer or PureGoRenderer instead.
 type WkhtmlRenderer struct {
 	Semaphore chan struct{}
 	sem       chan struct{}
@@ -37,6 +40,8 @@ type WkhtmlRenderer struct {
 
 // NewWkhtmlRenderer constructs a WkhtmlRenderer with an encapsulated semaphore of capacity maxConcurrency.
 // If maxConcurrency <= 0, DefaultMaxConcurrency (10) is used.
+//
+// Deprecated: Since v0.8.0 (remove in >= v0.10.0). Use NewChromiumRenderer or NewPureGoRenderer instead.
 func NewWkhtmlRenderer(maxConcurrency ...int) *WkhtmlRenderer {
 	limit := DefaultMaxConcurrency
 	if len(maxConcurrency) > 0 && maxConcurrency[0] > 0 {

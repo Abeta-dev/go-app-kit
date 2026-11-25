@@ -12,12 +12,12 @@ Use this umbrella skill when integrating `github.com/abeta-dev/go-app-kit` into 
 | Task / Domain | Subskill to Load | Path |
 | :--- | :--- | :--- |
 | PostgreSQL transactional outbox, `SKIP LOCKED` polling, lease fencing, retry/dead-letter | `go-app-kit-outbox` | `skills/go-app-kit-outbox/SKILL.md` |
-| HTML-to-PDF compilation, `wkhtmltopdf` concurrency semaphore, GST invoice & receipt templates | `go-app-kit-pdf` | `skills/go-app-kit-pdf/SKILL.md` |
+| HTML-to-PDF compilation (`NewChromiumRenderer`, `NewPureGoRenderer`, legacy `NewWkhtmlRenderer`), GST invoice & receipt templates | `go-app-kit-pdf` | `skills/go-app-kit-pdf/SKILL.md` |
 | Multi-channel broker (`SendAsync`), SMTP, Brevo, WhatsApp, DLT SMS, Slack, HMAC-SHA256 webhooks | `go-app-kit-notifications` | `skills/go-app-kit-notifications/SKILL.md` |
 | Range-partitioned PostgreSQL audit logs, append-only triggers, JSON `ComputeDiff` | `go-app-kit-audit` | `skills/go-app-kit-audit/SKILL.md` |
 | Low-memory streaming CSV export (`CSVStreamer[T]`, `StreamHTTP[T]`, `StreamHTTPCompressed[T]`, `NegotiateEncoding`), Brotli/Gzip HTTP compression, Excel UTF-8 BOM, CSV escaping | `go-app-kit-export` | `skills/go-app-kit-export/SKILL.md` |
-| Zero-leak object storage (`Store`, `NewMemoryStore`, `ValidateKey`), SHA-256 content digests, and HMAC-SHA256 presigned `GET`/`PUT` URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`) | `go-app-kit-storage` | `skills/go-app-kit-storage/SKILL.md` |
-| Distributed lease-fenced periodic job scheduler (`Scheduler`, `NewScheduler`, `LeaseStore`, `NewMemoryLeaseStore`, `Register`, `RunOnce`, `Start`) with panic recovery | `go-app-kit-scheduler` | `skills/go-app-kit-scheduler/SKILL.md` |
+| Zero-leak object storage (`Store`, `NewLocalStore` atomic 0600 filesystem, `NewMemoryStore`, `ValidateKey`), SHA-256 content digests, and HMAC-SHA256 presigned `GET`/`PUT` URLs (`PresignGet`, `PresignPut`, `VerifyPresignedURL`) | `go-app-kit-storage` | `skills/go-app-kit-storage/SKILL.md` |
+| Distributed & local OS `flock`/PID lease-fenced periodic job scheduler (`Scheduler`, `NewScheduler`, `LeaseStore`, `NewFileLeaseStore`, `NewMemoryLeaseStore`, `Register`, `RunOnce`, `Start`) with panic recovery | `go-app-kit-scheduler` | `skills/go-app-kit-scheduler/SKILL.md` |
 | Indian GSTIN, PAN, Aadhaar Verhoeff D5, IFSC, UPI, exact paise `Money` math | `go-fintech-india` | Companion module `github.com/abeta-dev/go-fintech-india` |
 
 ---
