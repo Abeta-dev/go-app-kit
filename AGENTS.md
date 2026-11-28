@@ -4,6 +4,19 @@
 
 ---
 
+## 0. Mandatory Grounding Before Generation (Fixed Analysis Order)
+
+Before generating, modifying, or reviewing any code in this repository, **follow this exact 6-step analysis order**:
+
+1. **`AGENTS.md`** *(this file)* — Identify the matching package subskill, Module Code-Owner Agent, leaf-import isolation rules, and verification gates.
+2. **Architecture Docs** — Read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md), [`docs/VERSIONING.md`](docs/VERSIONING.md), and [`docs/adr/`](docs/adr/) to verify zero cross-sibling imports, dependency isolation tiers, and interface contracts.
+3. **Flow Docs** — Read [`docs/FLOWS.md`](docs/FLOWS.md) to trace transactional outbox lease fencing, Chromium/pure-Go PDF pipelines, atomic `0600` `LocalStore` + HMAC presigning, OS `flock` `FileLeaseStore` scheduling, notifications, audit hash-chaining, and streaming CSV export.
+4. **Pattern Docs (Package Subskills)** — Load the narrowest matching `skills/go-app-kit-*/SKILL.md` from Section 1 below (single source of truth for idiomatic patterns and options).
+5. **CodeGraph & Symbol Index** — Consult [`docs/CODEGRAPH.md`](docs/CODEGRAPH.md) (AST dependency DAG and exported `file:line` symbol coordinates) and [`llms.txt`](llms.txt) — plus local `graphify-out/GRAPH_REPORT.md` when available — to pinpoint exact targets.
+6. **Source Reads Only for Verification** — Open raw `.go` / `.sql` files **only** to verify exact signatures, edge cases, and tests for the specific targets identified in Steps 1–5 before editing.
+
+---
+
 ## 1. Module & Subskill Routing
 
 When working inside or consuming `go-app-kit`, load the subskill matching the target package:
