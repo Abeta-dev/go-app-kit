@@ -17,7 +17,10 @@ npx skills add abeta-dev/go-app-kit
 - [Documentation Portal](https://abeta-dev.github.io/go-app-kit/): Interactive package reference, architecture topology, and PostgreSQL DDL blueprints.
 - [Go Reference (pkg.go.dev)](https://pkg.go.dev/github.com/abeta-dev/go-app-kit): Official Go package and symbol documentation.
 - [GitHub Repository](https://github.com/abeta-dev/go-app-kit): Source code, verification scripts, and release artifacts.
-- [AGENTS.md](https://github.com/abeta-dev/go-app-kit/blob/main/AGENTS.md): Root AI agent routing table and repository invariants.
+- [AGENTS.md](https://github.com/abeta-dev/go-app-kit/blob/main/AGENTS.md): Mandatory 6-step grounding order, root AI agent routing table, and repository invariants.
+- [System Architecture Blueprint (`docs/ARCHITECTURE.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/docs/ARCHITECTURE.md): 7-package dependency isolation topology, interface contracts, and PostgreSQL DDL governance.
+- [End-to-End Execution Flows (`docs/FLOWS.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/docs/FLOWS.md): Outbox lease fencing, Chromium/pure-Go PDF pipelines, atomic `0600` `LocalStore` + HMAC presigning, OS `flock` `FileLeaseStore` scheduling, notifications, audit hash-chaining, and streaming CSV export.
+- [CodeGraph & Symbol Index (`docs/CODEGRAPH.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/docs/CODEGRAPH.md): Deterministic AST dependency DAG and exported `file:line` symbol coordinates across all 7 packages.
 - [Versioning Policy & Deprecation Contract (`docs/VERSIONING.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/docs/VERSIONING.md): 7-package leaf-import isolation matrix (`./scripts/check_leaf_imports.sh`) and strict `N + 2` minor-release deprecation window policy (`./scripts/check_deprecation.sh`).
 - [Umbrella Skill (`skills/go-app-kit/SKILL.md`)](https://github.com/abeta-dev/go-app-kit/blob/main/skills/go-app-kit/SKILL.md): Cross-package transactional composition and truth-gate verification loop.
 - [Reference Microservice (`examples/invoice_service`)](https://github.com/abeta-dev/go-app-kit/tree/main/examples/invoice_service): End-to-end B2B GST invoicing service combining core packages with `go-fintech-india`.
